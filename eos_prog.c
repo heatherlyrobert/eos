@@ -3,7 +3,6 @@
 
 
 
-tDEBUG      debug;
 
 
 
@@ -19,397 +18,229 @@ PROG_version       (void)
 {
    char    t [20] = "";
 #if    __TINYC__ > 0
-   strlcpy (t, "[tcc built]", 15);
+   strlcpy (t, "[tcc built  ]", 15);
 #elif  __GNUC__  > 0
-   strlcpy (t, "[gnu gcc  ]", 15);
+   strlcpy (t, "[gnu gcc    ]", 15);
 #elif  __CBANG__  > 0
-   strlcpy (t, "[cbang    ]", 15);
+   strlcpy (t, "[cbang      ]", 15);
+#elif  __HEPH__  > 0
+   strncpy (t, "[hephaestus ]", 18);
 #else
-   strlcpy (t, "[unknown  ]", 15);
+   strlcpy (t, "[unknown    ]", 15);
 #endif
    snprintf (verstring, 100, "%s   %s : %s", t, VER_NUM, VER_TXT);
    return verstring;
 }
 
-char         /*--: dispaly usage information -------------[ leaf-- [ ------ ]-*/
-PROG_usage         (void)
-{
-   printf ("\n");
-   printf ("eos        : clean, light, consistent, reliable system initialization\n");
-   printf ("\n");
-   printf ("usage      : eos [URGENTS] [OPTIONS]\n");
-   printf ("\n");
-   printf ("OPTIONS...\n");
-   printf ("   -d,--daemon  (*)\n");
-   printf ("             execute in normal, daemon mode\n");
-   printf ("   -f,--foreground\n");
-   printf ("             execute in non-daemon or foreground mode\n");
-   printf ("   -1,--init  (*)\n");
-   printf ("             must execute as pid 1\n");
-   printf ("   -a,--anypid\n");
-   printf ("             allow execution as any pid, not just 1\n");
-   printf ("   -h,--help\n");
-   printf ("             display program usage/help\n");
-   printf ("\n");
-   printf ("URGENTS...\n");
-   printf ("   @q        quiet execution with no logs\n");
-   printf ("   @l,@ls    route logging to system logs  (*)\n");
-   printf ("   @lp       route logging to personal logs\n");
-   printf ("   @lo       route logging to stdout\n");
-   printf ("\n");
-   printf ("namesake   : goddess of daybreak, i.e., homer's rosy-fingered dawn\n");
-   printf ("\n");
-   exit (0);
-}
+/*> char                                                                               <* 
+ *> PROG_mountproc     (void)                                                          <* 
+ *> {                                                                                  <* 
+ *>    /+---(design notes)-------------------+/                                        <* 
+ *>    /+ mount the /proc filesystem, if necessary  +/                                 <* 
+ *>    /+---(locals)-----------+-----------+-+/                                        <* 
+ *>    int         rc          = 0;             /+ generic return code            +/   <* 
+ *>    FILE       *f           = NULL;          /+ generic file pointer           +/   <* 
+ *>    /+---(try to open)--------------------+/                                        <* 
+ *>    DEBUG_VIEW   printf        ("PROG_mountproc :");                                <* 
+ *>    DEBUG_VIEW   printf (" /proc");                                                 <* 
+ *>    f = fopen ("/proc/mounts", "r");                                                <* 
+ *>    /+---(check mounting)-----------------+/                                        <* 
+ *>    if (f != NULL) {                                                                <* 
+ *>       DEBUG_VIEW   printf (", found, already mounted");                            <* 
+ *>       my.status_proc    = 'a';  /+ already mounted +/                              <* 
+ *>    }                                                                               <* 
+ *>    /+---(if needed, mount)---------------+/                                        <* 
+ *>    else {                                                                          <* 
+ *>       DEBUG_VIEW   printf        (", mounting");                                   <* 
+ *>       my.status_proc  = 'm';   /+ newly mounted +/                                 <* 
+ *>       rc = mount ("proc"  , "/proc", "proc", 0, NULL);                             <* 
+ *>       if (rc < 0)  {                                                               <* 
+ *>          rc = errno;                                                               <* 
+ *>          DEBUG_VIEW   printf (", error %d (%s), FATAL\n", rc, strerror (rc));      <* 
+ *>          exit (-10);                                                               <* 
+ *>       }                                                                            <* 
+ *>       DEBUG_VIEW   printf        (", mounted");                                    <* 
+ *>       f = fopen ("/proc/mounts", "r");                                             <* 
+ *>       if (f == NULL) {                                                             <* 
+ *>          printf (", error, no access /proc/mounts, FATAL\n");                      <* 
+ *>          exit (-3);                                                                <* 
+ *>       }                                                                            <* 
+ *>    }                                                                               <* 
+ *>    /+---(close)--------------------------+/                                        <* 
+ *>    DEBUG_VIEW   printf (", close");                                                <* 
+ *>    rc = fclose (f);                                                                <* 
+ *>    if (rc < 0)  {                                                                  <* 
+ *>       rc = errno;                                                                  <* 
+ *>       DEBUG_VIEW   printf (", error %d (%s)", rc, strerror (rc));                  <* 
+ *>    }                                                                               <* 
+ *>    /+---(complete)-----------------------+/                                        <* 
+ *>    DEBUG_VIEW   printf (", done\n");                                               <* 
+ *>    return 0;                                                                       <* 
+ *> }                                                                                  <*/
+
+/*> char                                                                                     <* 
+ *> PROG_logtest       (void)                                                                <* 
+ *> {                                                                                        <* 
+ *>    /+---(design notes)-------------------+/                                              <* 
+ *>    /+                                                                                    <* 
+ *>     *  make sure to respect existing mounts                                              <* 
+ *>     +/                                                                                   <* 
+ *>    /+---(locals)-----------+-----------+-+/                                              <* 
+ *>    int         rc          = 0;             /+ generic return code            +/         <* 
+ *>    FILE       *f           = NULL;          /+ generic file pointer           +/         <* 
+ *>    char        x_recd      [LEN_RECD];      /+ file record entry              +/         <* 
+ *>    /+---(try to open)--------------------+/                                              <* 
+ *>    DEBUG_VIEW   printf ("PROG_logtest   :");                                             <* 
+ *>    DEBUG_VIEW   printf (" find /var/log/yLOG");                                          <* 
+ *>    f = fopen ("/proc/mounts", "r");                                                      <* 
+ *>    /+---(prepare defaults)---------------+/                                              <* 
+ *>    my.status_log     = '-';  /+ not mounted +/                                           <* 
+ *>    /+---(check on log filesystem)--------+/                                              <* 
+ *>    DEBUG_VIEW   printf (", searching /proc/mounts");                                     <* 
+ *>    while (!feof (f)) {                                                                   <* 
+ *>       fgets (x_recd, 450, f);                                                            <* 
+ *>       if (x_recd[0] == 'v' && strncmp (x_recd, "varlog /var/log/yLOG ", 21) == 0) {      <* 
+ *>          DEBUG_VIEW   printf (", tmpfs");                                                <* 
+ *>          my.status_log = 'a';                                                            <* 
+ *>          break;                                                                          <* 
+ *>       }                                                                                  <* 
+ *>       if (x_recd[0] == '/' && strncmp (x_recd, "/dev/sda3 /var/log/yLOG ", 24) == 0) {   <* 
+ *>          DEBUG_VIEW   printf (", sda3");                                                 <* 
+ *>          my.status_log = 'a';                                                            <* 
+ *>          break;                                                                          <* 
+ *>       }                                                                                  <* 
+ *>    }                                                                                     <* 
+ *>    /+---(summary)------------------------+/                                              <* 
+ *>    if (my.status_log == '-') {                                                           <* 
+ *>       DEBUG_VIEW   printf (", not mounted");                                             <* 
+ *>    } else {                                                                              <* 
+ *>       DEBUG_VIEW   printf (", mounted");                                                 <* 
+ *>    }                                                                                     <* 
+ *>    /+---(close)--------------------------+/                                              <* 
+ *>    DEBUG_VIEW   printf (", close");                                                      <* 
+ *>    rc = fclose (f);                                                                      <* 
+ *>    if (rc < 0)  {                                                                        <* 
+ *>       rc = errno;                                                                        <* 
+ *>       DEBUG_VIEW   printf (", error %d (%s)", rc, strerror (rc));                        <* 
+ *>    }                                                                                     <* 
+ *>    /+---(complete)-----------------------+/                                              <* 
+ *>    DEBUG_VIEW   printf (", done\n");                                                     <* 
+ *>    return 0;                                                                             <* 
+ *> }                                                                                        <*/
+
+/*> char         /+--: look for screen debugging -------------[ leaf   [ ------ ]-+/   <* 
+ *> PROG_urgview       (int a_argc, char *a_argv[])                                    <* 
+ *> {                                                                                  <* 
+ *>    /+---(design)-------------------------+/                                        <* 
+ *>    /+ view mode is special and not included in @@full or @@kitchen or @@quiet +/   <* 
+ *>    /+---(locals)-------------------------+/                                        <* 
+ *>    int         i           = 0;             /+ loop iterator -- arguments     +/   <* 
+ *>    char       *a           = NULL;          /+ current argument               +/   <* 
+ *>    /+---(logger preprocessing)-----------+/                                        <* 
+ *>    for (i = 1; i < a_argc; ++i) {                                                  <* 
+ *>       a = a_argv[i];                                                               <* 
+ *>       if (a[0] != '@')  continue;                                                  <* 
+ *>       if       (strcmp ("@v"         , a) == 0)    debug.view    = 'y';            <* 
+ *>       else if  (strcmp ("@@view"     , a) == 0)    debug.view    = 'y';            <* 
+ *>    }                                                                               <* 
+ *>    /+---(complete)-----------------------+/                                        <* 
+ *>    return 0;                                                                       <* 
+ *> }                                                                                  <*/
+
+/*> char         /+--> before even logger --------------------[ leaf-- [ ------ ]-+/   <* 
+ *> PROG_preinit       (void)                                                          <* 
+ *> {                                                                                  <* 
+ *>    /+---(locals)-----------+-----------+-+/                                        <* 
+ *>    int         rc          = 0;             /+ generic return code            +/   <* 
+ *>    PROG_mountproc ();                                                              <* 
+ *>    return 0;                                                                       <* 
+ *> }                                                                                  <*/
 
 char         /*--: pre-argument initialization -----------[ leaf-- [ ------ ]-*/
 PROG_init          (void)
 {
-   /*---(locals)-----------+-----------+-*/
-   int         rc          = 0;             /* generic return code            */
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
    FILE       *f           = NULL;          /* generic file pointer           */
    char        x_recd      [LEN_RECD];      /* file record entry              */
+   /*---(log header)---------------------*/
+   DEBUG_TOPS   yLOG_info    ("purpose" , "simple, reliable, and transparent system initialization");
+   DEBUG_TOPS   yLOG_info    ("namesake", "eos-rhododactylos (rosy-fingered)");
+   DEBUG_TOPS   yLOG_info    ("heritage", "titaness of daybreak, opens the gates of heaven for the sun");
+   DEBUG_TOPS   yLOG_info    ("imagery" , "radiant winged woman with golden arms and rosy fingers");
+   DEBUG_TOPS   yLOG_info    ("eos"     , PROG_version    ());
+   DEBUG_TOPS   yLOG_info    ("yPARSE"  , yPARSE_version  ());
+   DEBUG_TOPS   yLOG_info    ("yDLST"   , yDLST_version   ());
+   DEBUG_TOPS   yLOG_info    ("yEXEC"   , yEXEC_version   ());
+   DEBUG_TOPS   yLOG_info    ("ySTR"    , ySTR_version    ());
+   DEBUG_TOPS   yLOG_info    ("yLOG"    , yLOG_version    ());
+   DEBUG_TOPS   yLOG_info    ("yURG"    , yURG_version    ());
+   DEBUG_VIEW   printf       ("EOS-RHODODACTYLOS : simple, reliable, and transparent system initialization");
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_VIEW   printf       ("EOS_init     :");
    /*---(set globals)--------------------*/
    my.daemon         = 'y';
    my.init           = 'y';
    my.test           = '-';
+   my.loop_msec      = 100;
+   my.loop_max       = 500;
+   /*---(call whoami)--------------------*/
+   rc = yEXEC_whoami (&my.pid, &my.ppid, &my.uid, NULL, &my.who, 'n');
+   DEBUG_TOPS   yLOG_value   ("whoami"    , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(check for root)-----------------*/
+   DEBUG_TOPS   yLOG_value   ("my.uid"    , my.uid);
+   --rce;  if (my.uid != 0) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(defenses : pid)-----------------*/
+   DEBUG_TOPS   yLOG_value   ("my.pid"    , my.pid);
+   --rce;  if (my.pid != 1) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_ARGS   yLOG_note    ("boot run confirmed");
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return 0;
    /*---(check on proc filesystem)-------*/
-   my.status_proc    = 'a';  /* already mounted */
-   f = fopen ("/proc/mounts", "r");
-   if (f == NULL) {
-      my.status_proc  = 'm';   /* mounted */
-      rc = mount("proc"  , "/proc", "proc", 0, NULL);
-      if (rc != 0) {
-         printf ("FATAL, can not mount /proc filesystem (rc = %d)\n", rc);
-         exit (-10);
-      }
-      f = fopen ("/proc/mounts", "r");
-      if (f == NULL) {
-         printf ("FATAL, can not access /proc/mounts file\n");
-         exit (-3);
-      }
-   }
+   /*> PROG_mountproc ();                                                             <*/
    /*---(check on log filesystem)--------*/
-   my.status_log     = '-';  /* not mounted */
-   while (!feof (f)) {
-      fgets (x_recd, 450, f);
-      if (strncmp (x_recd, "varlog ", 7) == 0) {
-         my.status_log = 'a';
-         break;
-      }
-      if (strncmp (x_recd, "/dev/sda3 ", 9) == 0) {
-         my.status_log = 'a';
-         break;
-      }
-   }
-   fclose (f);
+   /*> PROG_logtest   ();                                                             <*/
+   /*---(set file names)-----------------*/
+   snprintf (my.name_conf   , 200, "%s%s", DIR_ETC  , FILE_CONF );
+   snprintf (my.name_exec   , 200, "%s%s", DIR_YHIST, FILE_EXEC );
+   snprintf (my.name_perf   , 200, "%s%s", DIR_YHIST, FILE_PERF );
    /*---(complete)-----------------------*/
-   return 0;
-}
-
-char         /*--: wholesale urgents change --------------[ leaf   [ ------ ]-*/
-PROG_urgsmass      (char a_set, char a_extra)
-{
-   /*---(overall)------------------------*/
-   debug.tops     = a_set;
-   debug.summ     = a_set;
-   /*---(startup/shutdown)---------------*/
-   debug.args     = a_set;
-   debug.conf     = a_set;
-   debug.prog     = a_set;
-   /*---(file processing)----------------*/
-   debug.inpt     = a_set;
-   debug.inpt_mas = a_set;
-   debug.outp     = a_set;
-   debug.outp_mas = a_set;
-   /*---(event handling)-----------------*/
-   debug.loop     = a_set;
-   debug.user     = a_set;
-   debug.apis     = a_set;
-   debug.sign     = a_set;
-   debug.scrp     = a_set;
-   debug.hist     = a_set;
-   /*---(program)------------------------*/
-   debug.graf     = a_set;
-   debug.data     = a_set;
-   debug.envi     = a_set;
-   debug.envi_mas = a_set;
-   /*---(specific)-----------------------*/
-   if (a_extra == 'y') {
-      ;;
-   }
-   /*---(complete)-----------------------*/
-   return 0;
-}
-
-char         /*--: evaluate logger needs early -----------[ leaf   [ ------ ]-*/
-PROG_logger        (int a_argc, char *a_argv[])
-{
-   /*---(locals)-------------------------*/
-   int         rc          = 0;             /* generic return code            */
-   int         i           = 0;             /* loop iterator -- arguments     */
-   char       *a           = NULL;          /* current argument               */
-   int         x_len       = 0;             /* argument length                */
-   int         x_total     = 0;             /* total argument count           */
-   int         x_urgs      = 0;             /* urgent count                   */
-   /*---(default urgents)----------------*/
-   PROG_urgsmass ('-', 'y');
-   /*---(logger preprocessing)-----------*/
-   debug.logger   = -1;
-   debug.logtype  = '-';
-   debug.sda3     = '-';
-   for (i = 1; i < a_argc; ++i) {
-      a = a_argv[i];
-      if (a[0] != '@')  continue;
-      if (my.logtype == '-')  my.logtype = 's';
-      if       (strcmp ("@@sda3"    , a) == 0)  { debug.logtype = 'h'; debug.sda3    = '3'; }
-      else if  (strcmp ("@@personal", a) == 0)    debug.logtype = 'p';
-      else if  (strcmp ("@@system"  , a) == 0)    debug.logtype = 's';
-      else if  (strcmp ("@@stdout"  , a) == 0)    debug.logtype = 'o';
-      else if  (strcmp ("@@root"    , a) == 0)    debug.logtype = 'r';
-      else if ((strcmp ("@q", a) == 0) || (strcmp ("@@quiet", a) == 0)) {
-         debug.logtype = 'q';
-         PROG_urgsmass ('-', 'y');
-         break;
-      }
-   }
-   /*---(setup log filesystem)-----------*/
-   if (my.status_log == '-') {
-      if (debug.sda3 == 'y') {
-         rc = mount("/dev/sda3", "/var/log/yLOG", "ext4", MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_NOATIME, NULL);
-         if (rc != 0) {
-            printf ("FATAL, can not mount sda3 for logging (rc=%d)\n", rc);
-            exit   (ERR_NO_TMPFS);
-         }
-         my.status_log = '3';
-      } else {
-         rc = mount("varlog", "/var/log/yLOG", "tmpfs", MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_NOATIME, "size=500m");
-         if (rc != 0) {
-            printf ("FATAL, can not mount tmpfs for logging (rc=%d)\n", rc);
-            exit   (ERR_NO_TMPFS);
-         }
-         my.status_log = 't';
-      }
-   }
-   /*---(startup logging)----------------*/
-   if (my.logtype == '-' || my.logtype == 'q') {
-      debug.logger = yLOG_begin ("eos", yLOG_SYSTEM, yLOG_QUIET);
-   } else {
-      /*---(start)-----------------------*/
-      debug.tops = 'y';
-      /*---(initialize logging)-------------*/
-      switch (my.logtype ) {
-      case  'o' : debug.logger = yLOG_begin ("eos", yLOG_STDOUT    , yLOG_NOISE);  break;
-      case  'p' : debug.logger = yLOG_begin ("eos", yLOG_PERSONAL  , yLOG_NOISE);  break;
-      case  's' : debug.logger = yLOG_begin ("eos", yLOG_SYSTEM    , yLOG_NOISE);  break;
-      case  'h' : debug.logger = yLOG_begin ("eos", yLOG_HISTORICAL, yLOG_NOISE);  break;
-      case  'r' : debug.logger = yLOG_begin ("eos", yLOG_ROOT      , yLOG_NOISE);  break;
-      default   : debug.logger = yLOG_begin ("eos", yLOG_SYSTEM    , yLOG_NOISE);  break;
-      }
-   }
-   /*---(log header)------------------*/
-   DEBUG_TOPS   yLOG_info     ("purpose",  "clean, light, reliable, consistent system initialization");
-   DEBUG_TOPS   yLOG_info     ("namesake", "goddess of daybreak, rosy-fingered dawn");
-   DEBUG_TOPS   yLOG_info     ("eos"     , PROG_version   ());
-   DEBUG_TOPS   yLOG_info     ("yDLST"   , yDLST_version  ());
-   DEBUG_TOPS   yLOG_info     ("ySEC"    , ySEC_version   ());
-   DEBUG_TOPS   yLOG_info     ("yEXEC"   , yEXEC_version  ());
-   DEBUG_TOPS   yLOG_info     ("ySTR"    , ySTR_version   ());
-   DEBUG_TOPS   yLOG_info     ("yLOG"    , yLOG_version   ());
-   switch (my.status_proc) {
-   case 'a' :
-      DEBUG_TOPS   yLOG_info     ("proc"    , "proc filesystem was already mounted");
-      break;
-   case 'm' :
-      DEBUG_TOPS   yLOG_info     ("proc"    , "proc filesystem mounted by eos");
-      break;
-   }
-   switch (my.status_log) {
-   case 'a' :
-      DEBUG_TOPS   yLOG_info     ("varlog"  , "log filesystem was already mounted");
-      break;
-   case 't' :
-      DEBUG_TOPS   yLOG_info     ("varlog"  , "log filesystem mounted by eos as tmpfs");
-      break;
-   case '3' :
-      DEBUG_TOPS   yLOG_info     ("varlog"  , "log filesystem mounted by eos on sda3");
-      break;
-   }
-   /*---(complete)-----------------------*/
-   return 0;
-}
-
-char         /*--: evaluate command line urgents ---------[ leaf   [ ------ ]-*/
-PROG_urgs          (int a_argc, char *a_argv[])
-{
-   /*---(locals)-------------------------*/
-   int         rc          = 0;             /* generic return code            */
-   int         i           = 0;             /* loop iterator -- arguments     */
-   char       *a           = NULL;          /* current argument               */
-   int         x_len       = 0;             /* argument length                */
-   int         x_total     = 0;             /* total argument count           */
-   int         x_urgs      = 0;             /* urgent count                   */
-   /*---(default urgents)----------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   PROG_urgsmass ('-', 'y');
-   /*---(walk through urgents)-----------*/
-   for (i = 1; i < a_argc; ++i) {
-      /*---(prepare)---------------------*/
-      a        = a_argv [i];
-      x_len    = strllen (a, LEN_RECD);
-      ++x_total;
-      /*---(filter)----------------------*/
-      if (a[0] != '@')  continue;
-      ++x_urgs;
-      DEBUG_ARGS  yLOG_info  ("urgent"    , a);
-      /*---(overall)---------------------*/
-      if      (strncmp(a, "@t"           ,10) == 0)  debug.tops = 'y';
-      else if (strncmp(a, "@@top"        ,10) == 0)  debug.tops = 'y';
-      else if (strncmp(a, "@s"           ,10) == 0)  debug.tops = debug.summ  = 'y';
-      else if (strncmp(a, "@@summ"       ,10) == 0)  debug.tops = debug.summ  = 'y';
-      /*---(startup/shutdown)------------*/
-      else if (strncmp(a, "@a"           ,10) == 0)  debug.tops = debug.args  = 'y';
-      else if (strncmp(a, "@@args"       ,10) == 0)  debug.tops = debug.args  = 'y';
-      else if (strncmp(a, "@c"           ,10) == 0)  debug.tops = debug.conf  = 'y';
-      else if (strncmp(a, "@@conf"       ,10) == 0)  debug.tops = debug.conf  = 'y';
-      else if (strncmp(a, "@p"           ,10) == 0)  debug.tops = debug.prog  = 'y';
-      else if (strncmp(a, "@@prog"       ,10) == 0)  debug.tops = debug.prog  = 'y';
-      /*---(file processing)-------------*/
-      else if (strncmp(a, "@i"           ,10) == 0)  debug.tops = debug.inpt  = 'y';
-      else if (strncmp(a, "@@inpt"       ,10) == 0)  debug.tops = debug.inpt  = 'y';
-      else if (strncmp(a, "@I"           ,10) == 0)  debug.tops = debug.inpt  = debug.inpt_mas = 'y';
-      else if (strncmp(a, "@@INPT"       ,10) == 0)  debug.tops = debug.inpt  = debug.inpt_mas = 'y';
-      else if (strncmp(a, "@o"           ,10) == 0)  debug.tops = debug.outp  = 'y';
-      else if (strncmp(a, "@@outp"       ,10) == 0)  debug.tops = debug.outp  = 'y';
-      else if (strncmp(a, "@O"           ,10) == 0)  debug.tops = debug.outp  = debug.outp_mas = 'y';
-      else if (strncmp(a, "@@OUTP"       ,10) == 0)  debug.tops = debug.outp  = debug.outp_mas = 'y';
-      /*---(processing)------------------*/
-      else if (strncmp(a, "@l"           ,10) == 0)  debug.tops = debug.loop  = 'y';
-      else if (strncmp(a, "@@loop"       ,10) == 0)  debug.tops = debug.loop  = 'y';
-      else if (strncmp(a, "@u"           ,10) == 0)  debug.tops = debug.user  = 'y';
-      else if (strncmp(a, "@@user"       ,10) == 0)  debug.tops = debug.user  = 'y';
-      else if (strncmp(a, "@z"           ,10) == 0)  debug.tops = debug.apis  = 'y';
-      else if (strncmp(a, "@@apis"       ,10) == 0)  debug.tops = debug.apis  = 'y';
-      else if (strncmp(a, "@x"           ,10) == 0)  debug.tops = debug.sign  = 'y';
-      else if (strncmp(a, "@@sign"       ,10) == 0)  debug.tops = debug.sign  = 'y';
-      else if (strncmp(a, "@b"           ,10) == 0)  debug.tops = debug.scrp  = 'y';
-      else if (strncmp(a, "@@scrp"       ,10) == 0)  debug.tops = debug.scrp  = 'y';
-      else if (strncmp(a, "@h"           ,10) == 0)  debug.tops = debug.hist  = 'y';
-      else if (strncmp(a, "@@hist"       ,10) == 0)  debug.tops = debug.hist  = 'y';
-      /*---(program)---------------------*/
-      else if (strncmp(a, "@g"           ,10) == 0)  debug.tops = debug.graf  = 'y';
-      else if (strncmp(a, "@@graf"       ,10) == 0)  debug.tops = debug.graf  = 'y';
-      else if (strncmp(a, "@d"           ,10) == 0)  debug.tops = debug.data  = 'y';
-      else if (strncmp(a, "@@data"       ,10) == 0)  debug.tops = debug.data  = 'y';
-      else if (strncmp(a, "@e"           ,10) == 0)  debug.tops = debug.envi  = 'y';
-      else if (strncmp(a, "@@envi"       ,10) == 0)  debug.tops = debug.envi  = 'y';
-      else if (strncmp(a, "@E"           ,10) == 0)  debug.tops = debug.envi  = debug.envi_mas = 'y';
-      else if (strncmp(a, "@@ENVI"       ,10) == 0)  debug.tops = debug.envi  = debug.envi_mas = 'y';
-      /*---(complex)---------------------*/
-      else if (strncmp(a, "@f"           ,10) == 0)  PROG_urgsmass ('y', '-');
-      else if (strncmp(a, "@@full"       ,10) == 0)  PROG_urgsmass ('y', '-');
-      else if (strncmp(a, "@k"           ,10) == 0)  PROG_urgsmass ('y', 'y');
-      else if (strncmp(a, "@@kitchen"    ,10) == 0)  PROG_urgsmass ('y', 'y');
-      /*---(specific)--------------------*/
-      /*---(unknown)--------------------*/
-      else {
-         DEBUG_ARGS  yLOG_note    ("urgent not understood");
-      }
-      /*---(done)-----------------------*/
-   }
-   /*---(display urgents)----------------*/
-   DEBUG_ARGS   yLOG_note    ("summarization of urgent processing");
-   DEBUG_ARGS   yLOG_value   ("entries"   , x_total);
-   DEBUG_ARGS   yLOG_value   ("urgents"   , x_urgs);
-   DEBUG_ARGS   yLOG_note    ("standard urgents");
-   DEBUG_ARGS   yLOG_char    ("tops"      , debug.tops);
-   DEBUG_ARGS   yLOG_char    ("summ"      , debug.summ);
-   DEBUG_ARGS   yLOG_char    ("args"      , debug.args);
-   DEBUG_ARGS   yLOG_char    ("conf"      , debug.conf);
-   DEBUG_ARGS   yLOG_char    ("prog"      , debug.prog);
-   DEBUG_ARGS   yLOG_char    ("inpt"      , debug.inpt);
-   DEBUG_ARGS   yLOG_char    ("INPT"      , debug.inpt_mas);
-   DEBUG_ARGS   yLOG_char    ("outp"      , debug.outp);
-   DEBUG_ARGS   yLOG_char    ("OUTP"      , debug.outp_mas);
-   DEBUG_ARGS   yLOG_char    ("loop"      , debug.loop);
-   DEBUG_ARGS   yLOG_char    ("user"      , debug.user);
-   DEBUG_ARGS   yLOG_char    ("apis"      , debug.apis);
-   DEBUG_ARGS   yLOG_char    ("sign"      , debug.sign);
-   DEBUG_ARGS   yLOG_char    ("scrp"      , debug.scrp);
-   DEBUG_ARGS   yLOG_char    ("hist"      , debug.hist);
-   DEBUG_ARGS   yLOG_char    ("graf"      , debug.graf);
-   DEBUG_ARGS   yLOG_char    ("data"      , debug.data);
-   DEBUG_ARGS   yLOG_char    ("envi"      , debug.envi);
-   DEBUG_ARGS   yLOG_char    ("ENVI"      , debug.envi_mas);
-   DEBUG_ARGS   yLOG_note    ("specialty urgents");
-   DEBUG_ARGS   yLOG_note    ("none yet");
-   /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char         /*--: determine user and permissions --------[ leaf   [ ------ ]-*/
-PROG_whoami        (void)
-{
-   /*---(locals)-------------------------*/
-   tPASSWD    *x_pass      = NULL;         /* passwd data structure               */
-   int         x_len       = 0;            /* user name length                    */
-   int         rc          = 0;            /* generic return code                 */
-   char        rce         = -10;
-   /*---(begin)--------------------------*/
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   /*---(get real uid)-------------------*/
-   my.uid    = getuid();
-   DEBUG_ARGS   yLOG_value   ("uid"       , my.uid);
-   /*---(pull user name)-----------------*/
-   x_pass    = getpwuid (my.uid);
-   --rce;  if (x_pass == NULL) {
-      yLOG_note    ("can not  retrieve user information from system");
-      yLOG_exit    (__FUNCTION__);
-      return rce;
-   }
-   /*---(check user name)----------------*/
-   yLOG_info    ("user name" , x_pass->pw_name);
-   x_len      = strllen (x_pass->pw_name, 20);
-   yLOG_value   ("length"    , x_len);
-   if (x_len < 1) {
-      yLOG_note    ("user name can not be empty");
-      yLOG_exit    (__FUNCTION__);
-      return rce;
-   }
-   if (x_len > 20) {
-      yLOG_note    ("user name is too long");
-      yLOG_exit    (__FUNCTION__);
-      return rce;
-   }
-   strlcpy (my.who, x_pass->pw_name, 20);
-   /*---(log pid info)---------------------*/
-   my.pid  = getpid();
-   DEBUG_ARGS   yLOG_value   ("pid"       , my.pid);
-   DEBUG_ARGS   printf("   current pid  = %d\n",    my.pid);
-   my.ppid = getppid();
-   DEBUG_ARGS   yLOG_value   ("ppid"      , my.ppid);
-   /*---(complete)-----------------------*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   DEBUG_VIEW   printf        (", done\n");
    return 0;
 }
 
 char         /*--: evaluate command line arguments -------[ leaf   [ ------ ]-*/
 PROG_args          (int a_argc, char *a_argv[])
 {
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(locals)-------------------------*/
    int         i           = 0;             /* loop iterator -- arguments     */
    char       *a           = NULL;          /* current argument               */
-   int       x         = 0;            /* count of arguments                  */
    int         x_len       = 0;             /* argument length                */
    int         x_total     = 0;             /* total argument count           */
    int         x_args      = 0;             /* argument count                 */
+   int         x_num       = 0;             /* numeric argument holder        */
    /*---(process)------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_VIEW   printf        ("EOS -- arguments, ");
    for (i = 1; i < a_argc; ++i) {
       a = a_argv[i];
       if (a[0] == '@')       continue;
       ++x_args;
+      DEBUG_ARGS  yLOG_info  ("argument"  , a);
+      DEBUG_VIEW  printf ("%s, ", a);
       if      (strncmp(a, "-d"          , 12) == 0)     my.daemon        = 'y';
       else if (strncmp(a, "--daemon"    , 12) == 0)     my.daemon        = 'y';
       else if (strncmp(a, "-f"          , 12) == 0)     my.daemon        = '-';
@@ -421,12 +252,38 @@ PROG_args          (int a_argc, char *a_argv[])
       else if (strncmp(a, "--anypid"    , 12) == 0)     my.init          = '-';
       else if (strncmp(a, "-t"          , 12) == 0)   { my.init          = '-'; my.daemon   = '-'; my.test   = 'y'; }
       else if (strncmp(a, "--test"      , 12) == 0)   { my.init          = '-'; my.daemon   = '-'; my.test   = 'y'; }
-      else if (strncmp(a, "-h"          , 12) == 0)     PROG_usage ();
-      else if (strncmp(a, "--help"      , 12) == 0)     PROG_usage ();
+      /*---(complex)---------------------*/
+      else if (strcmp(a, "--normal"      ) == 0) {
+         my.loop_msec  = 10;
+         my.loop_max   = 1000;
+      }
+      else if (strcmp(a, "--fast"        ) == 0) {
+         my.loop_msec  = 1;
+         my.loop_max   = 10000;
+      }
+      else if (strcmp(a, "--slow"        ) == 0) {
+         my.loop_msec  = 100;
+         my.loop_max   = 100;
+      }
+      else if (strcmp(a, "--short"       ) == 0) {
+         my.loop_msec  = 100;
+         my.loop_max   = 20;
+      }
+      /*> else if (strcmp(a, "--msec"        ) == 0) {                                <* 
+       *>    if (i + 1 < argc) {                                                      <* 
+       *>       x_num = atoi (argv [i + i]);                                          <* 
+       *>       if (x_num > 0) {                                                      <* 
+       *>          my.loop_msec = x_num;                                              <* 
+       *>          ++i;                                                               <* 
+       *>       } else {                                                              <* 
+       *>          DEBUG_ARGS   yLOG_note    ("--msec value not numeric");            <* 
+       *>       }                                                                     <* 
+       *>    } else {                                                                 <* 
+       *>       DEBUG_ARGS   yLOG_note    ("--msec value not available");             <* 
+       *>    }                                                                        <* 
+       *> }                                                                           <*/
    }
-   /*---(summary)------------------------*/
-   printf ("count  = %2d", x);
-   printf (", init   = %c"  , my.init  );
+   DEBUG_VIEW   printf        ("done\n");
    /*---(display urgents)----------------*/
    DEBUG_ARGS   yLOG_note    ("summarization of argument processing");
    DEBUG_ARGS   yLOG_value   ("entries"   , x_total);
@@ -434,6 +291,8 @@ PROG_args          (int a_argc, char *a_argv[])
    DEBUG_ARGS   yLOG_char    ("daemon"    , my.daemon);
    DEBUG_ARGS   yLOG_char    ("init"      , my.init);
    DEBUG_ARGS   yLOG_char    ("test"      , my.test);
+   DEBUG_ARGS   yLOG_value   ("loop_msec" , my.loop_msec);
+   DEBUG_ARGS   yLOG_value   ("loop_max"  , my.loop_max);
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -442,60 +301,49 @@ PROG_args          (int a_argc, char *a_argv[])
 char         /*--: final preparation for execution -------[ leaf   [ ------ ]-*/
 PROG_begin         (void)
 {
-   /*---(locals)-------*-----------------*/
-   int       rc        = 0;            /* generic return code                 */
-   FILE     *output = NULL;
-   long      now;                                 /* present datetime         */
-   tTIME    *curr_time = NULL;
-   char      msg[200];
+   /*---(locals)-----------+-------------*/
+   int         rc          = 0;             /* generic return code            */
+   FILE       *f           = NULL;          /* local file handle              */
+   long        x_now       = 0;             /* present datetime               */
+   tTIME      *x_broke     = NULL;
+   char        x_msg       [200];
    int         x_uid       = 0;             /* running user id                */
    int         x_pid       = 0;             /* running process id             */
    char        x_recd      [LEN_RECD];
-   /*---(defense : uid)------------------*/
-   x_uid = getuid ();
-   printf ("uid = %d", x_uid);
-   if (x_uid != 0) {
-      printf (", never allowed, FATAL\n");
-      exit   (ERR_NOT_ROOT);      /* boot is always superuser, so no worries  */
-   }
-   /*---(defenses : pid)-----------------*/
-   x_pid = getpid ();
-   printf (", pid = %d", x_pid);
-   if (x_pid != 1) {  /* process number 1 only            */
-      if (my.test == 'y') {
-         printf (", test mode", x_pid);
-      } else {
-         printf (", not test mode, FATAL\n");
-         exit (ERR_NOT_PID_ONE);     /* boot is always pid 1, so no worries      */
-      }
-   }
+   /*---(begin)--------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_VIEW   printf       ("EOS -- begin, ");
    /*---(process initd.conf)--------------------*/
-   yLOG_info  ("UID",      "properly logged in as superuser");
-   if (my.init   == 'y')  yLOG_info  ("PID",      "running as process id 1");
-   else                   yLOG_info  ("PID",      "running in anypid mode");
-   if (my.status_log    == 'y')  yLOG_info  ("tmpfs",    "yLOG tmpfs already mounted");
-   else                   yLOG_info  ("tmpfs",    "mounted the yLOG tmpfs");
-   yLOG_info  ("logger",   "heatherly custom logger up and running");
+   /*> yLOG_info  ("UID",      "properly logged in as superuser");                            <* 
+    *> if (my.init   == 'y')  yLOG_info  ("PID",      "running as process id 1");             <* 
+    *> else                   yLOG_info  ("PID",      "running in anypid mode");              <* 
+    *> if (my.status_log    == 'y')  yLOG_info  ("tmpfs",    "yLOG tmpfs already mounted");   <* 
+    *> else                   yLOG_info  ("tmpfs",    "mounted the yLOG tmpfs");              <* 
+    *> yLOG_info  ("logger",   "heatherly custom logger up and running");                     <*/
    /*---(startup dlst library)------------------*/
-   yLOG_info  ("yDLST"    ,"starting");
-   yDLST_begin ();
+   DEBUG_ARGS   yLOG_info    ("yDLST"    ,"starting");
+   yDLST_init ();
+   rc = yPARSE_init  ('-', NULL, '-');
+   rc = yPARSE_delimiters  ("§");
    /*---(clear feedback file)-------------------*/
-   output = fopen(STUFF, "w");
-   now = time(NULL);
-   curr_time = localtime(&now);
-   strftime(msg, 50, "%Ss %Mm %Hh %dd %mm  %ww", curr_time);
-   fprintf(output, "eos start : %s\n",   msg);
-   fclose (output);
+   f         = fopen     (my.name_exec, "w");
+   x_now     = time      (NULL);
+   x_broke   = localtime (&x_now);
+   strftime  (x_msg, 50, "%Ss %Mm %Hh %dd %mm  %ww", x_broke);
+   fprintf   (f, "eos start : %s\n", x_msg);
+   fclose    (f);
+   /*---(setup signals)-------------------------*/
+   rc = yEXEC_signal (YEXEC_SOFT, YEXEC_NO, YEXEC_NO, NULL);
+   /*> rc = yEXEC_signal (YEXEC_HARD, YEXEC_NO, YEXEC_NO, NULL);                      <*/
    /*---(complete)------------------------------*/
-   yLOG_exit  (__FUNCTION__);
-   printf ("\n");
+   DEBUG_VIEW   printf       ("done\n");
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
 char         /*--: wrapup program execution --------------[ leaf   [ ------ ]-*/
 PROG_end           (void)
 {
-   printf ("   > PROG_end\n");
    /*---(create utmp boot)----------------------*/
    yLOG_enter (__FUNCTION__);
    yLOG_info  ("logger",   "shutting down logger");
@@ -505,46 +353,175 @@ PROG_end           (void)
 }
 
 
+/*====================------------------------------------====================*/
+/*===----                     signal handling                          ----===*/
+/*====================------------------------------------====================*/
+static void      o___SIGNALS_________________o (void) {;}
 
-/*====================------------------------------------====================*/
-/*===----                   helpers for unit testing                   ----===*/
-/*====================------------------------------------====================*/
-static void      o___UNITTEST________________o (void) {;}
+/*> void      PROG_signal       (int a_signal, siginfo_t *a_info, void *a_nada) {return;};   <*/
+
+/*> void       /+----: handle signals --------------------------------------------+/                     <* 
+ *> PROG_signal         (int a_signal, siginfo_t *a_info, void *a_nada)                                  <* 
+ *> {                                                                                                    <* 
+ *>    /+---(locals)-------*-----------------+/                                                          <* 
+ *>    int       status    = 0;                                                                          <* 
+ *>    int       xlink     = 0;                                                                          <* 
+ *>    tPROC    *xdata     = NULL;                                                                       <* 
+ *>    tRUSAGE   r_use;                                                                                  <* 
+ *>    int       rc        = 0;                                                                          <* 
+ *>    int       errsave   = 0;                                                                          <* 
+ *>    DEBUG_SIGN   yLOG_note   ("CONF_comm called");                                                    <* 
+ *>    DEBUG_SIGN   yLOG_value  ("a_signal"  , a_signal);                                                <* 
+ *>    DEBUG_SIGN   yLOG_point  ("a_info"    , a_info);                                                  <* 
+ *>    DEBUG_SIGN   yLOG_point  ("a_nada"    , a_nada);                                                  <* 
+ *>    switch (a_signal) {                                                                               <* 
+ *>    case  SIGCHLD:                                                                                    <* 
+ *>       DEBUG_SIGN   yLOG_info    ("SIGNAL", "SIGCHLD means a child has terminated");                  <* 
+ *>       xlink  = EXEC_find (a_info->si_pid);                                                           <* 
+ *>       if (xlink < 0) break;                                                                          <* 
+ *>       xdata = (tPROC*) yDLST_index (xlink);                                                          <* 
+ *>       DEBUG_SIGN   yLOG_senter  ("sigchld");                                                         <* 
+ *>       DEBUG_SIGN   yLOG_spoint  ((void *) a_info);                                                   <* 
+ *>       DEBUG_SIGN   yLOG_svalue  ("pid"     , (int) a_info->si_pid);                                  <* 
+ *>       DEBUG_SIGN   yLOG_snote   (xdata->name);                                                       <* 
+ *>       xdata->rc = (int) a_info->si_status;                                                           <* 
+ *>       DEBUG_SIGN   yLOG_svalue  ("rc"      , (int) a_info->si_status);                               <* 
+ *>       DEBUG_SIGN   yLOG_snote   ("wait");                                                            <* 
+ *>       rc = wait4(a_info->si_pid, &status, WNOHANG, &r_use);                                          <* 
+ *>       if (rc <  0) errsave = errno;                                                                  <* 
+ *>       DEBUG_SIGN   yLOG_svalue  ("wait_rc" , rc);                                                    <* 
+ *>       DEBUG_SIGN   yLOG_snote   ("done");                                                            <* 
+ *>       DEBUG_SIGN   yLOG_sexit   ("sigchld");                                                         <* 
+ *>       xdata->status = 'c';                                                                           <* 
+ *>       yDLST_active_off (xdata->dlst);                                                                <* 
+ *>       xdata->end    = yLOG_time();;                                                                  <* 
+ *>       if (rc >= 0) {                                                                                 <* 
+ *>          if (strchr("abcm", xdata->type) != 0)  ++complete;                                          <* 
+ *>          xdata->swaps  = (int) (r_use.ru_nvcsw + r_use.ru_nivcsw);                                   <* 
+ *>          xdata->u_time = (int) ((r_use.ru_utime.tv_sec * 1000) + (r_use.ru_utime.tv_usec / 1000));   <* 
+ *>          xdata->s_time = (int) ((r_use.ru_stime.tv_sec * 1000) + (r_use.ru_stime.tv_usec / 1000));   <* 
+ *>       } else if (rc < 0) {                                                                           <* 
+ *>          DEBUG_SIGN   yLOG_value   ("cerrno"    , errsave);                                          <* 
+ *>          DEBUG_SIGN   yLOG_info    ("cerrstr"   , strerror(errsave));                                <* 
+ *>       }                                                                                              <* 
+ *>       EXEC_children (xdata->dlst);                                                                   <* 
+ *>       break;                                                                                         <* 
+ *>    case  SIGHUP:                                                                                     <* 
+ *>       DEBUG_SIGN   yLOG_info  ("SIGNAL", "SIGHUP MEANS REFRESH");                                    <* 
+ *>       break;                                                                                         <* 
+ *>    case  SIGTERM:                                                                                    <* 
+ *>       DEBUG_SIGN   yLOG_info  ("SIGNAL", "SIGTERM means terminate daemon (but eos can't)");          <* 
+ *>       break;                                                                                         <* 
+ *>    case  SIGSEGV:                                                                                    <* 
+ *>       DEBUG_SIGN   yLOG_info  ("SIGNAL", "SIGSEGV means daemon blew up (but eos can't)");            <* 
+ *>       break;                                                                                         <* 
+ *>    }                                                                                                 <* 
+ *>    /+---(complete)------------------------------+/                                                   <* 
+ *>    return;                                                                                           <* 
+ *> }                                                                                                    <*/
+
+   /*> char       /+----: setup signal handling -------------------------------------+/   <* 
+    *> CONF_signal          (void)                                                        <* 
+    *> {                                                                                  <* 
+    *>    /+---(design notes)-------------------+/                                        <* 
+    *>    /+ options are...                                                               <* 
+    *>     *    signal()        -- race conditions when they come fast (depricated)       <* 
+    *>     *    sigaction()     -- preferred method and standard in c                     <* 
+    *>     *    signalfd()      -- linux specific that treats it like a file              <* 
+    *>     *                                                                              <* 
+    *>     +/                                                                             <* 
+    *>    /+---(set up structure)---------------+/                                        <* 
+    *>    struct sigaction sa;                                                            <* 
+    *>    /+---(begin)--------------------------+/                                        <* 
+    *>    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);                                       <* 
+    *>    /+---(set actions)--------------------+/                                        <* 
+    *>    sa.sa_handler   = NULL;                                                         <* 
+    *>    sa.sa_sigaction = CONF_comm;                                                    <* 
+    *>    sa.sa_flags     = SA_RESTART | SA_SIGINFO;                                      <* 
+    *>    sigfillset (&sa.sa_mask);                                                       <* 
+    *>    sa.sa_restorer  = NULL;                                                         <* 
+    *>    DEBUG_SIGN   yLOG_info  ("children", "pay attention to children");              <* 
+    *>    sigaction (SIGCHLD,  &sa      , NULL);       /+ watch for children         +/   <* 
+    *>    DEBUG_SIGN   yLOG_info  ("program",  "look for HUP");                           <* 
+    *>    sigaction (SIGHUP ,  &sa      , NULL);       /+ hangup means refresh       +/   <* 
+    *>    DEBUG_SIGN   yLOG_info  ("baddies",  "handle SEGV and TERM");                   <* 
+    *>    sigaction (SIGTERM,  &sa      , NULL);       /+ catch a kill               +/   <* 
+    *>    sigaction (SIGSEGV,  &sa      , NULL);       /+ catch a segfault           +/   <* 
+    *>    DEBUG_SIGN   yLOG_info  ("keyboard", "stop keyboard kills and pauses");         <* 
+    *>    sigaction (SIGINT ,  &sa      , NULL);       /+ keyboard interrupt         +/   <* 
+    *>    sigaction (SIGQUIT,  &sa      , NULL);       /+ keyboard quit              +/   <* 
+    *>    sigaction (SIGTERM,  &sa      , NULL);       /+ terminate                  +/   <* 
+    *>    sigaction (SIGCONT,  &sa      , NULL);       /+ continue                   +/   <* 
+    *>    sigaction (SIGTSTP,  &sa      , NULL);       /+ keyboard stop              +/   <* 
+    *>    DEBUG_SIGN   yLOG_info  ("terminal", "ignore stadin and stdout");               <* 
+    *>    sigaction (SIGTTIN,  &sa      , NULL);       /+ tty input for background   +/   <* 
+    *>    sigaction (SIGTTOU,  &sa      , NULL);       /+ tty output for background  +/   <* 
+    *>    /+---(complete)-----------------------+/                                        <* 
+    *>    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);                                       <* 
+    *>    return 0;                                                                       <* 
+    *> }                                                                                  <*/
+
+
+
+   /*====================------------------------------------====================*/
+   /*===----                   helpers for unit testing                   ----===*/
+   /*====================------------------------------------====================*/
+   static void      o___UNITTEST________________o (void) {;}
+
 
 char       /*----: set up program test file locations ------------------------*/
-PROG_testfiles     (void)
+prog__unit_files   (void)
 {
-   /*> snprintf (my.name_pulser , 200, "%s%s", "/tmp/" , FILE_PULSE);                 <* 
-    *> snprintf (my.name_watcher, 200, "%s%s", "/tmp/" , FILE_WATCH);                 <* 
-    *> snprintf (my.name_locker , 200, "%s%s", "/tmp/" , FILE_LOCK);                  <* 
-    *> snprintf (my.name_exec   , 200, "%s%s", "/tmp/" , FILE_EXEC);                  <* 
-    *> snprintf (my.name_status , 200, "%s%s", "/tmp/" , FILE_STATUS);                <*/
+   char        x_cmd       [LEN_RECD];
+   snprintf (my.name_conf   , 200, "%s%s", DIR_UNIT , FILE_CONF );
+   snprintf (my.name_exec   , 200, "%s%s", DIR_UNIT , FILE_EXEC );
+   snprintf (my.name_perf   , 200, "%s%s", DIR_UNIT , FILE_PERF );
+   chdir    ("/tmp");
+   sprintf  (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT);
+   system   (x_cmd);
+   rmdir    (DIR_UNIT);
+   sprintf  (x_cmd, "mkdir %s   > /dev/null", DIR_UNIT);
+   system   (x_cmd);
+   return 0;
+}
+
+char       /*----: set up programgents/debugging -----------------------------*/
+prog__unit_quiet   (void)
+{
+   int         x_argc      = 1;
+   char       *x_argv [1]  = { "eos" };
+   yURG_logger    (x_argc, x_argv);
+   yURG_urgs      (x_argc, x_argv);
+   PROG_init      ();
+   prog__unit_files ();
+   PROG_args      (x_argc, x_argv);
+   PROG_begin     ();
+   return 0;
+}
+
+char       /*----: set up programgents/debugging -----------------------------*/
+prog__unit_loud    (void)
+{
+   int         x_argc      = 5;
+   char       *x_argv [5]  = { "eos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@yexec"  };
+   yURG_logger    (x_argc, x_argv);
+   yURG_urgs      (x_argc, x_argv);
+   PROG_init      ();
+   prog__unit_files ();
+   PROG_args      (x_argc, x_argv);
+   PROG_begin     ();
    return 0;
 }
 
 char       /*----: set up program urgents/debugging --------------------------*/
-PROG_testquiet     (void)
+prog__unit_end     (void)
 {
-   /*> char       *x_args [1]  = { "eos" };                                           <* 
-    *> PROG_urgs      (1, x_args);                                                    <* 
-    *> PROG_init      ();                                                             <* 
-    *> PROG_whoami    ();                                                             <* 
-    *> PROG_testfiles ();                                                             <* 
-    *> PROG_args      (1, x_args);                                                    <* 
-    *> PROG_begin     ();                                                             <*/
-   return 0;
-}
-
-char       /*----: set up program urgents/debugging --------------------------*/
-PROG_testloud      (void)
-{
-   /*> char       *x_args [2]  = { "eos", "@@kitchen"    };                           <* 
-    *> PROG_urgs      (2, x_args);                                                    <* 
-    *> PROG_init      ();                                                             <* 
-    *> PROG_whoami    ();                                                             <* 
-    *> PROG_testfiles ();                                                             <* 
-    *> PROG_args      (2, x_args);                                                    <* 
-    *> PROG_begin     ();                                                             <*/
+   char        x_cmd       [LEN_RECD];
+   chdir    ("/tmp");
+   sprintf  (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT);
+   system   (x_cmd);
+   rmdir    (DIR_UNIT);
+   PROG_end       ();
    return 0;
 }
 

@@ -2,17 +2,22 @@
 
 /*===[[ HEADER ]]=============================================================*/
 /*
- *   focus         : SA.in       system administration, initialization
- *   application   : eos         (goddess of daybreak, rosy-fingered dawn)
- *   purpose       : clean, light, consistent, reliable system initialization
+ *   focus         : (SA) system administration
+ *   niche         : (in) initialization
+ *   purpose       : simple, reliable, and transparent system initialization
+ *
+ *   namesake      : eos-rhododactylos (rosy-fingered)
+ *   heritage      : titaness of daybreak, opens the gates of heaven for the sun
+ *   imagery       : radiant winged woman with golden arms and rosy fingers
  *
  *   base_system   : gnu/linux   (powerful, ubiquitous, technical, and hackable)
  *   lang_name     : ansi-c      (wicked, limitless, universal, and everlasting)
  *   dependencies  : yLOG, yDLST, dash
- *   size          : small       (approximately 1,000 slocL)
  * 
  *   author        : heatherly
  *   created       : 2010-10
+ *   size          : small       (approximately 1,000 slocL)
+ *
  *   priorities    : direct, simple, brief, vigorous, and lucid (h.w. fowler)
  *   end goal      : loosely coupled, strict interface, maintainable, portable
  * 
@@ -258,8 +263,8 @@
 
 /*===[[ VERSIONING ]]=========================================================*/
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define     VER_NUM   "2.0b"
-#define     VER_TXT   "updated PROG functions"
+#define     VER_NUM   "2.0c"
+#define     VER_TXT   "group and proc unit testing working"
 
 
 
@@ -269,6 +274,8 @@
 #include    <yEXEC.h>             /* heatherly process control                */
 #include    <ySTR.h>              /* heatherly safe string library            */
 #include    <yLOG.h>              /* heatherly logger                         */
+#include    <yURG.h>              /* heatherly debugging framework            */
+#include    <yPARSE.h>            /* heatherly file parsing                   */
 
 /*===[[ PUBLIC HEADERS ]]=====================================================*/
 /*---(big standards)------------*/
@@ -306,68 +313,6 @@
 
 
 
-/*===[[ DEBUGGING SETUP ]]====================================================*/
-/* this is my latest standard format, vars, and urgents                       */
-/* v3.0b : added signal handling                                (2014-feb-01) */
-struct cDEBUG
-{
-   /*---(handle)-------------------------*/
-   int         logger;                 /* log file so that we don't close it  */
-   char        logtype;                /* where the logger should log         */
-   /*---(overall)------------------------*/  /* abcdefghi_kl__opq_stu__x__    */
-   /* f = full urgents turns on all standard urgents                          */
-   /* k = kitchen sink and turns everything, i mean everything on             */
-   /* q = quiet turns all urgents off including the log itself                */
-   char        tops;                   /* t) broad structure and context      */
-   char        summ;                   /* s) statistics and analytical output */
-   /*---(startup/shutdown)---------------*/
-   char        args;                   /* a) command line args and urgents    */
-   char        conf;                   /* c) configuration handling           */
-   char        prog;                   /* p) program setup and teardown       */
-   /*---(file processing)----------------*/
-   char        inpt;                   /* i) text/data file input             */
-   char        inpt_mas;               /* i) text/data file input   (mas/more)*/
-   char        outp;                   /* o) text/data file output            */
-   char        outp_mas;               /* o) text/data file output  (mas/more)*/
-   /*---(event handling)-----------------*/
-   char        loop;                   /* l) main program event loop          */
-   char        user;                   /* u) user input and handling          */
-   char        apis;                   /* z) interprocess communication       */
-   char        sign;                   /* x) os signal handling               */
-   char        scrp;                   /* b) scripts and batch operations     */
-   char        hist;                   /* h) history, undo, redo              */
-   /*---(program)------------------------*/
-   char        graf;                   /* g) grahpics, drawing, and display   */
-   char        data;                   /* d) complex data structure handling  */
-   char        envi;                   /* e) environment processing           */
-   char        envi_mas;               /* E) environment processing (mas/more)*/
-   /*---(specific)-----------------------*/
-   char        sda3                    /* use /dev/sda3 for logging           */
-   /*---(done)---------------------------*/
-};
-typedef     struct      cDEBUG       tDEBUG;
-extern      tDEBUG      debug;
-
-#define     DEBUG_TOPS          if (debug.tops      == 'y')
-#define     DEBUG_SUMM          if (debug.summ      == 'y')
-#define     DEBUG_ARGS          if (debug.args      == 'y')
-#define     DEBUG_CONF          if (debug.conf      == 'y')
-#define     DEBUG_PROG          if (debug.prog      == 'y')
-#define     DEBUG_INPT          if (debug.inpt      == 'y')
-#define     DEBUG_INPTM         if (debug.inpt_mas  == 'y')
-#define     DEBUG_OUTP          if (debug.outp      == 'y')
-#define     DEBUG_OUTPM         if (debug.outp_mas  == 'y')
-#define     DEBUG_LOOP          if (debug.loop      == 'y')
-#define     DEBUG_USER          if (debug.user      == 'y')
-#define     DEBUG_APIS          if (debug.apis      == 'y')
-#define     DEBUG_SIGN          if (debug.sign      == 'y')
-#define     DEBUG_SCRP          if (debug.scrp      == 'y')
-#define     DEBUG_HIST          if (debug.hist      == 'y')
-#define     DEBUG_GRAF          if (debug.graf      == 'y')
-#define     DEBUG_DATA          if (debug.data      == 'y')
-#define     DEBUG_ENVI          if (debug.envi      == 'y')
-#define     DEBUG_ENVIM         if (debug.envi_mas  == 'y')
-
 /*---(error codes)----------------------------------------------*/
 #define     ERR_NOT_ROOT          -1
 #define     ERR_NOT_PID_ONE       -2
@@ -377,10 +322,11 @@ extern      tDEBUG      debug;
 
 
 /*---(rational limits)------------------------------------------*/
-#define     LEN_NAME        20     /* max name field           */
-#define     LEN_DESC        50     /* max desc field           */
-#define     LEN_CMD        200     /* max command len          */
-#define     LEN_RECD      1000     /* max record len           */
+#define     LEN_NAME        20     /* max name field            */
+#define     LEN_DESC        50     /* max desc field            */
+#define     LEN_CMD        200     /* max command len           */
+#define     LEN_RECD      1000     /* max record len            */
+#define     MAX_ARGV        20     /* max number of arguments   */
 
 /*---(structures)-----------------------------------------------*/
 
@@ -389,16 +335,15 @@ struct cACCESSOR
    /*---(files)----------------*/
    char        quiet;                  /* bool : 0=normal, 1=quiet            */
    char        updates;                /* bool : 0=normal, 1=quiet            */
-   char        logtype;                /* type of logging requested           */
    int         logger;                 /* log file so that we don't close it  */
    int         locker;                 /* lock file in /var/run               */
    /*---(owner)----------------*/
    int         uid;                    /* uid of person who launched eos      */
    char        who         [LEN_NAME]; /* user name who launched eos          */
-   int         pid;                    /* process id of khronos               */
-   int         ppid;                   /* parent process id of khronos        */
+   int         pid;                    /* process id of eos                   */
+   int         ppid;                   /* parent process id of eos            */
    /*---(commands)-------------*/
-   char       *argv;                   /* command in argv format              */
+   char       *argv        [MAX_ARGV]; /* command in argv format              */
    int         argc;                   /* count of arguments                  */
    /*---(flags)----------------*/
    char        status_proc;            /* status of /proc filesystem          */
@@ -406,10 +351,50 @@ struct cACCESSOR
    char        daemon;                 /* daemon mode                         */
    char        init;                   /* is this an init run                 */
    char        test;                   /* is this a test run                  */
+   /*---(files)-----------------*/
+   char        name_conf   [LEN_CMD];  /* name of configuration file          */
+   char        name_exec   [LEN_CMD];  /* name of execution detail file       */
+   char        name_perf   [LEN_CMD];  /* name of execution speed file        */
+   int         c_recdno;               /* eos.conf record number              */
+   int         c_verb      [LEN_NAME]; /* eos.conf verb                       */
+   /*---(current group)---------*/
+   char        g_ready;                /* group record checks out             */
+   char        g_name      [LEN_NAME]; /* short name for reference            */
+   char        g_desc      [LEN_DESC]; /* longer description                  */
+   /*---(current proc)----------*/
+   char        p_ready;                /* proc record checks out              */
+   char        p_name      [LEN_NAME]; /* short name for reference            */
+   char        p_type;                 /* process type                        */
+   char        p_desc      [LEN_DESC]; /* longer description                  */
+   char        p_user      [LEN_NAME]; /* user name                           */
+   int         p_uid;                  /* user id to use to launch job        */
+   char        p_check     [LEN_CMD];  /* command to check existance          */
+   char        p_run       [LEN_CMD];  /* command to execute                  */
+   /*---(arguments)-------------*/
+   long        loop_msec;              /* wait time in milliseconds           */
+   int         loop_max;               /* maximum loops allowed before quit   */
+   /*---(done)------------------*/
 } my;
 
+/*---(directory names)--------------------------*/
+#define     DIR_ETC          "/etc/"
+#define     DIR_RUN          "/var/run/"
+#define     DIR_YLOG         "/var/log/yLOG/"
+#define     DIR_YHIST        "/var/log/yLOG.historical/"
+#define     DIR_UNIT         "/tmp/eos_test/"
 
-#define     EXEC_FILE        "/var/log/yLOG/kharon_exec" 
+/*---(file names)-------------------------------*/
+#define     FILE_CONF        "eos.conf"
+#define     FILE_LOCK        "initd.pid"
+#define     FILE_EXEC        "eos_execs.execution_feedback"
+#define     FILE_PERF        "eos_speed.execution_tracking"
+#define     FILE_DEBUG       "eos_debug.linked_list_details"
+
+/*---(shell related)--------------------------------------------*/
+#define     PATH             "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
+#define     SHELL            "/bin/dash"
+
+
 #define     UTMP             "/var/run/utmp"
 #define     WTMP             "/var/log/wtmp"
 #define     BTMP             "/var/log/btmp"
@@ -429,25 +414,32 @@ struct cACCESSOR
 
 #define     LOGGER           if (my.logger >= 1)
 
-/*---(file paths)-----------------------------------------------*/
-#define     LOCK       "/var/run/initd.pid"
-#define     FILE_CONF  "/etc/eos.conf"
-#define     PERFORM    "/var/log/yLOG/eos_speed.execution_tracking"
-#define     STUFF      "/var/log/yLOG/eos_execs.execution_feedback"
+
+#define     TYPE_BOOT        'b'
+#define     TYPE_CONFIG      'c'
+#define     TYPE_DAEMON      'd'
+#define     TYPE_MOUNT       'm'
+#define     TYPE_SERIAL      's'
+#define     TYPE_ALL         "bcdms"
 
 
-/*---(shell related)--------------------------------------------*/
-#define     PATH       "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
-#define     SHELL      "/bin/dash"
-
+typedef struct cGROUP tGROUP;
+struct cGROUP {
+   /*---(master)-------------------------*/
+   int         line;                        /* line in eos.conf               */
+   char        name        [LEN_NAME];      /* short name for reference       */
+   char        desc        [LEN_DESC];      /* longer description             */
+   /*---(processing)---------------------*/
+   int         requested;
+   int         completed;
+   /*---(done)---------------------------*/
+};
 
 /*---(structures)-----------------------------------------------*/
 typedef struct  cPROC tPROC;
 struct cPROC {
-   /*---(reference)----------------------*/
-   int         dlst;                        /* index number in dlst           */
-   /*---(input)--------------------------*/
-   int         seq;                         /* inittab record number          */
+   /*---(master)-------------------------*/
+   int         line;                        /* line in eos.conf               */
    char        name        [LEN_NAME];      /* short name for reference       */
    char        type;                        /* process type                   */
    char        desc        [LEN_DESC];      /* longer description             */
@@ -478,10 +470,10 @@ typedef const  char      cchar;
 typedef struct FILE      tFILE;
 typedef struct stat      tSTAT;
 typedef struct passwd    tPASSWD;
-typedef struct group     tGROUP;
 typedef struct rusage    tRUSAGE;
 typedef struct tm        tTIME;
 typedef struct dirent    tDIRENT;
+typedef struct timespec  tTSPEC;
 
 
 extern      char      verstring    [500];
@@ -491,6 +483,7 @@ extern      int         running;
 extern      int         complete;
 
 
+extern      char        unit_answer [LEN_RECD];
 
 /*===[[ EOS_MAIN.C ]]=========================================================*/
 int         main               (int a_argc, char *a_argv[]);
@@ -498,15 +491,15 @@ int         main               (int a_argc, char *a_argv[]);
 /*===[[ EOS_PROG.C ]]=========================================================*/
 /*---(program)--------------*/
 char*       PROG_version       (void);
-char        PROG_usage         (void);
+/*> char        PROG_urgview       (int  a_argc, char *a_argv[]);                     <*/
+/*> char        PROG_mountproc     (void);                                            <*/
+/*> char        PROG_logtest       (void);                                            <*/
 char        PROG_init          (void);
-char        PROG_logger        (int  a_argc, char *a_argv[]);
-char        PROG_urgsmass      (char a_set , char  a_extra);
-char        PROG_urgs          (int  a_argc, char *a_argv[]);
-char        PROG_whoami        (void);
 char        PROG_args          (int  a_argc, char *a_argv[]);
 char        PROG_begin         (void);
 char        PROG_end           (void);
+/*---(signals)-------------*/
+/*> void        PROG_signal        (int a_signal, siginfo_t *a_info, void *a_nada);   <*/
 /*---(unittest)------------*/
 char        PROG_testfiles     (void);
 char        PROG_testquiet     (void);
@@ -515,8 +508,7 @@ char        PROG_testloud      (void);
 /*===[[ EOS_CONF.C ]]=========================================================*/
 /*---(daemon)---------------*/
 char        CONF_daemon        (void);
-char        CONF_signal        (void);
-void        CONF_comm          (int a_sig, siginfo_t *a_info, void *a_nada);
+/*> void        CONF_comm          (int a_sig, siginfo_t *a_info, void *a_nada);      <*/
 /*---(config)---------------*/
 char        CONF_open          (void);
 char        CONF_read          (void);
@@ -524,6 +516,7 @@ char        CONF_parse         (void);
 char        CONF_list          (void);
 char        CONF_close         (void);
 char        CONF_report        (char);
+char        CONF_tableview     (void);
 
 /*===[[ EOS_EXEC.C ]]=========================================================*/
 /*---(processes)------------*/
@@ -533,6 +526,15 @@ char        EXEC_find          (int);
 char        EXEC_run           (tPROC*);
 char        EXEC_check         (void);
 char        EXEC_children      (int);
+
+
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+char        group_create            (void);
+char*       group__unit             (char *a_question, int a_num);
+
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+char        proc_create             (char a_type);
+char*       proc__unit              (char *a_question, int a_num);
 
 
 
