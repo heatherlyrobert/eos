@@ -20,7 +20,7 @@ main               (int a_argc, char *a_argv[])
    /*---(initialize)---------------------*/
    if (rc >= 0)  rc = yURG_logger  (a_argc, a_argv);
    if (rc >= 0)  rc = yURG_urgs    (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_init    ();
+   if (rc >= 0)  rc = PROG_init    (a_argv [0][0]);
    if (rc >= 0)  rc = PROG_args    (a_argc, a_argv);
    if (rc >= 0)  rc = PROG_begin   ();
    /*---(defense)------------------------*/
@@ -61,11 +61,13 @@ main               (int a_argc, char *a_argv[])
    /*---(enter main loop)----------------*/
    DEBUG_TOPS   yLOG_break   ();
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   while (complete < requested) {
+   while (my.done_done != 'y') {
       /*---(checking)--------------------*/
       DEBUG_LOOP   yLOG_break   ();
-      /*> EXEC_check   ();                                                            <*/
-      /*> EXEC_launch  ();                                                            <*/
+      exec_check    ();
+      exec_finish   ();
+      exec_start    ();
+      exec_dispatch ();
       /*---(sleeping)--------------------*/
       nanosleep    (&x_dur, NULL);
       /*---(write sec ASAP)--------------*/
@@ -83,7 +85,7 @@ main               (int a_argc, char *a_argv[])
    }
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    /*---(report out)---------------------*/
-   if (requested == complete) {
+   if (my.done_done == 'y') {
       DEBUG_TOPS   yLOG_note    ("ALL JOBS COMPLETE");
    } else {
       DEBUG_TOPS   yLOG_note    ("STOPPED WITHOUT ALL JOBS COMPLETE");
@@ -101,25 +103,6 @@ main               (int a_argc, char *a_argv[])
    if (my.pid == 1)   rc = execvp (*my.argv, my.argv);
    /*---(complete)-----------------------*/
    return 0;
-
-   /*> DEBUG_VIEW   printf ("forced end for testing\n");                              <*/
-   /*> DEBUG_VIEW   printf ("stop logging\n");                                        <*/
-   /*> PROG_end    ();                                                                   <* 
-    *> rc = umount ("/var/log/yLOG");                                                    <* 
-    *> if (rc < 0)  {                                                                    <* 
-    *>    rc = errno;                                                                    <* 
-    *>    DEBUG_VIEW   printf ("umount /var/log/yLOG (%d = %s)\n", rc, strerror (rc));   <* 
-    *> } else {                                                                          <* 
-    *>    DEBUG_VIEW   printf ("umount /var/log/yLOG success\n");                        <* 
-    *> }                                                                                 <* 
-    *> rc = umount ("/");                                                                <* 
-    *> if (rc < 0)  {                                                                    <* 
-    *>    rc = errno;                                                                    <* 
-    *>    DEBUG_VIEW   printf ("umount / (%d = %s)\n", rc, strerror (rc));               <* 
-    *> } else {                                                                          <* 
-    *>    DEBUG_VIEW   printf ("umount / success\n");                                    <* 
-    *> }                                                                                 <* 
-    *> exit (-1);                                                                        <*/
 }
 
 

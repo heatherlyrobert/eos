@@ -8,11 +8,357 @@
  *> int         complete    = 0;                                                      <*/
 
 
+/*====================------------------------------------====================*/
+/*===----                    specialty checks                          ----===*/
+/*====================------------------------------------====================*/
+static void      o___CHECKERS________________o (void) {;}
+
+char
+exec_check_daemon       (tPROC *a_proc, int *a_rpid)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char       *p           = NULL;
+   char        x_base      [LEN_NAME];
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP  yLOG_point   ("a_proc"    , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP  yLOG_info    ("->name"    , a_proc->name);
+   /*---(parse name)---------------------*/
+   DEBUG_LOOP  yLOG_info    ("->run"     , a_proc->run);
+   p = strrchr (a_proc->run, '/');
+   DEBUG_LOOP  yLOG_point   ("p"         , p);
+   --rce;  if (p == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   strcpy (x_base, p + 1);
+   DEBUG_LOOP  yLOG_info    ("x_base"    , x_base);
+   /*---(look for daemon)----------------*/
+   rc = yEXEC_find (x_base, a_rpid);
+   DEBUG_LOOP  yLOG_value   ("find"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+char
+exec_check_mount        (tPROC *a_proc)
+{
+}
+
+char
+exec_check_serial       (tPROC *a_proc)
+{
+}
+
 
 /*====================------------------------------------====================*/
 /*===----                           processes                          ----===*/
 /*====================------------------------------------====================*/
 static void      o___PROCESSES_______________o (void) {;}
+
+int
+exec_check              (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tGROUP     *x_group     = NULL;
+   tPROC      *x_proc      = NULL;
+   int         x_return    =    0;
+   int         c           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(check count)--------------------*/
+   DEBUG_LOOP   yLOG_value   ("actives"   , yDLST_active_count ());
+   if (yDLST_active_count () <= 0) {
+      DEBUG_LOOP  yLOG_note    ("no lines running/active, nothing to do");
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(check all files)----------------*/
+   for (x_proc = yDLST_active_seek (YDLST_HEAD); x_proc != NULL; x_proc = yDLST_active_seek (YDLST_NEXT)) {
+      /*---(header)----------------------*/
+      DEBUG_LOOP   yLOG_info    ("x_proc"    , x_proc->name);
+      /*---(get file)--------------------*/
+      x_group = (tGROUP *) yDLST_line_list ();
+      DEBUG_LOOP   yLOG_point   ("x_group"    , x_group);
+      if (x_group == NULL) {
+         DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      DEBUG_LOOP   yLOG_info    ("->name"    , x_group->name);
+      /*---(specialty checks)------------*/
+      switch (x_proc->type) {
+      case TYPE_LAUNCH :
+         rc       = 'n';
+         x_return = 0;
+         break;
+      case TYPE_DAEMON :
+      case TYPE_SERIAL :
+         DEBUG_LOOP   yLOG_note    ("daemon/serial existance checking");
+         /*---(check normal)-------------*/
+         rc  = exec_check_daemon (x_proc, &x_proc->rpid);
+         DEBUG_LOOP   yLOG_value   ("check"      , rc);
+         if (rc >  0) {
+            DEBUG_LOOP   yLOG_note    ("already running");
+            ++x_group->completed;
+            x_proc->yexec = YEXEC_NORMAL;
+            x_proc->rc    = 0;
+            x_proc->end   = time (NULL);
+            continue;
+         }
+         /*---(check if died)------------*/
+         rc = yEXEC_check (x_proc->name, x_proc->rpid, &x_return);
+         DEBUG_LOOP   yLOG_value   ("check"     , rc);
+         break;
+      case TYPE_MOUNT  :
+         rc       = 'n';
+         x_return = 0;
+         break;
+      case TYPE_CONFIG :
+      case TYPE_BOOT   :
+      default          :
+         rc = yEXEC_check (x_proc->name, x_proc->rpid, &x_return);
+         DEBUG_LOOP   yLOG_value   ("check"     , rc);
+         if (rc == YEXEC_RUNNING) {
+            DEBUG_LOOP   yLOG_note    ("still running, next");
+            continue;
+         }
+         break;
+      }
+      /*---(update)----------------------*/
+      ++x_group->completed;
+      x_proc->yexec = rc;
+      x_proc->rc    = x_return;
+      x_proc->end   = time (NULL);
+      /*---(reset lists)-----------------*/
+      yDLST_active_off ();
+      ++c;
+      DEBUG_LOOP  yLOG_note    ("collected, next");
+      /*---(done)------------------------*/
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return c;
+}
+
+char
+exec_finish             (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tGROUP     *x_group     = NULL;
+   int         c           =    0;
+   int         x_done      =    0;
+   int         x_count     =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(check all groups)---------------*/
+   for (x_group = yDLST_list_seek (YDLST_HEAD); x_group != NULL; x_group = yDLST_list_seek (YDLST_NEXT)) {
+      /*---(header)----------------------*/
+      DEBUG_LOOP   yLOG_point   ("x_group"   , x_group);
+      DEBUG_LOOP   yLOG_info    ("name"      , x_group->name);
+      DEBUG_LOOP   yLOG_char    ("status"    , x_group->status);
+      /*---(check for handled)-----------*/
+      if (x_group->status == GROUP_READY) {
+         DEBUG_LOOP   yLOG_note    ("not started, continue");
+         continue;
+      }
+      if (x_group->status == GROUP_DONE) {
+         DEBUG_LOOP   yLOG_note    ("done already, continue");
+         ++x_done;
+         continue;
+      }
+      /*---(show stats)------------------*/
+      DEBUG_LOOP   yLOG_value   ("requested" , x_group->requested);
+      DEBUG_LOOP   yLOG_value   ("completed" , x_group->completed);
+      /*---(check for done)--------------*/
+      if (x_group->requested == x_group->completed) {
+         DEBUG_LOOP   yLOG_note  ("mark completed");
+         x_group->status = GROUP_DONE;
+         ++c;
+         continue;
+      }
+      /*---(still running)---------------*/
+      DEBUG_LOOP   yLOG_note  ("group still running");
+      /*---(done)------------------------*/
+   }
+   /*---(check all done)-----------------*/
+   DEBUG_LOOP   yLOG_value   ("x_done"    , x_done);
+   x_count = yDLST_list_count ();
+   DEBUG_LOOP   yLOG_value   ("x_count"   , x_count);
+   if (x_done >= x_count) {
+      DEBUG_LOOP   yLOG_note  ("all groups are complete");
+      my.done_done = 'y';
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return c;
+}
+
+char
+exec_start              (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tGROUP     *x_group     = NULL;
+   tGROUP     *x_pred      = NULL;
+   char        x_ready     =  'y';
+   int         c           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(check all files)----------------*/
+   for (x_group = yDLST_list_seek (YDLST_HEAD); x_group != NULL; x_group = yDLST_list_seek (YDLST_NEXT)) {
+      /*---(header)----------------------*/
+      DEBUG_LOOP   yLOG_point   ("x_group"   , x_group);
+      DEBUG_LOOP   yLOG_info    ("name"      , x_group->name);
+      DEBUG_LOOP   yLOG_char    ("status"    , x_group->status);
+      /*---(check for handled)-----------*/
+      if (x_group->status == GROUP_RUNNING) {
+         DEBUG_LOOP   yLOG_note    ("already started, continue");
+         continue;
+      }
+      if (x_group->status == GROUP_DONE) {
+         DEBUG_LOOP   yLOG_note    ("done already, continue");
+         continue;
+      }
+      /*---(check preds)-----------------*/
+      x_ready = 'y';
+      DEBUG_LOOP   yLOG_value   ("preds"     , yDLST_pred_count ());
+      for (x_pred = yDLST_pred_seek (YDLST_HEAD); x_pred != NULL; x_pred = yDLST_pred_seek (YDLST_NEXT)) {
+         DEBUG_LOOP   yLOG_point   ("x_pred"    , x_pred);
+         DEBUG_LOOP   yLOG_info    ("name"      , x_pred->name);
+         DEBUG_LOOP   yLOG_char    ("status"    , x_pred->status);
+         if (x_pred->status != GROUP_DONE) {
+            DEBUG_LOOP   yLOG_note  ("already handled");
+            x_ready = '-';
+            break;
+         }
+      }
+      DEBUG_LOOP   yLOG_char    ("x_ready"   , x_ready);
+      /*---(if not ready-----------------*/
+      if (x_ready != 'y') {
+         DEBUG_LOOP   yLOG_note  ("not ready to launch");
+         continue;
+      }
+      /*---(ready)-----------------------*/
+      x_group->status = GROUP_RUNNING;
+      ++c;
+      rc = yDLST_focus_list ();
+      if (rc < 0) {
+         DEBUG_LOOP   yLOG_note  ("focus failed");
+         DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      /*---(done)------------------------*/
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return c;
+}
+
+char
+exec_dispatch           (int a_min)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tGROUP     *x_group     = NULL;
+   tPROC      *x_proc      = NULL;
+   int         x_rpid      =    0;
+   int         c           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(check count)--------------------*/
+   DEBUG_LOOP   yLOG_value   ("focused"   , yDLST_focus_count ());
+   if (yDLST_focus_count () <= 0) {
+      DEBUG_LOOP  yLOG_note    ("no lines focused, nothing to do");
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(check all files)----------------*/
+   for (x_proc = yDLST_focus_seek (YDLST_HEAD); x_proc != NULL; x_proc = yDLST_focus_seek (YDLST_NEXT)) {
+      DEBUG_LOOP   yLOG_info    ("x_proc"    , x_proc->name);
+      /*---(test)------------------------*/
+      if (x_proc->end  > 0) {
+         DEBUG_LOOP   yLOG_note  ("already competed");
+         continue;
+      }
+      if (x_proc->beg  > 0) {
+         DEBUG_LOOP   yLOG_note  ("already running");
+         continue;
+      }
+      /*---(activate)--------------------*/
+      yDLST_active_on ();
+      yDLST_focus_off ();
+      ++c;
+      /*---(get group)-------------------*/
+      x_group = (tGROUP *) yDLST_line_list ();
+      DEBUG_LOOP   yLOG_point   ("x_group"    , x_group);
+      if (x_group == NULL) {
+         DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      DEBUG_LOOP   yLOG_info    ("->name"    , x_group->name);
+      /*---(prerun checking)-------------*/
+      switch (x_proc->type) {
+      case TYPE_DAEMON :
+      case TYPE_SERIAL :
+         DEBUG_LOOP   yLOG_note    ("daemon/serial existance pre-checking");
+         rc  = exec_check_daemon (x_proc, &x_proc->rpid);
+         DEBUG_LOOP   yLOG_value   ("check"      , rc);
+         if (rc > 0) {
+            ++x_group->completed;
+            x_proc->beg     = time (NULL);
+            x_proc->yexec   = YEXEC_ALREADY;
+            x_proc->rc      = 0;
+            x_proc->end     = time (NULL);
+            yDLST_active_off ();
+            continue;
+         }
+         break;
+      }
+      /*---(run)-------------------------*/
+      DEBUG_LOOP   yLOG_info    ("->run"     , x_proc->run);
+      x_rpid = yEXEC_run (x_proc->name, x_proc->user, x_proc->run, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, my.name_exec);
+      DEBUG_LOOP   yLOG_value   ("x_rpid"    , x_rpid);
+      if (x_rpid <  0) {
+         DEBUG_LOOP  yLOG_note    ("could not launch");
+         ++x_group->completed;
+         x_proc->beg     = time (NULL);
+         x_proc->rpid    = -2;
+         x_proc->yexec   = YEXEC_ERROR;
+         x_proc->rc      = -2;
+         x_proc->end     = time (NULL);
+         yDLST_active_off ();
+         continue;
+      }
+      /*---(update line)-----------------*/
+      x_proc->beg     = time (NULL);
+      x_proc->rpid    = x_rpid;
+      DEBUG_LOOP  yLOG_note    ("launched, move to next");
+      /*---(done)------------------------*/
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return c;
+}
+
+
 
 /*> char                                                                               <* 
  *> EXEC_checkmount    (char *a_mount)                                                 <* 
@@ -316,17 +662,17 @@ static void      o___PROCESSES_______________o (void) {;}
  *>       yDLST_active_on (a_proc->dlst);                                                                                                           <* 
  *>       ++running;                                                                                                                                <* 
  *>    } else { /+ daemon and serial +/                                                                                                             <* 
- *>       DEBUG_LOOP   yLOG_note    ("add to complete list");                                                                                       <* 
- *>       a_proc->status = 'c';                                                                                                                     <* 
- *>       yDLST_active_off (a_proc->dlst);                                                                                                          <* 
- *>       ++complete;                                                                                                                               <* 
- *>    }                                                                                                                                            <* 
- *>    /+---(log and exit)-----------------------+/                                                                                                 <* 
- *>    a_proc->start  = yLOG_time();                                                                                                                <* 
- *>    DEBUG_LOOP   yLOG_info   ("SUCCESS"   , "all good");                                                                                         <* 
- *>    DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                                                                                     <* 
- *>    return 0;              /+ parent moves on to next task     +/                                                                                <* 
- *> }                                                                                                                                               <*/
+*>       DEBUG_LOOP   yLOG_note    ("add to complete list");                                                                                       <* 
+*>       a_proc->status = 'c';                                                                                                                     <* 
+*>       yDLST_active_off (a_proc->dlst);                                                                                                          <* 
+*>       ++complete;                                                                                                                               <* 
+*>    }                                                                                                                                            <* 
+*>    /+---(log and exit)-----------------------+/                                                                                                 <* 
+*>    a_proc->start  = yLOG_time();                                                                                                                <* 
+*>    DEBUG_LOOP   yLOG_info   ("SUCCESS"   , "all good");                                                                                         <* 
+*>    DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                                                                                     <* 
+*>    return 0;              /+ parent moves on to next task     +/                                                                                <* 
+*> }                                                                                                                                               <*/
 
 /*> char                                                                                               <* 
  *> EXEC_check         (void)                                                                          <* 
@@ -399,10 +745,10 @@ static void      o___PROCESSES_______________o (void) {;}
  *>    DEBUG_LOOP   yLOG_value  ("requested" , requested);                                             <* 
  *>    DEBUG_LOOP   yLOG_value  ("running"   , running);                                               <* 
  *>    DEBUG_LOOP   yLOG_value  ("complete"  , complete);                                              <* 
- *>    /+---(complete)-----------------------+/                                                        <* 
- *>    DEBUG_LOOP   yLOG_exit  (__FUNCTION__);                                                         <* 
- *>    return -1;                                                                                      <* 
- *> }                                                                                                  <*/
+*>    /+---(complete)-----------------------+/                                                        <* 
+*>    DEBUG_LOOP   yLOG_exit  (__FUNCTION__);                                                         <* 
+*>    return -1;                                                                                      <* 
+*> }                                                                                                  <*/
 
 /*> char       /+ ---- : put all children into focus -----------------------------+/   <* 
  *> EXEC_children       (int  a_index)                                                 <* 
@@ -429,6 +775,14 @@ static void      o___PROCESSES_______________o (void) {;}
  *>    DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                        <* 
  *>    return 0;                                                                       <* 
  *> }                                                                                  <*/
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      unit test accessor                      ----===*/
+/*====================------------------------------------====================*/
+static void      o___UNITTEST________________o (void) {;}
+
 
 
 

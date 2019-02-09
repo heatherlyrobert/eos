@@ -157,7 +157,7 @@ PROG_version       (void)
  *> }                                                                                  <*/
 
 char         /*--: pre-argument initialization -----------[ leaf-- [ ------ ]-*/
-PROG_init          (void)
+PROG_init          (char a_which)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -181,6 +181,7 @@ PROG_init          (void)
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    DEBUG_VIEW   printf       ("EOS_init     :");
    /*---(set globals)--------------------*/
+   my.done_done      = '-';
    my.daemon         = 'y';
    my.init           = 'y';
    my.test           = '-';
@@ -214,9 +215,19 @@ PROG_init          (void)
    /*---(check on log filesystem)--------*/
    /*> PROG_logtest   ();                                                             <*/
    /*---(set file names)-----------------*/
-   snprintf (my.name_conf   , 200, "%s%s", DIR_ETC  , FILE_CONF );
-   snprintf (my.name_exec   , 200, "%s%s", DIR_YHIST, FILE_EXEC );
-   snprintf (my.name_perf   , 200, "%s%s", DIR_YHIST, FILE_PERF );
+   DEBUG_TOPS   yLOG_char    ("a_which"   , a_which);
+   --rce;  if (a_which == RUN_EOS) {
+      snprintf (my.name_conf   , 200, "%seos%s"     , DIR_ETC  , FILE_CONF);
+      snprintf (my.name_exec   , 200, "%seos%s"     , DIR_YHIST, FILE_EXEC);
+      snprintf (my.name_perf   , 200, "%seos%s"     , DIR_YHIST, FILE_PERF);
+   } else if  (a_which == RUN_ASTRAIOS) {
+      snprintf (my.name_conf   , 200, "%sastraios%s", DIR_ETC  , FILE_CONF);
+      snprintf (my.name_exec   , 200, "%sastraios%s", DIR_YHIST, FILE_EXEC);
+      snprintf (my.name_perf   , 200, "%sastraios%s", DIR_YHIST, FILE_PERF);
+   } else {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(complete)-----------------------*/
    DEBUG_VIEW   printf        (", done\n");
    return 0;
@@ -473,9 +484,9 @@ char       /*----: set up program test file locations ------------------------*/
 prog__unit_files   (void)
 {
    char        x_cmd       [LEN_RECD];
-   snprintf (my.name_conf   , 200, "%s%s", DIR_UNIT , FILE_CONF );
-   snprintf (my.name_exec   , 200, "%s%s", DIR_UNIT , FILE_EXEC );
-   snprintf (my.name_perf   , 200, "%s%s", DIR_UNIT , FILE_PERF );
+   snprintf (my.name_conf   , 200, "%sunit%s", DIR_UNIT , FILE_CONF);
+   snprintf (my.name_exec   , 200, "%sunit%s", DIR_UNIT , FILE_EXEC);
+   snprintf (my.name_perf   , 200, "%sunit%s", DIR_UNIT , FILE_PERF);
    chdir    ("/tmp");
    sprintf  (x_cmd, "rm -fr %s* > /dev/null", DIR_UNIT);
    system   (x_cmd);
@@ -492,7 +503,7 @@ prog__unit_quiet   (void)
    char       *x_argv [1]  = { "eos" };
    yURG_logger    (x_argc, x_argv);
    yURG_urgs      (x_argc, x_argv);
-   PROG_init      ();
+   PROG_init      ('e');
    prog__unit_files ();
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();
@@ -506,7 +517,7 @@ prog__unit_loud    (void)
    char       *x_argv [5]  = { "eos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@yexec"  };
    yURG_logger    (x_argc, x_argv);
    yURG_urgs      (x_argc, x_argv);
-   PROG_init      ();
+   PROG_init      ('e');
    prog__unit_files ();
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();

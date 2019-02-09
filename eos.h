@@ -263,8 +263,8 @@
 
 /*===[[ VERSIONING ]]=========================================================*/
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define     VER_NUM   "2.0c"
-#define     VER_TXT   "group and proc unit testing working"
+#define     VER_NUM   "2.0d"
+#define     VER_TXT   "main loop is working and unit tested, special daemon handling"
 
 
 
@@ -337,6 +337,7 @@ struct cACCESSOR
    char        updates;                /* bool : 0=normal, 1=quiet            */
    int         logger;                 /* log file so that we don't close it  */
    int         locker;                 /* lock file in /var/run               */
+   char        done_done;              /* flag for all procs done             */
    /*---(owner)----------------*/
    int         uid;                    /* uid of person who launched eos      */
    char        who         [LEN_NAME]; /* user name who launched eos          */
@@ -376,6 +377,12 @@ struct cACCESSOR
    /*---(done)------------------*/
 } my;
 
+
+
+/*---(directory names)--------------------------*/
+#define     RUN_EOS          'e'
+#define     RUN_ASTRAIOS     'a'
+
 /*---(directory names)--------------------------*/
 #define     DIR_ETC          "/etc/"
 #define     DIR_RUN          "/var/run/"
@@ -384,15 +391,9 @@ struct cACCESSOR
 #define     DIR_UNIT         "/tmp/eos_test/"
 
 /*---(file names)-------------------------------*/
-#define     FILE_CONF        "eos.conf"
-#define     FILE_LOCK        "initd.pid"
-#define     FILE_EXEC        "eos_execs.execution_feedback"
-#define     FILE_PERF        "eos_speed.execution_tracking"
-#define     FILE_DEBUG       "eos_debug.linked_list_details"
-
-/*---(shell related)--------------------------------------------*/
-#define     PATH             "/sbin:/bin:/usr/sbin:/usr/bin:/opt/sbin:/opt/bin:/usr/local/sbin:/usr/local/bin"
-#define     SHELL            "/bin/dash"
+#define     FILE_CONF        ".conf"
+#define     FILE_EXEC        "_execs.execution_feedback"
+#define     FILE_PERF        "_speed.execution_tracking"
 
 
 #define     UTMP             "/var/run/utmp"
@@ -418,9 +419,14 @@ struct cACCESSOR
 #define     TYPE_BOOT        'b'
 #define     TYPE_CONFIG      'c'
 #define     TYPE_DAEMON      'd'
+#define     TYPE_LAUNCH      'l'
 #define     TYPE_MOUNT       'm'
 #define     TYPE_SERIAL      's'
-#define     TYPE_ALL         "bcdms"
+#define     TYPE_ALL         "bcdlms"
+
+#define     GROUP_READY      '-'
+#define     GROUP_RUNNING    'R'
+#define     GROUP_DONE       'd'
 
 
 typedef struct cGROUP tGROUP;
@@ -430,8 +436,9 @@ struct cGROUP {
    char        name        [LEN_NAME];      /* short name for reference       */
    char        desc        [LEN_DESC];      /* longer description             */
    /*---(processing)---------------------*/
-   int         requested;
-   int         completed;
+   int         requested;                   /* count of procs in group        */
+   int         completed;                   /* count of completed procs       */
+   char        status;                      /* ready, focused, done           */
    /*---(done)---------------------------*/
 };
 
@@ -445,18 +452,13 @@ struct cPROC {
    char        desc        [LEN_DESC];      /* longer description             */
    char        user        [LEN_NAME];      /* user name                      */
    int         uid;                         /* user id to use to launch job   */
-   char        check       [LEN_CMD];       /* command to check existance     */
    char        run         [LEN_CMD];       /* command to execute             */
    /*---(processing)---------------------*/
-   char        result      [LEN_CMD];       /* result of existance check      */
+   llong       beg;                         /* start time                     */
    int         rpid;                        /* process id of crond            */
-   llong       start;                       /* start time                     */
-   llong       end;                         /* end time                       */
-   char        status;                      /* -=new, r=running, c=complete, f=failed   */
-   long        u_time;                      /* user time in ms                */
-   long        s_time;                      /* system time in ms              */
-   int         swaps;                       /* number of process switches     */
+   char        yexec;                       /* end code from yEXEC            */
    int         rc;                          /* return code                    */
+   llong       end;                         /* end time                       */
    /*---(done)---------------------------*/
 };
 
@@ -494,7 +496,7 @@ char*       PROG_version       (void);
 /*> char        PROG_urgview       (int  a_argc, char *a_argv[]);                     <*/
 /*> char        PROG_mountproc     (void);                                            <*/
 /*> char        PROG_logtest       (void);                                            <*/
-char        PROG_init          (void);
+char        PROG_init          (char a_which);
 char        PROG_args          (int  a_argc, char *a_argv[]);
 char        PROG_begin         (void);
 char        PROG_end           (void);
@@ -529,6 +531,9 @@ char        EXEC_children      (int);
 
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+char        base_config             (void);
+
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 char        group_create            (void);
 char*       group__unit             (char *a_question, int a_num);
 
@@ -536,6 +541,8 @@ char*       group__unit             (char *a_question, int a_num);
 char        proc_create             (char a_type);
 char*       proc__unit              (char *a_question, int a_num);
 
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+char        rptg_performance        (void);
 
 
 #endif

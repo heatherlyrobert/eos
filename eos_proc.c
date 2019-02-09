@@ -19,18 +19,14 @@ proc__wipe          (tPROC *a_dst)
    a_dst->desc    [0] = '\0';
    a_dst->user    [0] = '\0';
    a_dst->uid         =   -1;
-   a_dst->check   [0] = '\0';
    a_dst->run     [0] = '\0';
    /*---(processing)---------------------*/
    DEBUG_INPT   yLOG_snote   ("wipe processing");
-   a_dst->rpid        =    0;
-   a_dst->status      =  '-';
-   a_dst->start       =    0;
-   a_dst->end         =    0;
-   a_dst->u_time      =    0;
-   a_dst->s_time      =    0;
-   a_dst->swaps       =    0;
+   a_dst->beg         =    0;
+   a_dst->rpid        =   -1;
+   a_dst->yexec       =  '-';
    a_dst->rc          =    0;
+   a_dst->end         =    0;
    /*---(done)---------------------------*/
    return 0;
 }
@@ -66,13 +62,12 @@ proc__new           (void)
 char
 proc__populate          (tPROC *a_dst)
 {
-   a_dst->line   = my.c_recdno;
+   a_dst->line   = yPARSE_recdno ();
    strlcpy (a_dst->name  , my.p_name  , LEN_NAME);
    a_dst->type   = my.p_type;
    strlcpy (a_dst->desc  , my.p_desc  , LEN_DESC);
    strlcpy (a_dst->user  , my.p_user  , LEN_NAME);
    a_dst->uid    = my.p_uid;
-   strlcpy (a_dst->check , my.p_check , LEN_CMD);
    strlcpy (a_dst->run   , my.p_run   , LEN_CMD);
    return 0;
 }
@@ -94,6 +89,7 @@ proc__parse             (char a_type)
    char        t           [LEN_NAME];
    int         x_pos       =    0;
    tPASSWD    *x_pass      = NULL;
+   tPROC      *x_proc      = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
@@ -104,7 +100,6 @@ proc__parse             (char a_type)
    strlcpy (my.p_desc    , ""         , LEN_DESC);
    strlcpy (my.p_user    , ""         , LEN_NAME);
    my.p_uid   =  -1;
-   strlcpy (my.p_check   , ""         , LEN_CMD);
    strlcpy (my.p_run     , ""         , LEN_CMD);
    /*---(field count)--------------------*/
    rc = yPARSE_ready (&x_fields);
@@ -114,7 +109,7 @@ proc__parse             (char a_type)
       return rce;
    }
    DEBUG_INPT   yLOG_value   ("fields"    , x_fields);
-   --rce; if (x_fields != 6) {
+   --rce; if (x_fields != 5) {
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
@@ -129,6 +124,12 @@ proc__parse             (char a_type)
       return rce;
    }
    DEBUG_INPT   yLOG_info    ("p_name"    , my.p_name);
+   x_proc = yDLST_line_find (my.p_name);
+   DEBUG_INPT   yLOG_point   ("x_proc"    , x_proc);
+   --rce;  if (x_proc != NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(desc)---------------------------*/
    rc = yPARSE_popstr  (my.p_desc);
    DEBUG_INPT   yLOG_value   ("desc"      , rc);
@@ -153,14 +154,6 @@ proc__parse             (char a_type)
    }
    my.p_uid = x_pass->pw_uid;
    DEBUG_INPT   yLOG_value ("p_uid"       , my.p_uid);
-   /*---(check)--------------------------*/
-   rc = yPARSE_popstr  (my.p_check);
-   DEBUG_INPT   yLOG_value   ("check"     , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("p_check"   , my.p_check);
    /*---(run)----------------------------*/
    rc = yPARSE_popstr  (my.p_run);
    DEBUG_INPT   yLOG_value   ("run"       , rc);
@@ -182,12 +175,20 @@ proc_create             (char a_type)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
+   tGROUP     *x_group     = NULL;
    tPROC      *x_proc      = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(parse the record)---------------*/
    rc = proc__parse (a_type);
    DEBUG_INPT   yLOG_value   ("parse"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(check its runable)--------------*/
+   rc = yEXEC_runable (my.p_name, my.p_user, my.p_run, YEXEC_FULL);
+   DEBUG_INPT   yLOG_value   ("runnable"  , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -213,6 +214,14 @@ proc_create             (char a_type)
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(update list)--------------------*/
+   x_group = (tGROUP *) yDLST_line_list ();
+   DEBUG_INPT   yLOG_point   ("x_group"   , x_group);
+   --rce;  if (x_group == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   ++x_group->requested;
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -237,6 +246,9 @@ proc__unit              (char *a_question, int a_num)
    tPROC      *x_proc      = NULL;
    char        x_ready     =  '-';
    int         x_fields    =    0;
+   char        x_beg       =  '-';
+   char        x_end       =  '-';
+   char        x_focus     =  '-';
    /*---(prepare)------------------------*/
    strlcpy  (unit_answer, "PROC             : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
@@ -261,14 +273,6 @@ proc__unit              (char *a_question, int a_num)
          snprintf (unit_answer, LEN_RECD, "PROC user   (%2d) :  0[]                    -1", a_num);
       }
    }
-   else if (strcmp (a_question, "check"   )        == 0) {
-      x_proc  = (tPROC  *) yDLST_line_entry (a_num, NULL);
-      if (x_proc != NULL) {
-         snprintf (unit_answer, LEN_RECD, "PROC check  (%2d) : %2d[%s]", a_num, strlen (x_proc->check), x_proc->check);
-      } else {
-         snprintf (unit_answer, LEN_RECD, "PROC check  (%2d) :  0[]", a_num);
-      }
-   }
    else if (strcmp (a_question, "run"     )        == 0) {
       x_proc  = (tPROC  *) yDLST_line_entry (a_num, NULL);
       if (x_proc != NULL) {
@@ -286,6 +290,20 @@ proc__unit              (char *a_question, int a_num)
          snprintf (unit_answer, LEN_RECD, "PROC entry  (%2d) : %-20.20s  %-20.20s  %2d", a_num, s, t, strlen (x_proc->run));
       } else {
          snprintf (unit_answer, LEN_RECD, "PROC entry  (%2d) : []                    []                    -1", a_num);
+      }
+   }
+   else if (strcmp (a_question, "exec"    )        == 0) {
+      x_proc  = (tPROC  *) yDLST_line_entry (a_num, &x_void);
+      x_group = (tGROUP *) x_void;
+      if (x_proc != NULL) {
+         sprintf (s, "[%-4.4s]", x_group->name);
+         sprintf (t, "[%-4.4s]", x_proc->name);
+         x_beg   = (x_proc->beg > 0) ? 'y' : '-';
+         x_end   = (x_proc->end > 0) ? 'y' : '-';
+         x_focus = (yDLST_focus_check (x_proc->name, NULL)) ? 'y' : '-';
+         snprintf (unit_answer, LEN_RECD, "PROC exec   (%2d) : %-6.6s  %-6.6s  %c %c %6d %c %3d %c", a_num, s, t, x_focus, x_beg, x_proc->rpid, x_proc->yexec, x_proc->rc, x_end);
+      } else {
+         snprintf (unit_answer, LEN_RECD, "PROC exec   (%2d) : []      []      - -     -1 -   0 -", a_num);
       }
    }
    /*---(complete)-----------------------*/

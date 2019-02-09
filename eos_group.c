@@ -18,8 +18,9 @@ group__wipe             (tGROUP *a_dst)
    a_dst->desc    [0] = '\0';
    /*---(processing)---------------------*/
    DEBUG_INPT   yLOG_snote   ("wipe processing");
+   a_dst->status      = GROUP_READY;
    a_dst->requested   =    0;
-   a_dst->completed   =  '-';
+   a_dst->completed   =    0;
    /*---(done)---------------------------*/
    return 0;
 }
@@ -55,7 +56,7 @@ group__new              (void)
 char
 group__populate         (tGROUP *a_dst)
 {
-   a_dst->line = my.c_recdno;
+   a_dst->line = yPARSE_recdno ();
    strlcpy (a_dst->name  , my.g_name  , LEN_NAME);
    strlcpy (a_dst->desc  , my.g_desc  , LEN_DESC);
    return 0;
@@ -76,6 +77,7 @@ group__parse            (void)
    int         rc          =    0;
    int         x_fields    =    0;
    char        t           [LEN_NAME];
+   tGROUP     *x_group     = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
@@ -91,7 +93,7 @@ group__parse            (void)
       return rce;
    }
    DEBUG_INPT   yLOG_value   ("fields"    , x_fields);
-   --rce; if (x_fields != 9) {
+   --rce; if (x_fields != 8) {
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
@@ -103,6 +105,12 @@ group__parse            (void)
       return rce;
    }
    DEBUG_INPT   yLOG_info    ("g_name"    , my.g_name);
+   x_group = yDLST_list_find (my.g_name);
+   DEBUG_INPT   yLOG_point   ("x_group"   , x_group);
+   --rce;  if (x_group != NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(desc)---------------------------*/
    rc = yPARSE_popstr  (my.g_desc);
    DEBUG_INPT   yLOG_value   ("desc"      , rc);
@@ -239,6 +247,15 @@ group__unit             (char *a_question, int a_num)
          snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) : %2d%-30.30s    %2d  %2d", a_num, strlen (x_group->name), t, x_group->line, c);
       } else {
          snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) :  0[]                                 0   0", a_num);
+      }
+   }
+   else if (strcmp (a_question, "exec"    )        == 0) {
+      x_group = (tGROUP *) yDLST_list_entry (a_num, &c);
+      if (x_group != NULL) {
+         sprintf (t, "[%s]", x_group->name);
+         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) : %2d%-30.30s    %2d  %2d  %c", a_num, strlen (x_group->name), t, x_group->requested, x_group->completed, x_group->status);
+      } else {
+         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) :  0[]                                 0   0  -", a_num);
       }
    }
    else if (strcmp (a_question, "yparse"  )        == 0) {
