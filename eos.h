@@ -263,8 +263,8 @@
 
 /*===[[ VERSIONING ]]=========================================================*/
 /* rapidly evolving version number to aid with visual change confirmation     */
-#define     VER_NUM   "2.0d"
-#define     VER_TXT   "main loop is working and unit tested, special daemon handling"
+#define     VER_NUM   "2.0e"
+#define     VER_TXT   "checking for mounts is now ready and unit tested"
 
 
 

@@ -53,14 +53,87 @@ exec_check_daemon       (tPROC *a_proc, int *a_rpid)
 }
 
 char
-exec_check_mount        (tPROC *a_proc)
+exec_check_mount   (tPROC *a_proc)
 {
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char       *p           = NULL;
+   char        x_path      [LEN_NAME];
+   FILE       *f           = NULL;
+   int         c           =    0;
+   char        x_recd      [LEN_RECD];
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP  yLOG_point   ("a_proc"    , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP  yLOG_info    ("->name"    , a_proc->name);
+   /*---(parse name)---------------------*/
+   DEBUG_LOOP  yLOG_info    ("->run"     , a_proc->run);
+   p = strrchr (a_proc->run, ' ');
+   DEBUG_LOOP  yLOG_point   ("p"         , p);
+   --rce;  if (p == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   strcpy (x_path, p + 1);
+   DEBUG_LOOP  yLOG_info    ("x_path"    , x_path);
+   /*---(open /proc/mounts)----------*/
+   DEBUG_LOOP  yLOG_info    ("open"      , "/proc/mounts");
+   c = 0;
+   f = fopen ("/proc/mounts", "r");
+   DEBUG_LOOP  yLOG_point   ("f"         , f);
+   --rce;  if (f == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(check /proc/mounts)---------*/
+   while (!feof (f)) {
+      fgets (x_recd, 450, f);
+      ++c;
+      if (strstr (x_recd, x_path) != NULL) {
+         DEBUG_LOOP   yLOG_note    ("found in /proc/mounts");
+         fclose (f);
+         DEBUG_LOOP   yLOG_exit    (__FUNCTION__);
+         return 1;
+      }
+   }
+   DEBUG_LOOP  yLOG_value   ("reviewed"  , c);
+   DEBUG_LOOP  yLOG_note    ("not found in /proc/mounts");
+   fclose (f);
+   /*---(open /proc/swaps)---------------*/
+   DEBUG_LOOP  yLOG_info    ("open"      , "/proc/swaps");
+   c = 0;
+   f = fopen ("/proc/swaps", "r");
+   DEBUG_LOOP  yLOG_point   ("f"         , f);
+   --rce;  if (f == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP  yLOG_point   ("f"         , f);
+   /*---(check /proc/swaps)--------------*/
+   while (!feof (f)) {
+      fgets (x_recd, 450, f);
+      ++c;
+      if (strstr (x_recd, x_path) != NULL) {
+         DEBUG_LOOP   yLOG_note    ("found in /proc/swaps");
+         fclose (f);
+         DEBUG_LOOP   yLOG_exit    (__FUNCTION__);
+         return 2;
+      }
+   }
+   DEBUG_LOOP  yLOG_value   ("reviewed"  , c);
+   DEBUG_LOOP  yLOG_note    ("not found in /proc/swaps");
+   fclose (f);
+   /*---(done)-----------------------*/
+   DEBUG_LOOP   yLOG_exit    (__FUNCTION__);
+   return 0;
 }
 
-char
-exec_check_serial       (tPROC *a_proc)
-{
-}
 
 
 /*====================------------------------------------====================*/
@@ -112,11 +185,12 @@ exec_check              (void)
          rc  = exec_check_daemon (x_proc, &x_proc->rpid);
          DEBUG_LOOP   yLOG_value   ("check"      , rc);
          if (rc >  0) {
-            DEBUG_LOOP   yLOG_note    ("already running");
+            DEBUG_LOOP   yLOG_note    ("now running");
             ++x_group->completed;
             x_proc->yexec = YEXEC_NORMAL;
             x_proc->rc    = 0;
             x_proc->end   = time (NULL);
+            ++c;
             continue;
          }
          /*---(check if died)------------*/
@@ -124,9 +198,20 @@ exec_check              (void)
          DEBUG_LOOP   yLOG_value   ("check"     , rc);
          break;
       case TYPE_MOUNT  :
-         rc       = 'n';
-         x_return = 0;
-         break;
+         DEBUG_LOOP   yLOG_note    ("device mounting existance checking");
+         /*---(check normal)-------------*/
+         rc  = exec_check_mount (x_proc);
+         DEBUG_LOOP   yLOG_value   ("check"      , rc);
+         if (rc >  0) {
+            DEBUG_LOOP   yLOG_note    ("now mounted");
+            ++x_group->completed;
+            x_proc->yexec = YEXEC_NORMAL;
+            x_proc->rc    = 0;
+            x_proc->end   = time (NULL);
+            ++c;
+            continue;
+         }
+         continue;
       case TYPE_CONFIG :
       case TYPE_BOOT   :
       default          :
@@ -331,6 +416,22 @@ exec_dispatch           (int a_min)
             continue;
          }
          break;
+      case TYPE_MOUNT  :
+         DEBUG_LOOP   yLOG_note    ("device mounting existance checking");
+         /*---(check normal)-------------*/
+         rc  = exec_check_mount (x_proc);
+         DEBUG_LOOP   yLOG_value   ("check"      , rc);
+         if (rc >  0) {
+            DEBUG_LOOP   yLOG_note    ("already mounted");
+            ++x_group->completed;
+            x_proc->beg     = time (NULL);
+            x_proc->yexec = YEXEC_ALREADY;
+            x_proc->rc    = 0;
+            x_proc->end   = time (NULL);
+            yDLST_active_off ();
+            continue;
+         }
+         break;
       }
       /*---(run)-------------------------*/
       DEBUG_LOOP   yLOG_info    ("->run"     , x_proc->run);
@@ -360,60 +461,6 @@ exec_dispatch           (int a_min)
 
 
 
-/*> char                                                                               <* 
- *> EXEC_checkmount    (char *a_mount)                                                 <* 
- *> {                                                                                  <* 
- *>    DEBUG_LOOP   yLOG_senter  (__FUNCTION__);                                       <* 
- *>    /+---(locals)-----------+-----------+-+/                                        <* 
- *>    char        rce         = -10;      /+ return code for errors              +/   <* 
- *>    int         rc          = 0;        /+ generic return code                 +/   <* 
- *>    FILE       *f           = NULL;     /+ generic file pointer                +/   <* 
- *>    int         x_len       = 0;        /+ length of mount name                +/   <* 
- *>    char        x_recd      [1000];     /+ proc table entry                    +/   <* 
- *>    /+---(defenses)-----------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_spoint  (a_mount);                                            <* 
- *>    --rce;  if (a_mount == NULL) {                                                  <* 
- *>       DEBUG_LOOP   yLOG_snote   ("pointer null, failed");                          <* 
- *>       DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                    <* 
- *>       return rce;                                                                  <* 
- *>    }                                                                               <* 
- *>    /+---(prepare)-----------------------+/                                         <* 
- *>    DEBUG_LOOP   yLOG_snote   (a_mount);                                            <* 
- *>    x_len = strllen (a_mount, LEN_NAME);                                            <* 
- *>    DEBUG_LOOP   yLOG_svalue  ("len"       , x_len);                                <* 
- *>    --rce;  if (x_len <= 0) {                                                       <* 
- *>       DEBUG_LOOP   yLOG_snote   ("name too short, failed");                        <* 
- *>       DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                    <* 
- *>       return rce;                                                                  <* 
- *>    }                                                                               <* 
- *>    /+---(check /proc/mounts)---------+/                                            <* 
- *>    f = fopen ("/proc/mounts", "r");                                                <* 
- *>    while (!feof (f)) {                                                             <* 
- *>       fgets (x_recd, 450, f);                                                      <* 
- *>       if (strncmp (x_recd, a_mount, x_len) == 0) {                                 <* 
- *>          DEBUG_LOOP   yLOG_snote   ("found in /proc/mounts");                      <* 
- *>          fclose (f);                                                               <* 
- *>          DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                 <* 
- *>          return 1;                                                                 <* 
- *>       }                                                                            <* 
- *>    }                                                                               <* 
- *>    fclose (f);                                                                     <* 
- *>    /+---(check /proc/swaps)----------+/                                            <* 
- *>    f = fopen ("/proc/swaps", "r");                                                 <* 
- *>    while (!feof (f)) {                                                             <* 
- *>       fgets (x_recd, 450, f);                                                      <* 
- *>       if (strncmp (x_recd, a_mount, x_len) == 0) {                                 <* 
- *>          DEBUG_LOOP   yLOG_snote   ("found in /proc/swaps");                       <* 
- *>          fclose (f);                                                               <* 
- *>          DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                 <* 
- *>          return 2;                                                                 <* 
- *>       }                                                                            <* 
- *>    }                                                                               <* 
- *>    fclose (f);                                                                     <* 
- *>    /+---(done)-----------------------+/                                            <* 
- *>    DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                       <* 
- *>    return 0;                                                                       <* 
- *> }                                                                                  <*/
 
 /*> char                                                                               <* 
  *> EXEC_launch        (void)                                                          <* 
