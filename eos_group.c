@@ -244,6 +244,66 @@ after_handler           (int n, uchar *a_verb)
 
 
 /*====================------------------------------------====================*/
+/*===----                      execution helpers                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___EXEC____________________o (void) {;}
+
+char
+group_mark_begin        (llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   tGROUP     *x_group     = NULL;
+   /*---(update group)-------------------*/
+   yDLST_list_by_cursor ('-', NULL, &x_group);
+   --rce;  if (x_group == NULL)                  return rce;
+   --rce;  if (x_group->status != GROUP_READY)   return rce;
+   x_group->status    = GROUP_RUNNING;
+   x_group->beg       = a_msec;
+   /*---(complete)-----------------------*/
+   return 0;
+}
+
+char
+group_mark_done         (llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   tGROUP     *x_group     = NULL;
+   /*---(update group)-------------------*/
+   yDLST_list_by_cursor ('-', NULL, &x_group);
+   --rce;  if (x_group == NULL)                  return rce;
+   --rce;  if (x_group->status != GROUP_RUNNING) return rce;
+   x_group->status    = GROUP_DONE;
+   x_group->end       = a_msec;
+   x_group->dur       = x_group->end - x_group->beg;
+   /*---(complete)-----------------------*/
+   return 0;
+}
+
+char
+group_mark_clear        (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   tGROUP     *x_group     = NULL;
+   /*---(update group)-------------------*/
+   yDLST_list_by_cursor ('-', NULL, &x_group);
+   --rce;  if (x_group == NULL)  return rce;
+   /*---(update proc)--------------------*/
+   x_group->status    = GROUP_READY;
+   x_group->completed =    0;
+   x_group->beg       =    0;
+   x_group->end       =    0;
+   x_group->dur       =    0;
+   x_group->warning   =  '-';
+   /*---(complete)-----------------------*/
+   return 0;
+}
+
+
+
+/*====================------------------------------------====================*/
 /*===----                      unit test accessor                      ----===*/
 /*====================------------------------------------====================*/
 static void      o___UNITTEST________________o (void) {;}
@@ -255,6 +315,7 @@ group__unit             (char *a_question, int a_num)
    char        rc          =    0;
    char        t           [LEN_RECD]  = "[ALPHA]";
    char        s           [LEN_RECD]  = "[OMEGA]";
+   char        u           [LEN_RECD]  = "";
    int         c           =    0;
    tGROUP     *x_group     = NULL;
    void       *x_void      = NULL;
@@ -279,7 +340,7 @@ group__unit             (char *a_question, int a_num)
       yDLST_list_by_index (a_num, NULL, &x_group);
       if (x_group != NULL) {
          sprintf (t, "%2d[%-.15s]", strlen (x_group->name), x_group->name);
-         strlcpy (s, "[", LEN_RECD);
+         strlcpy (s, "", LEN_RECD);
          rc = yDLST_seq_by_cursor ('<', '[', &x_void, NULL, &x_after);
          while (rc >= 0 && x_void != NULL) {
             if (c > 0)  strlcat (s, ", ", LEN_RECD);
@@ -288,10 +349,10 @@ group__unit             (char *a_question, int a_num)
             rc = yDLST_seq_by_cursor ('<', '>', &x_void, NULL, &x_after);
             ++c;
          }
-         strlcat (s, "]", LEN_RECD);
-         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) : %-19.19s  %2d  %2d  %c  %1d%s", a_num, t, x_group->requested, x_group->completed, x_group->status, c, s);
+         sprintf  (u, "%1d[%.30s]", c, s);
+         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) : %-19.19s %2d %2d %c  %-33.33s  %4d %4d %4d %c", a_num, t, x_group->requested, x_group->completed, x_group->status, u, x_group->beg, x_group->end, x_group->dur, x_group->warning);
       } else {
-         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) :  -[]                  -   -  -  -[]", a_num);
+         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) :  -[]                 -  - -  -[]                                   -    -    - -", a_num);
       }
    }
    else if (strcmp (a_question, "count"   )        == 0) {

@@ -439,6 +439,10 @@ proc_mark_done          (llong a_msec, char a_yexec, int a_rc)
    yDLST_line_list      (NULL, &x_group);
    --rce;  if (x_group == NULL)  return rce;
    ++x_group->completed;
+   switch (a_yexec) {
+   case 'n' : case 'r' : case 'A' :  break;
+   default                        :  x_group->warning = '#';  break;
+   }
    /*---(deactivate)---------------------*/
    yDLST_active_off ();
    /*---(complete)-----------------------*/

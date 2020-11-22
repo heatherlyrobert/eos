@@ -11,14 +11,14 @@
 #define     P_NAMESAKE  "eos-rhododactylos (rosy-fingered dawn)"
 #define     P_HERITAGE  "titaness of daybreak who opens the gates of heaven for the sun"
 #define     P_IMAGERY   "radiant worman with white wings, golden arms, and rosy fingers"
-#define     P_REASON    ""
+#define     P_REASON    "fantastically poetic reference to system start-up"
 
 #define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
 
-#define     P_BASENAME  ""
-#define     P_FULLPATH  ""
-#define     P_SUFFIX    ""
-#define     P_CONTENT   ""
+#define     P_BASENAME  "eos"
+#define     P_FULLPATH  "/sbin/eos"
+#define     P_SUFFIX    "conf"
+#define     P_CONTENT   "sequenced initialization"
 
 #define     P_SYSTEM    "gnu/linux   (powerful, ubiquitous, technical, and hackable)"
 #define     P_LANGUAGE  "ansi-c      (wicked, limitless, universal, and everlasting)"
@@ -30,8 +30,8 @@
 
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.1-, starting rebuild back up"
-#define     P_VERNUM    "2.1a"
-#define     P_VERTXT    "fully updated execution details and unit testing"
+#define     P_VERNUM    "2.1b"
+#define     P_VERTXT    "exec is now pretty well unit tested, groups added times"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -588,7 +588,11 @@ char        group__free             (tGROUP **a_old);
 /*---(existance)------------*/
 char        group_handler           (int n, uchar *a_verb);
 char        after_handler           (int n, uchar *a_verb);
-
+/*---(exec)-----------------*/
+char        group_mark_begin        (llong a_msec);
+char        group_mark_done         (llong a_msec);
+char        group_mark_clear        (void);
+/*---(unittest)-------------*/
 char*       group__unit             (char *a_question, int a_num);
 
 

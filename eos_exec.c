@@ -396,6 +396,7 @@ exec_finish             (llong a_msec)
    int         c           =    0;
    int         x_done      =    0;
    int         x_count     =    0;
+   char        x_warn      =  '-';
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
@@ -415,7 +416,7 @@ exec_finish             (llong a_msec)
       }
       /*---(check for done)--------------*/
       else  if (x_group->requested == x_group->completed) {
-         x_group->status = GROUP_DONE;
+         group_mark_done (a_msec);
          ++x_done;
          ++c;
       }
@@ -489,7 +490,7 @@ exec_start              (llong a_msec)
          /*---(ready)-----------------------*/
          DEBUG_LOOP   yLOG_char    ("x_ready"   , x_ready);
          if (x_ready == 'y') {
-            x_group->status = GROUP_RUNNING;
+            group_mark_begin (a_msec);
             ++c;
             rc = yDLST_focus_list ();
             if (rc < 0) {
