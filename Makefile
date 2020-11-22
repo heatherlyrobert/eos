@@ -38,7 +38,11 @@ include /usr/local/sbin/make_program
 
 #===(post-processing)======================================#
 # create a rule for...
-#install_post       :
+install_post       :
+#	gcc -o dumb_eos dumb_eos.c ${LIB_DEBUG}
+#	cp dumb_eos /sbin/
+
+
 #remove_post        :
 
 

@@ -8,73 +8,35 @@
  *> int         complete    = 0;                                                      <*/
 
 
+
 /*====================------------------------------------====================*/
-/*===----                    specialty checks                          ----===*/
+/*===----                      verify results                          ----===*/
 /*====================------------------------------------====================*/
-static void      o___CHECKERS________________o (void) {;}
+static void      o___VERIFY__________________o (void) {;}
 
 char
-exec_check_daemon       (tPROC *a_proc, int *a_rpid)
+exec__verify_mount      (uchar *a_run)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
    char       *p           = NULL;
-   char        x_base      [LEN_NAME];
-   /*---(header)-------------------------*/
-   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_LOOP  yLOG_point   ("a_proc"    , a_proc);
-   --rce;  if (a_proc == NULL) {
-      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_LOOP  yLOG_info    ("->name"    , a_proc->name);
-   /*---(parse name)---------------------*/
-   DEBUG_LOOP  yLOG_info    ("->run"     , a_proc->run);
-   p = strrchr (a_proc->run, '/');
-   DEBUG_LOOP  yLOG_point   ("p"         , p);
-   --rce;  if (p == NULL) {
-      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   strcpy (x_base, p + 1);
-   DEBUG_LOOP  yLOG_info    ("x_base"    , x_base);
-   /*---(look for daemon)----------------*/
-   rc = yEXEC_find (x_base, a_rpid);
-   DEBUG_LOOP  yLOG_value   ("find"      , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
-   return rc;
-}
-
-char
-exec_check_mount   (tPROC *a_proc)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        rc          =    0;
-   char       *p           = NULL;
-   char        x_path      [LEN_NAME];
+   char        x_path      [LEN_LABEL];
    FILE       *f           = NULL;
    int         c           =    0;
    char        x_recd      [LEN_RECD];
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
-   DEBUG_LOOP  yLOG_point   ("a_proc"    , a_proc);
-   --rce;  if (a_proc == NULL) {
+   DEBUG_LOOP  yLOG_point   ("a_run"     , a_run);
+   --rce;  if (a_run == NULL) {
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_LOOP  yLOG_info    ("->name"    , a_proc->name);
+   DEBUG_LOOP  yLOG_info    ("a_run"     , a_run);
    /*---(parse name)---------------------*/
-   DEBUG_LOOP  yLOG_info    ("->run"     , a_proc->run);
-   p = strrchr (a_proc->run, ' ');
+   DEBUG_LOOP  yLOG_info    ("->run"     , a_run);
+   p = strrchr (a_run, ' ');
    DEBUG_LOOP  yLOG_point   ("p"         , p);
    --rce;  if (p == NULL) {
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
@@ -98,6 +60,9 @@ exec_check_mount   (tPROC *a_proc)
       if (strstr (x_recd, x_path) != NULL) {
          DEBUG_LOOP   yLOG_note    ("found in /proc/mounts");
          fclose (f);
+         if (strstr (x_recd, "(rw,") == NULL) {
+            DEBUG_LOOP   yLOG_note    ("concern, not marked as rw");
+         }
          DEBUG_LOOP   yLOG_exit    (__FUNCTION__);
          return 1;
       }
@@ -134,113 +99,295 @@ exec_check_mount   (tPROC *a_proc)
    return 0;
 }
 
-
-
-/*====================------------------------------------====================*/
-/*===----                           processes                          ----===*/
-/*====================------------------------------------====================*/
-static void      o___PROCESSES_______________o (void) {;}
-
-int
-exec_check              (void)
+char
+exec__verify_daemon     (char *a_run, int *a_rpid)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
-   tGROUP     *x_group     = NULL;
-   tPROC      *x_proc      = NULL;
+   char       *p           = NULL;
+   char        t           [LEN_RECD];
+   char        x_base      [LEN_RECD];
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(default)------------------------*/
+   if (a_rpid != NULL)  *a_rpid = -1;
+   /*---(defense)------------------------*/
+   DEBUG_LOOP  yLOG_point   ("a_run"     , a_run);
+   --rce;  if (a_run == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP  yLOG_info    ("a_run"     , a_run);
+   /*---(cut at first space)-------------*/
+   DEBUG_LOOP  yLOG_info    ("a_run"     , a_run);
+   strlcpy (t, a_run, LEN_RECD);
+   p = strchr (t, ' ');
+   DEBUG_LOOP  yLOG_point   ("p"         , p);
+   --rce;  if (p != NULL) {
+      p [0] = '\0';
+   }
+   DEBUG_LOOP  yLOG_info    ("t"         , t);
+   /*---(parse name)---------------------*/
+   p = strrchr (t, '/');
+   DEBUG_LOOP  yLOG_point   ("p"         , p);
+   --rce;  if (p == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   strcpy (x_base, p + 1);
+   DEBUG_LOOP  yLOG_info    ("x_base"    , x_base);
+   /*---(look for daemon)----------------*/
+   rc = yEXEC_find (x_base, a_rpid);
+   DEBUG_LOOP  yLOG_value   ("find"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                    check running procs                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___CHECK___________________o (void) {;}
+
+char
+exec__check_launch      (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
    int         x_return    =    0;
+   int         x_dur       =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
+   --rce;  if (a_proc->end > 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
+   if (a_msec < 0)  a_msec = 0;
+   if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
+   /*---(update)-------------------------*/
+   DEBUG_LOOP   yLOG_note    ("normal process launch checking");
+   rc = yEXEC_check (a_proc->name, a_proc->rpid, &x_return);
+   DEBUG_LOOP   yLOG_value   ("check"      , rc);
+   if (rc != YEXEC_RUNNING) {
+      DEBUG_LOOP   yLOG_note    ("not running anymore");
+      proc_mark_done  (a_msec, rc, x_return);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   /*---(check limits)-------------------*/
+   DEBUG_LOOP   yLOG_char    ("strict"     , a_proc->strict);
+   --rce;  if (a_proc->strict == 'S') {
+      x_dur = a_msec - a_proc->beg;
+      DEBUG_LOOP   yLOG_complex ("durs"       , "min %c %7d, max %c %7d, %7d", a_proc->lower, a_proc->minest, a_proc->upper, a_proc->maxest, x_dur);
+      if (x_dur > a_proc->maxest && a_proc->remedy == 'k') {
+         kill (a_proc->rpid, SIGTERM);
+         proc_mark_done  (a_msec, ']', -9);
+         DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+         return 1;
+      }
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+exec__check_mount       (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         x_check     =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
+   --rce;  if (a_proc->end > 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
+   if (a_msec < 0)  a_msec = 0;
+   if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
+   /*---(wait period)-----------------*/
+   x_check = a_proc->minest + a_proc->beg;
+   DEBUG_LOOP   yLOG_value   ("x_check"    , x_check);
+   if (a_msec < x_check) {
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(call launch)--------------------*/
+   rc = exec__check_launch (a_proc, a_msec);
+   DEBUG_LOOP   yLOG_value   ("launch"     , rc);
+   --rce;  if (rc <= 0) {
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return rc;
+   }
+   /*---(verify results)-----------------*/
+   rc  = exec__verify_mount (a_proc->run);
+   DEBUG_LOOP   yLOG_value   ("check"      , rc);
+   if (a_proc->type == EOS_TYPE_MOUNT  && rc >  0) {
+      DEBUG_LOOP   yLOG_note    ("now mounted");
+      proc_mark_done  (a_msec, YEXEC_NORMAL, 0);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   if (a_proc->type == EOS_TYPE_UMOUNT && rc == 0) {
+      DEBUG_LOOP   yLOG_note    ("now unmounted");
+      proc_mark_done  (a_msec, YEXEC_NORMAL, 0);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   /*---(not mounted)--------------------*/
+   proc_mark_done  (a_msec, YEXEC_ERROR , 0);
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 1;
+}
+
+char
+exec__check_daemon      (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        c           =    0;
+   int         x_check     =    0;
+   int         x_rpid      =    0;
+   int         x_return    =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_info    ("name"       , a_proc->name);
+   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
+   --rce;  if (a_proc->end > 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
+   if (a_msec < 0)  a_msec = 0;
+   if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
+   /*---(wait period)-----------------*/
+   x_check = a_proc->minest + a_proc->beg;
+   DEBUG_LOOP   yLOG_value   ("x_check"    , x_check);
+   if (a_msec < x_check) {
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(clear out extras)------------*/
+   c = exec__verify_daemon (a_proc->run, &x_rpid);
+   DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
+   while (c > 1) {
+      rc = yEXEC_check (a_proc->name, x_rpid, NULL);
+      DEBUG_LOOP   yLOG_char    ("exit"       , rc);
+      c  = exec__verify_daemon (a_proc->run, &x_rpid);
+      DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
+   }
+   /*---(final daemon)----------------*/
+   a_proc->rpid = x_rpid;
+   rc = yEXEC_check (a_proc->name, a_proc->rpid, &x_return);
+   switch (rc) {
+   case  YEXEC_NOSUCH :  rc = YEXEC_RUNNING;  break;
+   case  YEXEC_NORMAL :  rc = YEXEC_DIED;     break;
+   }
+   proc_mark_done  (a_msec, rc, x_return);
+   /*---(complete)--------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 1;
+}
+
+int
+exec_check              (llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tPROC      *x_proc      = NULL;
+   int         n           =    0;
    int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    /*---(check count)--------------------*/
-   DEBUG_LOOP   yLOG_value   ("actives"   , yDLST_active_count ());
-   if (yDLST_active_count () <= 0) {
+   n = yDLST_active_count ();
+   DEBUG_LOOP   yLOG_value   ("actives"   , n);
+   if (n <= 0) {
       DEBUG_LOOP  yLOG_note    ("no lines running/active, nothing to do");
       DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
       return 0;
    }
-   /*---(check all files)----------------*/
-   for (x_proc = yDLST_active_seek (YDLST_HEAD); x_proc != NULL; x_proc = yDLST_active_seek (YDLST_NEXT)) {
-      /*---(header)----------------------*/
-      DEBUG_LOOP   yLOG_info    ("x_proc"    , x_proc->name);
-      /*---(get file)--------------------*/
-      x_group = (tGROUP *) yDLST_line_list ();
-      DEBUG_LOOP   yLOG_point   ("x_group"    , x_group);
-      if (x_group == NULL) {
-         DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      DEBUG_LOOP   yLOG_info    ("->name"    , x_group->name);
-      /*---(specialty checks)------------*/
+   /*---(prepare)------------------------*/
+   rc = yDLST_active_by_cursor ('[', NULL, &x_proc);
+   DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p, %d", rc, x_proc, c);
+   /*---(walk-through active)------------*/
+   while (rc >= 0 && x_proc != NULL) {
+      /*---(checkers)--------------------*/
+      DEBUG_LOOP   yLOG_info    ("X_PROC"    , x_proc->name);
       switch (x_proc->type) {
-      case TYPE_LAUNCH :
-         rc       = 'n';
-         x_return = 0;
+      case EOS_TYPE_DAEMON : case EOS_TYPE_SERIAL :
+         rc = exec__check_daemon (x_proc, a_msec);
          break;
-      case TYPE_DAEMON :
-      case TYPE_SERIAL :
-         DEBUG_LOOP   yLOG_note    ("daemon/serial existance checking");
-         /*---(check normal)-------------*/
-         rc  = exec_check_daemon (x_proc, &x_proc->rpid);
-         DEBUG_LOOP   yLOG_value   ("check"      , rc);
-         if (rc >  0) {
-            DEBUG_LOOP   yLOG_note    ("now running");
-            ++x_group->completed;
-            x_proc->yexec = YEXEC_NORMAL;
-            x_proc->rc    = 0;
-            x_proc->end   = time (NULL);
-            ++c;
-            continue;
-         }
-         /*---(check if died)------------*/
-         rc = yEXEC_check (x_proc->name, x_proc->rpid, &x_return);
-         DEBUG_LOOP   yLOG_value   ("check"     , rc);
+      case EOS_TYPE_MOUNT  : case EOS_TYPE_UMOUNT :
+         rc = exec__check_mount  (x_proc, a_msec);
          break;
-      case TYPE_MOUNT  :
-         DEBUG_LOOP   yLOG_note    ("device mounting existance checking");
-         /*---(check normal)-------------*/
-         rc  = exec_check_mount (x_proc);
-         DEBUG_LOOP   yLOG_value   ("check"      , rc);
-         if (rc >  0) {
-            DEBUG_LOOP   yLOG_note    ("now mounted");
-            ++x_group->completed;
-            x_proc->yexec = YEXEC_NORMAL;
-            x_proc->rc    = 0;
-            x_proc->end   = time (NULL);
-            ++c;
-            continue;
-         }
-         continue;
-      case TYPE_CONFIG :
-      case TYPE_BOOT   :
+      case EOS_TYPE_EXEC   : case EOS_TYPE_CONFIG : case EOS_TYPE_BOOT   :
+         rc = exec__check_launch (x_proc, a_msec);
+         break;
       default          :
-         rc = yEXEC_check (x_proc->name, x_proc->rpid, &x_return);
-         DEBUG_LOOP   yLOG_value   ("check"     , rc);
-         if (rc == YEXEC_RUNNING) {
-            DEBUG_LOOP   yLOG_note    ("still running, next");
-            continue;
-         }
+         rc = exec__check_launch (x_proc, a_msec);
          break;
       }
-      /*---(update)----------------------*/
-      ++x_group->completed;
-      x_proc->yexec = rc;
-      x_proc->rc    = x_return;
-      x_proc->end   = time (NULL);
-      /*---(reset lists)-----------------*/
-      yDLST_active_off ();
-      ++c;
-      DEBUG_LOOP  yLOG_note    ("collected, next");
+      DEBUG_LOOP   yLOG_value   ("checker"   , rc);
+      /*---(next)------------------------*/
+      if (rc == 1)  ++c;
+      rc = yDLST_active_by_cursor ('>', NULL, &x_proc);
+      DEBUG_LOOP   yLOG_complex ("next"      , "%3d, %p, %d", rc, x_proc, c);
       /*---(done)------------------------*/
    }
+   /*---(summary)------------------------*/
+   DEBUG_LOOP   yLOG_value   ("COMPLETED" , c);
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
    return c;
 }
 
+
+
+/*====================------------------------------------====================*/
+/*===----                    update group status                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___GROUP___________________o (void) {;}
+
 char
-exec_finish             (void)
+exec_finish             (llong a_msec)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -251,34 +398,35 @@ exec_finish             (void)
    int         x_count     =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   /*---(check all groups)---------------*/
-   for (x_group = yDLST_list_seek (YDLST_HEAD); x_group != NULL; x_group = yDLST_list_seek (YDLST_NEXT)) {
-      /*---(header)----------------------*/
-      DEBUG_LOOP   yLOG_point   ("x_group"   , x_group);
-      DEBUG_LOOP   yLOG_info    ("name"      , x_group->name);
-      DEBUG_LOOP   yLOG_char    ("status"    , x_group->status);
-      /*---(check for handled)-----------*/
+   /*---(prepare)------------------------*/
+   rc = yDLST_list_by_cursor ('[', NULL, &x_group);
+   DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p, %d", rc, x_group, c);
+   /*---(walk through groups)------------*/
+   while (rc >= 0 && x_group != NULL) {
+      DEBUG_LOOP   yLOG_complex ("GROUP"     , "%p, %-15.15s, %c, %2dr, %2dc", x_group, x_group->name, x_group->status, x_group->requested, x_group->completed);
+      /*---(filter not started)----------*/
       if (x_group->status == GROUP_READY) {
          DEBUG_LOOP   yLOG_note    ("not started, continue");
-         continue;
       }
-      if (x_group->status == GROUP_DONE) {
+      /*---(filter completed)------------*/
+      else if (x_group->status == GROUP_DONE) {
          DEBUG_LOOP   yLOG_note    ("done already, continue");
          ++x_done;
-         continue;
       }
-      /*---(show stats)------------------*/
-      DEBUG_LOOP   yLOG_value   ("requested" , x_group->requested);
-      DEBUG_LOOP   yLOG_value   ("completed" , x_group->completed);
       /*---(check for done)--------------*/
-      if (x_group->requested == x_group->completed) {
-         DEBUG_LOOP   yLOG_note  ("mark completed");
+      else  if (x_group->requested == x_group->completed) {
          x_group->status = GROUP_DONE;
+         ++x_done;
          ++c;
-         continue;
       }
       /*---(still running)---------------*/
-      DEBUG_LOOP   yLOG_note  ("group still running");
+      else {
+         DEBUG_LOOP   yLOG_note  ("group still running");
+         rc = yDLST_list_by_cursor ('>', NULL, &x_group);
+      }
+      /*---(next)------------------------*/
+      rc = yDLST_list_by_cursor ('>', NULL, &x_group);
+      DEBUG_LOOP   yLOG_complex ("next"      , "%3d, %p, %d", rc, x_group, c);
       /*---(done)------------------------*/
    }
    /*---(check all done)-----------------*/
@@ -289,13 +437,15 @@ exec_finish             (void)
       DEBUG_LOOP   yLOG_note  ("all groups are complete");
       my.done_done = 'y';
    }
+   /*---(summary)------------------------*/
+   DEBUG_LOOP   yLOG_value   ("FINISHED"  , c);
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
    return c;
 }
 
 char
-exec_start              (void)
+exec_start              (llong a_msec)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -306,58 +456,194 @@ exec_start              (void)
    int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   /*---(check all files)----------------*/
-   for (x_group = yDLST_list_seek (YDLST_HEAD); x_group != NULL; x_group = yDLST_list_seek (YDLST_NEXT)) {
-      /*---(header)----------------------*/
-      DEBUG_LOOP   yLOG_point   ("x_group"   , x_group);
-      DEBUG_LOOP   yLOG_info    ("name"      , x_group->name);
-      DEBUG_LOOP   yLOG_char    ("status"    , x_group->status);
-      /*---(check for handled)-----------*/
+   /*---(prepare)------------------------*/
+   rc = yDLST_list_by_cursor ('[', NULL, &x_group);
+   DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p, %d", rc, x_group, c);
+   /*---(walk through groups)------------*/
+   while (rc >= 0 && x_group != NULL) {
+      DEBUG_LOOP   yLOG_complex ("GROUP"     , "%p, %-15.15s, %c, %2dr, %2dc", x_group, x_group->name, x_group->status, x_group->requested, x_group->completed);
+      /*---(filter out running)----------*/
       if (x_group->status == GROUP_RUNNING) {
          DEBUG_LOOP   yLOG_note    ("already started, continue");
-         continue;
       }
-      if (x_group->status == GROUP_DONE) {
+      /*---(filter completed)------------*/
+      else if (x_group->status == GROUP_DONE) {
          DEBUG_LOOP   yLOG_note    ("done already, continue");
-         continue;
       }
-      /*---(check preds)-----------------*/
-      x_ready = 'y';
-      DEBUG_LOOP   yLOG_value   ("preds"     , yDLST_pred_count ());
-      for (x_pred = yDLST_pred_seek (YDLST_HEAD); x_pred != NULL; x_pred = yDLST_pred_seek (YDLST_NEXT)) {
-         DEBUG_LOOP   yLOG_point   ("x_pred"    , x_pred);
-         DEBUG_LOOP   yLOG_info    ("name"      , x_pred->name);
-         DEBUG_LOOP   yLOG_char    ("status"    , x_pred->status);
-         if (x_pred->status != GROUP_DONE) {
-            DEBUG_LOOP   yLOG_note  ("already handled");
-            x_ready = '-';
-            break;
+      /*---(review for ready)------------*/
+      else {
+         /*---(check predecessors)-------*/
+         x_ready = 'y';
+         DEBUG_LOOP   yLOG_value   ("preds"     , yDLST_seq_count ('<'));
+         rc = yDLST_seq_by_cursor ('<', '[', NULL, NULL, &x_pred);
+         DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p, %d", rc, x_pred, c);
+         while (rc >= 0 && x_pred != NULL) {
+            DEBUG_LOOP   yLOG_complex ("pred"      , "%p, %-15.15s, %c", x_pred, x_pred->name, x_pred->status);
+            if (x_pred->status != GROUP_DONE) {
+               DEBUG_LOOP   yLOG_note  ("group still running");
+               x_ready = '-';
+            }
+            rc = yDLST_seq_by_cursor ('<', '>', NULL, NULL, &x_pred);
+            DEBUG_LOOP   yLOG_complex ("next"      , "%3d, %p, %d", rc, x_pred, c);
+         }
+         /*---(ready)-----------------------*/
+         DEBUG_LOOP   yLOG_char    ("x_ready"   , x_ready);
+         if (x_ready == 'y') {
+            x_group->status = GROUP_RUNNING;
+            ++c;
+            rc = yDLST_focus_list ();
+            if (rc < 0) {
+               DEBUG_LOOP   yLOG_note  ("focus failed");
+               DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+               return rce;
+            }
+            DEBUG_LOOP   yLOG_info    ("STARTING"  , x_group->name);
          }
       }
-      DEBUG_LOOP   yLOG_char    ("x_ready"   , x_ready);
-      /*---(if not ready-----------------*/
-      if (x_ready != 'y') {
-         DEBUG_LOOP   yLOG_note  ("not ready to launch");
-         continue;
-      }
-      /*---(ready)-----------------------*/
-      x_group->status = GROUP_RUNNING;
-      ++c;
-      rc = yDLST_focus_list ();
-      if (rc < 0) {
-         DEBUG_LOOP   yLOG_note  ("focus failed");
-         DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
+      /*---(next)------------------------*/
+      rc = yDLST_list_by_cursor ('>', NULL, &x_group);
+      DEBUG_LOOP   yLOG_complex ("next"      , "%3d, %p, %d", rc, x_group, c);
       /*---(done)------------------------*/
    }
+   /*---(summary)------------------------*/
+   DEBUG_LOOP   yLOG_value   ("STARTED"   , c);
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
    return c;
 }
 
+
+
+/*====================------------------------------------====================*/
+/*===----                     dispatch new procs                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___DISPATCH________________o (void) {;}
+
 char
-exec_dispatch           (int a_min)
+exec__dispatch_launch   (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         x_rpid      =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_value   ("beg"        , a_proc->beg);
+   --rce;  if (a_proc->beg > 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
+   if (a_msec < 0)  a_msec = 0;
+   /*---(run)-------------------------*/
+   x_rpid = yEXEC_run (a_proc->name, a_proc->user, a_proc->run, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, my.n_exec);
+   DEBUG_LOOP   yLOG_value   ("x_rpid"    , x_rpid);
+   /*---(handle bad launch)-----------*/
+   if (x_rpid <  0) {
+      DEBUG_LOOP  yLOG_note    ("could not launch");
+      proc_mark_all_in_one (a_msec, -1, YEXEC_NOTREAL);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   /*---(update line)-----------------*/
+   proc_mark_begin (a_msec, x_rpid);
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 1;
+}
+
+char
+exec__dispatch_mount    (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_value   ("beg"        , a_proc->beg);
+   --rce;  if (a_proc->beg > 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
+   if (a_msec < 0)  a_msec = 0;
+   /*---(check mount)--------------*/
+   rc  = exec__verify_mount (a_proc->run);
+   DEBUG_LOOP   yLOG_value   ("check"      , rc);
+   if (a_proc->type == EOS_TYPE_MOUNT  && rc >  0) {
+      DEBUG_LOOP   yLOG_note    ("already mounted");
+      proc_mark_all_in_one (a_msec, a_proc->rpid, YEXEC_ALREADY);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   if (a_proc->type == EOS_TYPE_UMOUNT && rc == 0) {
+      DEBUG_LOOP   yLOG_note    ("already unmounted");
+      proc_mark_all_in_one (a_msec, a_proc->rpid, YEXEC_ALREADY);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   /*---(launch)-------------------------*/
+   rc = exec__dispatch_launch (a_proc, a_msec);
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+char
+exec__dispatch_daemon   (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         x_rpid      =   -1;
+   char        rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_value   ("beg"        , a_proc->beg);
+   --rce;  if (a_proc->beg > 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
+   if (a_msec < 0)  a_msec = 0;
+   /*---(check daemon)-------------*/
+   rc  = exec__verify_daemon (a_proc->run, &a_proc->rpid);
+   DEBUG_LOOP   yLOG_value   ("check"      , rc);
+   if (rc > 0) {
+      DEBUG_LOOP   yLOG_note    ("already running");
+      proc_mark_all_in_one (a_msec, a_proc->rpid, YEXEC_ALREADY);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   /*---(launch)-------------------------*/
+   rc = exec__dispatch_launch (a_proc, a_msec);
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+char
+exec_dispatch           (llong a_msec)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -365,95 +651,62 @@ exec_dispatch           (int a_min)
    tGROUP     *x_group     = NULL;
    tPROC      *x_proc      = NULL;
    int         x_rpid      =    0;
+   int         n           =    0;
    int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    /*---(check count)--------------------*/
-   DEBUG_LOOP   yLOG_value   ("focused"   , yDLST_focus_count ());
-   if (yDLST_focus_count () <= 0) {
+   n = yDLST_focus_count ();
+   DEBUG_LOOP   yLOG_value   ("focused"   , n);
+   if (n <= 0) {
       DEBUG_LOOP  yLOG_note    ("no lines focused, nothing to do");
       DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
       return 0;
    }
-   /*---(check all files)----------------*/
-   for (x_proc = yDLST_focus_seek (YDLST_HEAD); x_proc != NULL; x_proc = yDLST_focus_seek (YDLST_NEXT)) {
-      DEBUG_LOOP   yLOG_info    ("x_proc"    , x_proc->name);
-      /*---(test)------------------------*/
+   /*---(prepare)------------------------*/
+   rc = yDLST_focus_by_cursor ('[', NULL, &x_proc);
+   DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p, %d", rc, x_proc, c);
+   /*---(walk-through focus)-------------*/
+   while (rc >= 0 && x_proc != NULL) {
+      DEBUG_LOOP   yLOG_complex ("PROC"      , "%p, %-15.15s, %6db, %6de", x_proc, x_proc->name, x_proc->beg, x_proc->end);
+      /*---(filter completed)------------*/
       if (x_proc->end  > 0) {
          DEBUG_LOOP   yLOG_note  ("already competed");
-         continue;
       }
-      if (x_proc->beg  > 0) {
+      /*---(filter running)--------------*/
+      else if (x_proc->beg     > 0) {
          DEBUG_LOOP   yLOG_note  ("already running");
-         continue;
       }
       /*---(activate)--------------------*/
-      yDLST_active_on ();
-      yDLST_focus_off ();
-      ++c;
-      /*---(get group)-------------------*/
-      x_group = (tGROUP *) yDLST_line_list ();
-      DEBUG_LOOP   yLOG_point   ("x_group"    , x_group);
-      if (x_group == NULL) {
-         DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      DEBUG_LOOP   yLOG_info    ("->name"    , x_group->name);
-      /*---(prerun checking)-------------*/
-      switch (x_proc->type) {
-      case TYPE_DAEMON :
-      case TYPE_SERIAL :
-         DEBUG_LOOP   yLOG_note    ("daemon/serial existance pre-checking");
-         rc  = exec_check_daemon (x_proc, &x_proc->rpid);
-         DEBUG_LOOP   yLOG_value   ("check"      , rc);
-         if (rc > 0) {
-            ++x_group->completed;
-            x_proc->beg     = time (NULL);
-            x_proc->yexec   = YEXEC_ALREADY;
-            x_proc->rc      = 0;
-            x_proc->end     = time (NULL);
-            yDLST_active_off ();
-            continue;
+      else {
+         /*---(update)-------------------*/
+         yDLST_active_on ();
+         yDLST_focus_off ();
+         ++c;
+         /*---(dispatch handlers)--------*/
+         switch (x_proc->type) {
+         case EOS_TYPE_DAEMON : case EOS_TYPE_SERIAL :
+            rc  = exec__dispatch_daemon (x_proc, a_msec);
+            break;
+         case EOS_TYPE_MOUNT  : case EOS_TYPE_UMOUNT :
+            rc  = exec__dispatch_mount  (x_proc, a_msec);
+            break;
+         case EOS_TYPE_BOOT   :
+            if (my.run_mode == MODE_NORMAL)  rc  = exec__dispatch_launch (x_proc, a_msec);
+            else                             proc_mark_all_in_one (a_msec, 0, YEXEC_ALREADY);
+            break;
+         case EOS_TYPE_EXEC   : case EOS_TYPE_CONFIG : default :
+            rc  = exec__dispatch_launch (x_proc, a_msec);
+            break;
          }
-         break;
-      case TYPE_MOUNT  :
-         DEBUG_LOOP   yLOG_note    ("device mounting existance checking");
-         /*---(check normal)-------------*/
-         rc  = exec_check_mount (x_proc);
-         DEBUG_LOOP   yLOG_value   ("check"      , rc);
-         if (rc >  0) {
-            DEBUG_LOOP   yLOG_note    ("already mounted");
-            ++x_group->completed;
-            x_proc->beg     = time (NULL);
-            x_proc->yexec = YEXEC_ALREADY;
-            x_proc->rc    = 0;
-            x_proc->end   = time (NULL);
-            yDLST_active_off ();
-            continue;
-         }
-         break;
       }
-      /*---(run)-------------------------*/
-      DEBUG_LOOP   yLOG_info    ("->run"     , x_proc->run);
-      x_rpid = yEXEC_run (x_proc->name, x_proc->user, x_proc->run, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, my.name_exec);
-      DEBUG_LOOP   yLOG_value   ("x_rpid"    , x_rpid);
-      if (x_rpid <  0) {
-         DEBUG_LOOP  yLOG_note    ("could not launch");
-         ++x_group->completed;
-         x_proc->beg     = time (NULL);
-         x_proc->rpid    = -2;
-         x_proc->yexec   = YEXEC_ERROR;
-         x_proc->rc      = -2;
-         x_proc->end     = time (NULL);
-         yDLST_active_off ();
-         continue;
-      }
-      /*---(update line)-----------------*/
-      x_proc->beg     = time (NULL);
-      x_proc->rpid    = x_rpid;
-      DEBUG_LOOP  yLOG_note    ("launched, move to next");
+      /*---(next)------------------------*/
+      rc = yDLST_focus_by_cursor ('>', NULL, &x_proc);
+      DEBUG_LOOP   yLOG_complex ("next"      , "%3d, %p, %d", rc, x_proc, c);
       /*---(done)------------------------*/
    }
+   /*---(summary)------------------------*/
+   DEBUG_LOOP   yLOG_value   ("DISPATCHED", c);
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
    return c;
@@ -461,376 +714,25 @@ exec_dispatch           (int a_min)
 
 
 
-
-/*> char                                                                               <* 
- *> EXEC_launch        (void)                                                          <* 
- *> {                                                                                  <* 
- *>    /+---(locals)-----------+-------------+/                                        <* 
- *>    tPROC      *x_proc      = NULL;          /+ current process                +/   <* 
- *>    tPROC      *x_pred      = NULL;          /+ predecessors                   +/   <* 
- *>    char        x_ready     = 'y';                                                  <* 
- *>    int         i           = 0;                                                    <* 
- *>    /+---(begin)--------------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_enter   (__FUNCTION__);                                       <* 
- *>    /+---(find)---------------------------+/                                        <* 
- *>    x_proc = (tPROC*) yDLST_focus (HEAD);                                           <* 
- *>    while (x_proc != NULL) {                                                        <* 
- *>       DEBUG_LOOP   yLOG_info    ("checking"  , x_proc->name);                      <* 
- *>       /+---(recursors)------------------+/                                         <* 
- *>       DEBUG_LOOPM  yLOG_enter   ("precursors");                                    <* 
- *>       x_ready = 'y';                                                               <* 
- *>       x_pred  = yDLST_ups   (x_proc->dlst, HEAD);                                  <* 
- *>       while (x_pred != NULL) {                                                     <* 
- *>          if  (x_pred->status != 'c') {                                             <* 
- *>             DEBUG_LOOPM  yLOG_info    ("waiting on", x_pred->name);                <* 
- *>             x_ready = 'n';                                                         <* 
- *>          } else {                                                                  <* 
- *>             DEBUG_LOOPM  yLOG_info    ("done"      , x_pred->name);                <* 
- *>          }                                                                         <* 
- *>          x_pred = yDLST_ups   (x_proc->dlst, NEXT);                                <* 
- *>       }                                                                            <* 
- *>       if (x_ready == 'y') {                                                        <* 
- *>          DEBUG_LOOPM  yLOG_note    ("ready to run");                               <* 
- *>       } else {                                                                     <* 
- *>          DEBUG_LOOPM  yLOG_note    ("must wait for precursors to finish");         <* 
- *>       }                                                                            <* 
- *>       DEBUG_LOOPM  yLOG_exit    ("precursors");                                    <* 
- *>       /+---(handle)----------------------+/                                        <* 
- *>       if (x_ready == 'y')   EXEC_run     (x_proc);                                 <* 
- *>       /+---(find next)-------------------+/                                        <* 
- *>       ++i;                                                                         <* 
- *>       x_proc = (tPROC*) yDLST_focus (NEXT);                                        <* 
- *>    }                                                                               <* 
- *>    /+---(complete)-----------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_exit    (__FUNCTION__);                                       <* 
- *>    return -1;                                                                      <* 
- *> }                                                                                  <*/
-
-/*> char       /+-#<[: locate a process dlst based on pid ------------------------+/   <* 
- *> EXEC_find          (int a_rpid)                                                    <* 
- *> {                                                                                  <* 
- *>    /+---(locals)-------*-----------------+/                                        <* 
- *>    tPROC    *xdata     = NULL;                                                     <* 
- *>    /+---(find)---------------------------+/                                        <* 
- *>    xdata = (tPROC*) yDLST_links (HEAD);                                            <* 
- *>    while (xdata != NULL) {                                                         <* 
- *>       if (xdata->rpid == a_rpid)  return xdata->dlst;                              <* 
- *>       xdata = yDLST_links (NEXT);                                                  <* 
- *>    }                                                                               <* 
- *>    /+---(complete)-----------------------+/                                        <* 
- *>    return -1;                                                                      <* 
- *> }                                                                                  <*/
-
-/*> char       /+----: execute a milestone ---------------------------------------+/   <* 
- *> EXEC_milesone      (tPROC *a_proc)                                                 <* 
- *> {                                                                                  <* 
- *>    /+---(defenses)-----------------------+/                                        <* 
- *>    if (a_proc       == NULL)  return -1;                                           <* 
- *>    if (a_proc->type != '-' )  return  0;                                           <* 
- *>    /+---(header)-------------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_senter  (__FUNCTION__);                                       <* 
- *>    DEBUG_LOOP   yLOG_snote   (a_proc->name);                                       <* 
- *>    /+---(mark complete)------------------+/                                        <* 
- *>    a_proc->status = 'c';                                                           <* 
- *>    yDLST_focus_off (a_proc->dlst);                                                 <* 
- *>    DEBUG_LOOP   yLOG_snote   ("completed");                                        <* 
- *>    DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                       <* 
- *>    /+---(test children)------------------+/                                        <* 
- *>    EXEC_children (a_proc->dlst);                                                   <* 
- *>    /+---(complete)-----------------------+/                                        <* 
- *>    return 1;                                                                       <* 
- *> }                                                                                  <*/
-
-/*> char       /+----: ckeck for boot only ---------------------------------------+/   <* 
- *> EXEC_test          (tPROC *a_proc)                                                 <* 
- *> {                                                                                  <* 
- *>    /+---(defenses)-----------------------+/                                        <* 
- *>    if (a_proc       == NULL)  return -1;                                           <* 
- *>    if (a_proc->type != 'b')   return  0;                                           <* 
- *>    if (my.test      != 'y')   return  0;                                           <* 
- *>    /+---(header)-------------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_senter  (__FUNCTION__);                                       <* 
- *>    DEBUG_LOOP   yLOG_snote   (a_proc->name);                                       <* 
- *>    /+---(mark complete)------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_snote   ("not boot, don't run");                              <* 
- *>    yDLST_focus_off  (a_proc->dlst);                                                <* 
- *>    yDLST_active_on  (a_proc->dlst);                                                <* 
- *>    a_proc->rpid       = 0;                                                         <* 
- *>    a_proc->status     = 'r';                                                       <* 
- *>    ++running;                                                                      <* 
- *>    /+---(complete)-----------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                       <* 
- *>    return 1;                                                                       <* 
- *> }                                                                                  <*/
-
-/*> char       /+----: ckeck for serial control ----------------------------------+/   <* 
- *> EXEC_serial        (tPROC *a_proc)                                                 <* 
- *> {                                                                                  <* 
- *>    /+---(defenses)-----------------------+/                                        <* 
- *>    if (a_proc       == NULL)  return -1;                                           <* 
- *>    if (a_proc->type != 's')   return  0;                                           <* 
- *>    if (my.pid       ==  1 )   return  0;                                           <* 
- *>    /+---(header)-------------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_senter  (__FUNCTION__);                                       <* 
- *>    DEBUG_LOOP   yLOG_snote   (a_proc->name);                                       <* 
- *>    /+---(mark complete)------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_info   ("serial"    , "not boot, don't run");                 <* 
- *>    a_proc->status = 'c';                                                           <* 
- *>    yDLST_focus_off  (a_proc->dlst);                                                <* 
- *>    yDLST_active_off (a_proc->dlst);                                                <* 
- *>    ++complete;                                                                     <* 
- *>    DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                       <* 
- *>    /+---(test children)------------------+/                                        <* 
- *>    EXEC_children (a_proc->dlst);                                                   <* 
- *>    /+---(complete)-----------------------+/                                        <* 
- *>    return 1;                                                                       <* 
- *> }                                                                                  <*/
-
-/*> char       /+----: ckeck for mounting ----------------------------------------+/   <* 
- *> EXEC_mount         (tPROC *a_proc)                                                 <* 
- *> {                                                                                  <* 
- *>    FILE       *f           = NULL;                                                 <* 
- *>    /+---(defenses)-----------------------+/                                        <* 
- *>    if (a_proc       == NULL)  return -1;                                           <* 
- *>    if (a_proc->type != 'm')   return  0;                                           <* 
- *>    /+---(prepare)--------------------+/                                            <* 
- *>    strcpy (a_proc->result, "not found");                                           <* 
- *>    sprintf (check, "%s ", a_proc->check);                                          <* 
- *>    len = strlen (check);                                                           <* 
- *>    /+---(check /proc/mounts)---------+/                                            <* 
- *>    f = fopen ("/proc/mounts", "r");                                                <* 
- *>    while (!feof (f)) {                                                             <* 
- *>       fgets (x_recd, 450, f);                                                      <* 
- *>       if (strncmp (x_recd, check, len) == 0) {                                     <* 
- *>          DEBUG_LOOP   yLOG_info   ("check"     , "found in /proc/mounts");         <* 
- *>          a_proc->status = 'c';                                                     <* 
- *>          yDLST_focus_off  (a_proc->dlst);                                          <* 
- *>          yDLST_active_off (a_proc->dlst);                                          <* 
- *>          ++complete;                                                               <* 
- *>          DEBUG_LOOP   yLOG_info   ("complete"  , "mark done");                     <* 
- *>          EXEC_children (a_proc->dlst);                                             <* 
- *>          strcpy (a_proc->result, "mounted");                                       <* 
- *>          DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                  <* 
- *>          return 1;                                                                 <* 
- *>       }                                                                            <* 
- *>    }                                                                               <* 
- *>    fclose (f);                                                                     <* 
- *>    /+---(check /proc/swaps)----------+/                                            <* 
- *>    f = fopen ("/proc/swaps", "r");                                                 <* 
- *>    while (!feof (f)) {                                                             <* 
- *>       fgets (x_recd, 450, f);                                                      <* 
- *>       if (strncmp (x_recd, check, strlen (check)) == 0) {                          <* 
- *>          DEBUG_LOOP   yLOG_info   ("check"     , "found in /proc/swaps");          <* 
- *>          a_proc->status = 'c';                                                     <* 
- *>          yDLST_focus_off  (a_proc->dlst);                                          <* 
- *>          yDLST_active_off (a_proc->dlst);                                          <* 
- *>          ++complete;                                                               <* 
- *>          DEBUG_LOOP   yLOG_info   ("complete"  , "mark done");                     <* 
- *>          EXEC_children (a_proc->dlst);                                             <* 
- *>          strcpy (a_proc->result, "mounted");                                       <* 
- *>          DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                  <* 
- *>          return 1;                                                                 <* 
- *>       }                                                                            <* 
- *>    }                                                                               <* 
- *>    fclose (f);                                                                     <* 
- *>    /+---(complete)-----------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_sexit   (__FUNCTION__);                                       <* 
- *>    return 1;                                                                       <* 
- *> }                                                                                  <*/
-
-/*> char       /+----: execute a particular process entry ------------------------+/                                                                <* 
- *> EXEC_run           (tPROC *a_proc)                                                                                                              <* 
- *> {                                                                                                                                               <* 
- *>    DEBUG_LOOP   yLOG_enter  (__FUNCTION__);                                                                                                     <* 
- *>    /+---(locals)--------------------------------+/                                                                                              <* 
- *>    int       rc        = 0;                       /+ simple return code       +/                                                                <* 
- *>    int       rpid      = 0;                       /+ child pid for execution  +/                                                                <* 
- *>    tPASSWD  *pass;                                                                                                                              <* 
- *>    FILE     *output = NULL;                                                                                                                     <* 
- *>    long      now;                                 /+ present datetime         +/                                                                <* 
- *>    tTIME    *curr_time = NULL;                                                                                                                  <* 
- *>    char      msg[200];                                                                                                                          <* 
- *>    char      envp[10][200];                                                                                                                     <* 
- *>    sigset_t  new_mask, old_mask;                                                                                                                <* 
- *>    char      backup[LEN_CMD]    = "";          /+ copy of the command for parsing +/                                                            <* 
- *>    char     *p[20];                        /+ pointers to cli arguments       +/                                                                <* 
- *>    int       i         = 0;                /+ loop iterator -- arguement      +/                                                                <* 
- *>    char        name        [100];                                                                                                               <* 
- *>    char        check       [200];                                                                                                               <* 
- *>    char        run         [200];                                                                                                               <* 
- *>    char        x_recd      [1000];                                                                                                              <* 
- *>    int       len;                                                                                                                               <* 
- *>    tDIRENT    *den;                        /+ daemon checking                 +/                                                                <* 
- *>    DIR        *dir;                        /+ daemon checking                 +/                        /+ daemon checking                 +/   <* 
- *>    char       *q;                                                                                                                               <* 
- *>    FILE       *f           = NULL;                                                                                                              <* 
- *>    /+---(prepare)------------------------+/                                                                                                     <* 
- *>    a_proc->rpid   = 0;                                                                                                                          <* 
- *>    DEBUG_LOOP   yLOG_info   ("name"      , a_proc->name);                                                                                       <* 
- *>    DEBUG_LOOP   yLOG_char   ("type"      , a_proc->type);                                                                                       <* 
- *>    strcpy (a_proc->result, "no check");                                                                                                         <* 
- *>    /+---(check for milestones)-----------+/                                                                                                     <* 
- *>    rc = EXEC_milesone (a_proc);                                                                                                                 <* 
- *>    if (rc > 0) {                                                                                                                                <* 
- *>       DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                                                                                  <* 
- *>       return 0;                                                                                                                                 <* 
- *>    }                                                                                                                                            <* 
- *>    /+---(check for boot only)------------+/                                                                                                     <* 
- *>    rc = EXEC_test     (a_proc);                                                                                                                 <* 
- *>    if (rc > 0) {                                                                                                                                <* 
- *>       DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                                                                                  <* 
- *>       return 1;                                                                                                                                 <* 
- *>    }                                                                                                                                            <* 
- *>    /+---(check for serial)---------------+/                                                                                                     <* 
- *>    rc = EXEC_serial   (a_proc);                                                                                                                 <* 
- *>    if (rc > 0) {                                                                                                                                <* 
- *>       DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                                                                                  <* 
- *>       return 1;                                                                                                                                 <* 
- *>    }                                                                                                                                            <* 
- *>    /+---(execute)------------------------+/                                                                                                     <* 
- *>    DEBUG_LOOP   yLOG_info   ("user"      , a_proc->user);                                                                                       <* 
- *>    DEBUG_LOOP   yLOG_info   ("command"   , a_proc->run);                                                                                        <* 
- *>    printf   ("%-8.8s : %-16.16s : %c :  %-70.70s\n", a_proc->user, a_proc->name, a_proc->type, a_proc->run);                                    <* 
- *>    snprintf (msg, 200, "%-16.16s", a_proc->name);                                                                                               <* 
- *>    rpid = yEXEC_run (my.name_exec, msg, a_proc->user, a_proc->run, SHELL, PATH, yEXEC_FORK);                                                    <* 
- *>    /+---(failed)-------------------------+/                                                                                                     <* 
- *>    if (rpid <  0) {                                                                                                                             <* 
- *>       a_proc->rpid       = 0;                                                                                                                   <* 
- *>       DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                                                                                  <* 
- *>       return -1;                                                                                                                                <* 
- *>    }                                                                                                                                            <* 
- *>    /+---(success)------------------------+/                                                                                                     <* 
- *>    DEBUG_LOOP   yLOG_value  ("forked"    , rpid);                                                                                               <* 
- *>    a_proc->rpid       = rpid;                                                                                                                   <* 
- *>    yDLST_focus_off (a_proc->dlst);                                                                                                              <* 
- *>    if (strchr("abcm", a_proc->type) != 0) {                                                                                                     <* 
- *>       DEBUG_LOOP   yLOG_note    ("add to running list");                                                                                        <* 
- *>       a_proc->status = 'r';                                                                                                                     <* 
- *>       yDLST_active_on (a_proc->dlst);                                                                                                           <* 
- *>       ++running;                                                                                                                                <* 
- *>    } else { /+ daemon and serial +/                                                                                                             <* 
-*>       DEBUG_LOOP   yLOG_note    ("add to complete list");                                                                                       <* 
-*>       a_proc->status = 'c';                                                                                                                     <* 
-*>       yDLST_active_off (a_proc->dlst);                                                                                                          <* 
-*>       ++complete;                                                                                                                               <* 
-*>    }                                                                                                                                            <* 
-*>    /+---(log and exit)-----------------------+/                                                                                                 <* 
-*>    a_proc->start  = yLOG_time();                                                                                                                <* 
-*>    DEBUG_LOOP   yLOG_info   ("SUCCESS"   , "all good");                                                                                         <* 
-*>    DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                                                                                     <* 
-*>    return 0;              /+ parent moves on to next task     +/                                                                                <* 
-*> }                                                                                                                                               <*/
-
-/*> char                                                                                               <* 
- *> EXEC_check         (void)                                                                          <* 
- *> {                                                                                                  <* 
- *>    /+---(locals)-----------+-----------+-+/                                                        <* 
- *>    tPROC      *x_data      = NULL;                                                                 <* 
- *>    int         i           = 0;                                                                    <* 
- *>    int         rc          = 0;                                                                    <* 
- *>    tRUSAGE     x_use;                                                                              <* 
- *>    int         status      = 0;                                                                    <* 
- *>    int         errsave     = 0;                                                                    <* 
- *>    char        msg         [200];                                                                  <* 
- *>    /+---(begin)--------------------------+/                                                        <* 
- *>    DEBUG_LOOP   yLOG_enter  (__FUNCTION__);                                                        <* 
- *>    /+---(find)---------------------------+/                                                        <* 
- *>    x_data = (tPROC*) yDLST_active (HEAD);                                                          <* 
- *>    while (x_data != NULL) {                                                                        <* 
- *>       /+---(header)----------------------+/                                                        <* 
- *>       DEBUG_LOOP   yLOG_info   ("review"    , x_data->name);                                       <* 
- *>       /+---(exit code)-------------------+/                                                        <* 
- *>       if (x_data->type == 'b' && my.test == 'y') {                                                 <* 
- *>          rc = 1;                                                                                   <* 
- *>       } else {                                                                                     <* 
- *>          /+> rc = wait4 (x_data->rpid, &status, WNOHANG, &x_use);                      <+/         <* 
- *>          snprintf (msg, 200, "%-15.15s", x_data->name);                                            <* 
- *>          rc = yEXEC_check (msg, x_data->rpid);                                                     <* 
- *>       }                                                                                            <* 
- *>       /+---(feedback)--------------------+/                                                        <* 
- *>       if (rc ==  1) {                                                                              <* 
- *>          ++i;                                                                                      <* 
- *>          x_data = (tPROC*) yDLST_active (NEXT);                                                    <* 
- *>          continue;                                                                                 <* 
- *>       }                                                                                            <* 
- *>       /+---(error)-----------------------+/                                                        <* 
- *>       if (rc < 0) {                                                                                <* 
- *>          errsave = errno;                                                                          <* 
- *>          DEBUG_LOOP   yLOG_value ("zerrno"    , errsave);                                          <* 
- *>          DEBUG_LOOP   yLOG_info  ("zerrstr"   , strerror(errsave));                                <* 
- *>          ++i;                                                                                      <* 
- *>          x_data = (tPROC*) yDLST_active (NEXT);                                                    <* 
- *>          continue;                                                                                 <* 
- *>       }                                                                                            <* 
- *>       /+---(normal)----------------------+/                                                        <* 
- *>       if (x_data->type == 'b' && my.test == 'y') {                                                 <* 
- *>          DEBUG_LOOP   yLOG_senter ("bootskip");                                                    <* 
- *>       } else {                                                                                     <* 
- *>          DEBUG_LOOP   yLOG_senter ("normal");                                                      <* 
- *>       }                                                                                            <* 
- *>       DEBUG_LOOP   yLOG_svalue ("pid"     , x_data->rpid);                                         <* 
- *>       DEBUG_LOOP   yLOG_snote  (x_data->name);                                                     <* 
- *>       DEBUG_LOOP   yLOG_svalue ("wait_rc" , rc);                                                   <* 
- *>       DEBUG_LOOP   yLOG_snote  ("done");                                                           <* 
- *>       if (x_data->type == 'b' && my.test == 'y') {                                                 <* 
- *>          DEBUG_LOOP   yLOG_sexit  ("bootskip");                                                    <* 
- *>       } else {                                                                                     <* 
- *>          DEBUG_LOOP   yLOG_sexit  ("normal");                                                      <* 
- *>       }                                                                                            <* 
- *>       x_data->status = 'c';                                                                        <* 
- *>       yDLST_active_off (x_data->dlst);                                                             <* 
- *>       x_data->end    = yLOG_time();                                                                <* 
- *>       wait4 (x_data->rpid, &status, WNOHANG, &x_use);                                              <* 
- *>       x_data->swaps  = (int) (x_use.ru_nvcsw + x_use.ru_nivcsw);                                   <* 
- *>       x_data->u_time = (int) ((x_use.ru_utime.tv_sec * 1000) + (x_use.ru_utime.tv_usec / 1000));   <* 
- *>       x_data->s_time = (int) ((x_use.ru_stime.tv_sec * 1000) + (x_use.ru_stime.tv_usec / 1000));   <* 
- *>       if (strchr("abcm", x_data->type) != 0)  ++complete;                                          <* 
- *>       EXEC_children (x_data->dlst);                                                                <* 
- *>       ++i;                                                                                         <* 
- *>       x_data = (tPROC*) yDLST_active (NEXT);                                                       <* 
- *>    }                                                                                               <* 
- *>    DEBUG_LOOP   yLOG_value  ("requested" , requested);                                             <* 
- *>    DEBUG_LOOP   yLOG_value  ("running"   , running);                                               <* 
- *>    DEBUG_LOOP   yLOG_value  ("complete"  , complete);                                              <* 
-*>    /+---(complete)-----------------------+/                                                        <* 
-*>    DEBUG_LOOP   yLOG_exit  (__FUNCTION__);                                                         <* 
-*>    return -1;                                                                                      <* 
-*> }                                                                                                  <*/
-
-/*> char       /+ ---- : put all children into focus -----------------------------+/   <* 
- *> EXEC_children       (int  a_index)                                                 <* 
- *> {                                                                                  <* 
- *>    DEBUG_LOOP   yLOG_enter  (__FUNCTION__);                                        <* 
- *>    /+---(locals)-------*-----------------+/                                        <* 
- *>    int       i         = 0;            /+ loop iterator -- children           +/   <* 
- *>    tPROC    *x_data    = NULL;         /+ data payload for child              +/   <* 
- *>    char      x_msg     [100];                                                      <* 
- *>    /+---(identify parent)----------------+/                                        <* 
- *>    x_data = yDLST_index (a_index);                                                 <* 
- *>    sprintf (x_msg, "(%3d) %s", a_index, x_data->name);                             <* 
- *>    DEBUG_LOOP   yLOG_info   ("parent"    , x_msg);                                 <* 
- *>    /+---(walk children)------------------+/                                        <* 
- *>    x_data = yDLST_downs (a_index, i);                                              <* 
- *>    while (x_data != NULL) {                                                        <* 
- *>       sprintf (x_msg, "(%3d) %s", x_data->dlst, x_data->name);                     <* 
- *>       DEBUG_LOOP   yLOG_info   ("focus_on"  , x_msg);                              <* 
- *>       yDLST_focus_on  (x_data->dlst);                                              <* 
- *>       x_data = yDLST_downs (a_index, ++i);                                         <* 
- *>    }                                                                               <* 
- *>    /+---(complete)-----------------------+/                                        <* 
- *>    DEBUG_LOOP   yLOG_value  ("processed" , i);                                     <* 
- *>    DEBUG_LOOP   yLOG_exit   (__FUNCTION__);                                        <* 
- *>    return 0;                                                                       <* 
- *> }                                                                                  <*/
-
-
-
 /*====================------------------------------------====================*/
-/*===----                      unit test accessor                      ----===*/
+/*===----                         unit testing                         ----===*/
 /*====================------------------------------------====================*/
-static void      o___UNITTEST________________o (void) {;}
+static void  o___UNITTEST________o () { return; }
 
-
+char*        /*-> tbd --------------------------------[ light  [us.JC0.271.X1]*/ /*-[01.0000.00#.!]-*/ /*-[--.---.---.--]-*/
+exec__unit              (char *a_question)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rc          =    0;
+   /*---(defense)------------------------*/
+   snprintf (unit_answer, LEN_RECD, "EXEC unit        : question unknown");
+   /*---(simple)-------------------------*/
+   if      (strcmp (a_question, "done"      )     == 0) {
+      snprintf (unit_answer, LEN_RECD, "EXEC done        : %c", my.done_done);
+   }
+   /*---(complete)-----------------------*/
+   return unit_answer;
+}
 
 
 

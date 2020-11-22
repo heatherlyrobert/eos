@@ -20,111 +20,345 @@ int         running     = 0;
 int         complete    = 0;
 
 
+
+/*====================------------------------------------====================*/
+/*===----                     command-line support                     ----===*/
+/*====================------------------------------------====================*/
+static void  o___CLI_____________o () { return; }
+
+char
+base_file_verify        (uchar *a_name)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   int         rci         =    0;
+   tSTAT       st;
+   /*---(defense)------------------------*/
+   if (a_name == NULL)                   return 0;
+   if (strcmp (a_name, "") == 0)         return 0;
+   /*---(check for existance)------------*/
+   rci = lstat (a_name, &st);
+   DEBUG_FILE   yLOG_value   ("lstat"     , rci);
+   --rce; if (rci < 0) {
+      DEBUG_FILE   yLOG_note    ("file does not exist, can not read");
+      DEBUG_FILE   yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
+   /*---(check for regular file)---------*/
+   --rce;  if (!S_ISREG (st.st_mode)) {
+      DEBUG_FILE   yLOG_note    ("not a regular file, rejected");
+      DEBUG_FILE   yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
+   /*---(output)-------------------------*/
+   DEBUG_FILE   yLOG_note    ("confirmed as existing and is a regular file");
+   /*---(complete)-----------------------*/
+   return 1;
+}
+
+char
+base_file_cli           (char *a_terse, char *a_name)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_recd      [LEN_RECD]  = "";
+   int         l           =    0;
+   char       *x_valid     = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_/.";
+   int         i           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_FILE   yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_ARGS  yLOG_point   ("a_terse"   , a_terse);
+   --rce;  if (a_terse == NULL) {
+      yURG_error ("FATAL, option can not be null");
+      DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_ARGS  yLOG_info    ("a_terse"   , a_terse);
+   DEBUG_ARGS  yLOG_point   ("a_name"    , a_name);
+   --rce;  if (a_name == NULL) {
+      yURG_error ("FATAL, --%s <name>, name can not be null", a_terse);
+      DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_ARGS  yLOG_info    ("a_name"    , a_name);
+   strlcpy (x_recd, a_name, LEN_RECD);
+   /*---(check length)-------------------*/
+   l = strlen (x_recd);
+   DEBUG_ARGS  yLOG_value   ("l"         , l);
+   --rce;  if (l <= 0) {
+      yURG_error ("FATAL, --%s <name>, name can not be blank/empty", a_terse);
+      DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(check characters)---------------*/
+   --rce;  for (i = 0; i < l; ++i) {
+      if (strchr (x_valid, x_recd [i]) != NULL)  continue;
+      yURG_error ("FATAL, --%s <name>, name can not have a <%c> at character %d", a_terse, x_recd [i], i);
+      DEBUG_TOPS  yLOG_char  ("bad char"  , x_recd [i]);
+      DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(copy)---------------------------*/
+   --rce;  switch (a_terse [0]) {
+   case 'c' :
+      rc = base_file_verify (x_recd);
+      if (rc < 0) {
+         yURG_error ("FATAL, --%s <name>, name can not be found", a_terse);
+         DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
+         return rce;
+      }
+      strlcpy (my.n_conf, x_recd, LEN_FULL);
+      DEBUG_ARGS  yLOG_info    ("conf"      , my.n_conf);
+      break;
+   case 'e' :
+      strlcpy (my.n_exec, x_recd, LEN_FULL);
+      DEBUG_ARGS  yLOG_info    ("exec"      , my.n_exec);
+      break;
+   case 'p' :
+      strlcpy (my.n_perf, x_recd, LEN_FULL);
+      DEBUG_ARGS  yLOG_info    ("perf"      , my.n_perf);
+      break;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_FILE   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+
 /*====================------------------------------------====================*/
 /*===----                      daemons and signals                     ----===*/
 /*====================------------------------------------====================*/
 static void      o___DAEMON__________________o (void) {;}
 
-char               /* PURPOSE : daemonize the program ------------------------*/
-CONF_daemon         (void)
+char
+base_console            (void)
 {
-   /*---(locals)--------------------------------*/
-   int       i    = 0;                       /* loop iterator                 */
-   int       fd   = 0;                       /* file descriptor               */
-   int       rc   = 0;
-   /*---(begin)--------------------------*/
-   DEBUG_CONF   yLOG_enter   (__FUNCTION__);
-   /*---(check for foreground mode)-------------*/
-   if (my.daemon != 'y') {
-      yLOG_info  ("mode",   "user requested foreground mode running");
-      yLOG_exit  (__FUNCTION__);
-      printf ("     - debug is interactive\n");
-      printf ("     - will not daemonize\n");
-      return 0;
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tTERMIOS    x_tty;
+   int         x_fd        =   -1;
+   int         x_sid       =   -1;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(environment)--------------------*/
+   rc = putenv ("TERM=console");
+   printf (", term=%d", rc);
+   DEBUG_TOPS   yLOG_value   ("putenv"    , rc);
+   --rce;  if (rc != 0) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   yLOG_info  ("mode",   "moving into daemon mode");
-   /*> rc = yEXEC_daemon (my.logger, NULL);                                           <*/
-   /*---(fix the umask)-------------------------*/
-   umask(0077);
-   yLOG_info  ("umask",  "tighten the default file permissions");
-   /*---(close off all descriptors)-------------*/
-   for (i = 0; i < 256; ++i) {
-      if (i == my.logger) continue;
-      close(i);
+   /*---(open term)----------------------*/
+   x_fd = open ("/dev/tty1", O_RDWR | O_NOCTTY | O_NONBLOCK);
+   printf (", open %d", x_fd);
+   DEBUG_TOPS   yLOG_value   ("open"      , x_fd);
+   --rce;  if (x_fd < 0) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   yLOG_info  ("fds",    "closed all inherited file descriptors");
-   /*---(tie std fds to the bitbucket)----------*/
-   fd = open("/dev/null", O_RDWR);
-   if (fd < 0) {
-      yLOG_info  ("fds",    "creation of safe fd FAILED");
+   /*---(get attributes)-----------------*/
+   rc = tcgetattr (x_fd, &x_tty);
+   printf (", get %d", rc);
+   DEBUG_TOPS   yLOG_value   ("getattr"   , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
    }
-   dup2(fd, 0);
-   dup2(fd, 1);
-   dup2(fd, 2);
-   yLOG_info  ("std fds",   "redirect stdin, stdout, and stderr to /dev/null");
-   /*---(session id)----------------------------*/
-   /*> setsid();                                                                      <*/
-   /*---(complete)------------------------------*/
-   DEBUG_CONF   yLOG_exit    (__FUNCTION__);
+   /*---(change attributes)--------------*/
+   x_tty.c_cflag        &= CBAUD|CBAUDEX|CSIZE|CSTOPB|PARENB|PARODD;
+   x_tty.c_cflag        |= HUPCL|CLOCAL|CREAD;
+   x_tty.c_cc[VINTR]	    = CINTR;
+   x_tty.c_cc[VQUIT]	    = CQUIT;
+   x_tty.c_cc[VERASE]    = CERASE; /* ASCII DEL (0177) */
+   x_tty.c_cc[VKILL]	    = CKILL;
+   x_tty.c_cc[VEOF]	    = CEOF;
+   x_tty.c_cc[VTIME]	    = 0;
+   x_tty.c_cc[VMIN]	    = 1;
+   x_tty.c_cc[VSWTC]	    = _POSIX_VDISABLE;
+   x_tty.c_cc[VSTART]    = CSTART;
+   x_tty.c_cc[VSTOP]	    = CSTOP;
+   x_tty.c_cc[VSUSP]	    = CSUSP;
+   x_tty.c_cc[VEOL]	    = _POSIX_VDISABLE;
+   x_tty.c_cc[VREPRINT]  = CREPRINT;
+   x_tty.c_cc[VDISCARD]  = CDISCARD;
+   x_tty.c_cc[VWERASE]   = CWERASE;
+   x_tty.c_cc[VLNEXT]    = CLNEXT;
+   x_tty.c_cc[VEOL2]	    = _POSIX_VDISABLE;
+   x_tty.c_iflag         = IGNPAR|ICRNL|IXON|IXANY;
+   x_tty.c_oflag         = OPOST|ONLCR;
+   x_tty.c_lflag         = ISIG|ICANON|ECHO|ECHOCTL|ECHOPRT|ECHOKE;
+   x_tty.c_iflag        |=  IGNBRK;
+   x_tty.c_iflag        &= ~(BRKINT|INLCR|IGNCR|IXON);
+   x_tty.c_oflag        &= ~(OCRNL|ONLRET);
+   /*---(set attributes)-----------------*/
+   rc = tcsetattr (x_fd, TCSANOW, &x_tty);
+   printf (", set %d", rc);
+   DEBUG_TOPS   yLOG_value   ("setattr"   , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(flush data)---------------------*/
+   rc = tcflush (x_fd, TCIOFLUSH);
+   printf (", flush %d", rc);
+   DEBUG_TOPS   yLOG_value   ("flush"     , x_fd);
+   --rce;  if (x_fd < 0) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(close term)---------------------*/
+   rc = close (x_fd);
+   printf (", close %d", rc);
+   DEBUG_TOPS   yLOG_value   ("close"     , x_fd);
+   --rce;  if (x_fd < 0) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(set session id)-----------------*/
+   x_sid = setsid ();
+   printf (", x_sid %d", x_sid);
+   DEBUG_TOPS   yLOG_value   ("x_sid"     , x_sid);
+   /*> --rce;  if (x_sid < 0) {                                                       <* 
+    *>    DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);                              <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <*/
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
+char
+base_execute            (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   tTSPEC      x_dur;
+   int         x_ifboot    =    0;
+   char        x_args      [LEN_FULL];
+   int         i           = 0;
+   /*---(prepare)------------------------*/
+   x_dur.tv_sec    = 0;
+   x_dur.tv_nsec   = my.loop_msec * 1000000;
+   /*---(enter main loop)----------------*/
+   DEBUG_TOPS   yLOG_break   ();
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   while (my.done_done != 'y') {
+      /*---(looping)---------------------*/
+      DEBUG_LOOP   yLOG_break   ();
+      DEBUG_LOOP   yLOG_value   ("loop#"      , my.tic);
+      my.sec = time (NULL);
+      DEBUG_LOOP   yLOG_value   ("my.sec"     , my.sec);
+      /*---(checking)--------------------*/
+      rc = exec_check    (my.msec);
+      rc = exec_finish   (my.msec);
+      rc = exec_start    (my.msec);
+      rc = exec_dispatch (my.msec);
+      /*---(sleeping)--------------------*/
+      nanosleep  (&x_dur, NULL);
+      /*---(write sec ASAP)--------------*/
+      if (x_ifboot == 0 &&
+            access (WTMP, W_OK) == 0 &&
+            access (UTMP, W_OK) != 0) {
+         ySEC_startup ();
+         x_ifboot = 1;
+      }
+      /*---(done)------------------------*/
+      ++my.tic;
+      if (my.tic > my.loop_max)  break;
+   }
+   DEBUG_TOPS   yLOG_break   ();
+   /*---(report out)---------------------*/
+   if (my.done_done == 'y') {
+      DEBUG_TOPS   yLOG_note    ("ALL JOBS COMPLETE");
+   } else {
+      DEBUG_TOPS   yLOG_note    ("STOPPED WITHOUT ALL JOBS COMPLETE");
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
 
 char
-base_config             (void)
+base_kharon             (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        x_args      [LEN_FULL];
+   int         i           = 0;
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_char    ("run_mode"   , my.run_mode);
+   --rce;  if (my.run_mode != MODE_DAEMON) {
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(pass the torch)-----------------*/
+   /*> strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
+   strlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);
+   strlargs   (x_args, LEN_FULL, 20, &my.argc, my.argv);
+   DEBUG_LOOP   yLOG_value   ("argc"       , my.argc);
+   DEBUG_VIEW   printf ("arg count %d\n", my.argc);
+   for (i = 0; i < my.argc; ++i) {
+      DEBUG_LOOP   yLOG_bullet  (i            , my.argv [i]);
+      DEBUG_VIEW   printf ("arg %2d <<%s>>\n", i, my.argv [i]);
+   }
+   /*---(pass the torch)-----------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   PROG_end   ();
+   if (my.pid == 1)   rc = execvp (*my.argv, my.argv);
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+base_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
 {
    /*---(locals)-----------+-----------+-*/
    char        rce         =  -10;
    int         rc          =    0;
    char        x_type      =  '-';
+   int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(open file)----------------------*/
-   DEBUG_INPT  yLOG_info    ("name_conf"  , my.name_conf);
-   rc = yPARSE_open_in (my.name_conf);
-   DEBUG_INPT   yLOG_value   ("open"      , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
+   /*---(dispatch)-----------------------*/
+   switch (a_verb [0]) {
+   case 'G' :
+      rc = group_handler (n, a_verb);
+      break;
+   case 'A' :
+      rc = after_handler (n, a_verb);
+      break;
+   default  :
+      rc = proc_handler (n, a_verb);
+      break;
    }
-   /*---(lines)--------------------------*/
-   while (rc >= 0) {
-      /*---(read)------------------------*/
-      rc = yPARSE_read (&my.c_recdno, NULL);
-      DEBUG_INPT   yLOG_value   ("yparse"    , rc);
-      if (rc == 0) {
-         DEBUG_INPT  yLOG_note    ("end-of-file");
-         break;
-      }
-      --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      /*---(verb)------------------------*/
-      rc = yPARSE_popstr  (&my.c_verb);
-      DEBUG_INPT   yLOG_value   ("popstr"    , rc);
-      --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      DEBUG_INPT   yLOG_info    ("c_verb"    , my.c_verb);
-      x_type = my.c_verb [0];
-      DEBUG_INPT   yLOG_char    ("x_type"    , x_type);
-      /*---(handle)----------------------*/
-      if (x_type == 'G')     rc = group_create ();
-      else                   rc = proc_create  (x_type);
-      DEBUG_INPT   yLOG_value   ("create"    , rc);
-      --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return rce;
-      }
-      /*---(done)------------------------*/
-   }
-   /*---(close file)---------------------*/
-   rc = yPARSE_close_in ();
-   DEBUG_INPT   yLOG_value   ("close"     , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+base_config             (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   yDLST_purge ();
+   DEBUG_INPT  yLOG_info    ("n_conf"     , my.n_conf);
+   rc = yPARSE_autoread (my.n_conf, NULL, base_handler);
+   /*> rc = base_confi();                                                           <*/
+   DEBUG_PROG  yLOG_value   ("config"    , rc);
+   --rce;  if (rc <  0) {
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      /*> wait_sec ("its over",   rc,  20);                                           <*/
+      /*> PROG_end ();                                                                <*/
       return rce;
    }
    /*---(complete)-----------------------*/
@@ -132,92 +366,42 @@ base_config             (void)
    return 0;
 }
 
-/*> char             /+ [------] clean report of critical process feedback -------+/                                                                                                                                                  <* 
- *> CONF_report         (char a_mode)                                                                                                                                                                                                 <* 
- *> {                                                                                                                                                                                                                                 <* 
- *>    /+---(begin)--------------------------+/                                                                                                                                                                                       <* 
- *>    DEBUG_CONF   yLOG_enter   (__FUNCTION__);                                                                                                                                                                                      <* 
- *>    int         rc          = 0;                                                                                                                                                                                                   <* 
- *>    int         i           = 0;                       /+ loop iterator                 +/                                                                                                                                         <* 
- *>    int         status      = 0;                                                                                                                                                                                                   <* 
- *>    tRUSAGE     r_use;                                                                                                                                                                                                             <* 
- *>    FILE       *output      = NULL;                                                                                                                                                                                                <* 
- *>    char       *xname       = NULL;                                                                                                                                                                                                <* 
- *>    tPROC      *xdata       = NULL;                                                                                                                                                                                                <* 
- *>    char       *xsave       = NULL;                                                                                                                                                                                                <* 
- *>    char       *q           = "\x1F";                                                                                                                                                                                              <* 
- *>    long        now;                                 /+ present datetime         +/                                                                                                                                                <* 
- *>    tTIME      *curr_time   = NULL;                                                                                                                                                                                                <* 
- *>    char        msg         [200];                                                                                                                                                                                                 <* 
- *>    /+---(open output)--------------------+/                                                                                                                                                                                       <* 
- *>    DEBUG_CONF   yLOG_info  ("file"    , my.name_perf);                                                                                                                                                                            <* 
- *>    output = fopen (my.name_perf, "w");                                                                                                                                                                                            <* 
- *>    /+> output = stdout;                                                               <+/                                                                                                                                         <* 
- *>    DEBUG_CONF   yLOG_point ("file*"   , output);                                                                                                                                                                                  <* 
- *>    /+---(get the date)-----------------------+/                                                                                                                                                                                   <* 
- *>    now = time(NULL);                                                                                                                                                                                                              <* 
- *>    curr_time = localtime(&now);                                                                                                                                                                                                   <* 
- *>    /+> strftime(msg, 50, "%Ss %Mm %Hh %dd %mm  %ww", curr_time);                      <+/                                                                                                                                         <* 
- *>    strftime (msg, 50, "%y.%m.%d.%H.%m.%S.%W", curr_time);                                                                                                                                                                         <* 
- *>    /+---(write header)-----------------------+/                                                                                                                                                                                   <* 
- *>    fprintf (output, "# EOS (goddess of daybreak, rosy-fingered dawn)\n");                                                                                                                                                         <* 
- *>    fprintf (output, "# summary results reporting\n");                                                                                                                                                                             <* 
- *>    fprintf (output, "# written %s\n",   msg);                                                                                                                                                                                     <* 
- *>    if (a_mode == 'a') {                                                                                                                                                                                                           <* 
- *>       fprintf (output, "# AFTER last run\n");                                                                                                                                                                                     <* 
- *>    } else {                                                                                                                                                                                                                       <* 
- *>       fprintf(output, "# before last run\n");                                                                                                                                                                                     <* 
- *>    }                                                                                                                                                                                                                              <* 
- *>    fprintf(output, "#\n");                                                                                                                                                                                                        <* 
- *>    fprintf(output, "# ref  line  -----name---------  -  -------------------------desc------------------------  ---user---  --status--  -rpid-  --start---  ---end----  -rc-  u_time  s_time  swap  --dur- \n");    <* 
- *>    DEBUG_CONF   yLOG_note  ("writing lines...");                                                                                                                                                                                  <* 
- *>    /+---(grab head)----------------------+/                                                                                                                                                                                       <* 
- *>    xname = yDLST_lists (HEAD);                                                                                                                                                                                                    <* 
- *>    while (xname != NULL) {                                                                                                                                                                                                        <* 
- *>       xsave = xname;                                                                                                                                                                                                              <* 
- *>       DEBUG_CONF   yLOG_enter (xsave);                                                                                                                                                                                            <* 
- *>       xdata = (tPROC*) yDLST_list (CURR, HEAD);                                                                                                                                                                                   <* 
- *>       while (xdata != NULL) {                                                                                                                                                                                                     <* 
- *>          DEBUG_CONF   yLOG_info  ("link",    xdata->name);                                                                                                                                                                        <* 
- *>          ++i;                                                                                                                                                                                                                     <* 
- *>          /+---(references)---------------+/                                                                                                                                                                                       <* 
- *>          fprintf(output, "  %3d ", i);                                                                                                                                                                                           <* 
- *>          if (xdata->seq  <= 0) fprintf(output, " %4s ", "    ");                                                                                                                                                                 <* 
- *>          else                  fprintf(output, " %4d ", xdata->seq);                                                                                                                                                             <* 
- *>          if (xdata->type == '-') {                                                                                                                                                                                                <* 
- *>             fprintf(output, " %-15.15s     %c  %-50.50s    ", xdata->name   , ' ', xdata->desc  );                                                                                                                             <* 
- *>             fprintf(output, "                                                                                            \n");                                                                                          <* 
- *>          } else {                                                                                                                                                                                                                 <* 
- *>             fprintf(output, "    %-15.15s  %c     %-50.50s  %-10.10s  %-10.10s ",                                                                                                                                            <* 
- *>                   xdata->name   , xdata->type   , xdata->desc  , xdata->user   , xdata->result);                                                                                                                                  <* 
- *>             if (xdata->rpid == 0) {                                                                                                                                                                                               <* 
- *>                fprintf(output, "                                                                    \n");                                                                                                                 <* 
- *>             } else {                                                                                                                                                                                                              <* 
- *>                fprintf(output, " %6d  %10lld ", xdata->rpid   , xdata->start);                                                                                                                                                  <* 
- *>                if (strchr("sd", xdata->type) != 0) {                                                                                                                                                                              <* 
- *>                   fprintf(output, "                                                \n");                                                                                                                                    <* 
- *>                } else {                                                                                                                                                                                                           <* 
- *>                   fprintf(output, " %10lld  %4d  %6ld  %6ld  %4d  %6lld \n",                                                                                                                                                <* 
- *>                         xdata->end  , xdata->rc     , xdata->u_time , xdata->s_time ,                                                                                                                                             <* 
- *>                         xdata->swaps, xdata->end - xdata->start);                                                                                                                                                                 <* 
- *>                }                                                                                                                                                                                                                  <* 
- *>             }                                                                                                                                                                                                                     <* 
- *>          }                                                                                                                                                                                                                        <* 
-*>          xdata = (tPROC*) yDLST_list (CURR, NEXT);                                                                                                                                                                                <* 
-*>       }                                                                                                                                                                                                                           <* 
-*>       DEBUG_CONF   yLOG_exit  (xsave);                                                                                                                                                                                            <* 
-*>       xname = yDLST_lists (NEXT);                                                                                                                                                                                                 <* 
-*>    }                                                                                                                                                                                                                              <* 
-*>    fprintf (output, "# ref  line  -----name---------  -  -------------------------desc------------------------  ---user---  --status--  -rpid-  --start---  ---end----  -rc-  u_time  s_time  swap  --dur- \n");   <* 
-*>    fprintf (output, "# end of report\n");                                                                                                                                                                                         <* 
-*>    fflush (output);                                                                                                                                                                                                               <* 
-*>    DEBUG_CONF   yLOG_info  ("flushing", "done");                                                                                                                                                                                  <* 
-*>    fclose (output);                                                                                                                                                                                                               <* 
-*>    output = NULL;                                                                                                                                                                                                                 <* 
-*>    DEBUG_CONF   yLOG_info  ("closing" , "done");                                                                                                                                                                                  <* 
-*>    DEBUG_CONF   yLOG_exit    (__FUNCTION__);                                                                                                                                                                                      <* 
-*>    return  0;                                                                                                                                                                                                                     <* 
-*> }                                                                                                                                                                                                                                 <*/
+
+
+/*====================------------------------------------====================*/
+/*===----                         unit testing                         ----===*/
+/*====================------------------------------------====================*/
+static void  o___UNITTEST________o () { return; }
+
+char*        /*-> tbd --------------------------------[ light  [us.JC0.271.X1]*/ /*-[01.0000.00#.!]-*/ /*-[--.---.---.--]-*/
+base__unit              (char *a_question)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rc          =    0;
+   char        x_exist     =  '-';
+   int         n           =    0;
+   /*---(defense)------------------------*/
+   snprintf (unit_answer, LEN_RECD, "BASE unit        : question unknown");
+   /*---(simple)-------------------------*/
+   if      (strcmp (a_question, "conf"      )     == 0) {
+      rc = base_file_verify (my.n_conf);
+      if      (rc >  0)  x_exist = 'y';
+      else if (rc <= 0)  x_exist = '-';
+      snprintf (unit_answer, LEN_RECD, "BASE conf        : %c  %2d[%s]",
+            x_exist, strlen (my.n_conf), my.n_conf);
+   }
+   else if (strcmp (a_question, "exec"      )     == 0) {
+      snprintf (unit_answer, LEN_RECD, "BASE exec        : %c  %2d[%s]",
+            x_exist, strlen (my.n_exec), my.n_exec);
+   }
+   else if (strcmp (a_question, "perf"      )     == 0) {
+      snprintf (unit_answer, LEN_RECD, "BASE perf        : %c  %2d[%s]",
+            x_exist, strlen (my.n_perf), my.n_perf);
+   }
+   /*---(complete)-----------------------*/
+   return unit_answer;
+}
+
 
 
 

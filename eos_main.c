@@ -1,6 +1,17 @@
 /*===============================[[ beg-code ]]===============================*/
 #include    "eos.h"
 
+char
+wait_sec           (char *a_func, char a_rc, int a_sec)
+{
+   int         i           =    0;
+   printf ("%-12.12s  : returned %d\n", a_func, a_rc);
+   for (i = 0; i < a_sec; ++i) {
+      printf ("sleep %d\n", i);
+      sleep (1);
+   }
+   return 0;
+}
 
 int              /* [------] main entry point --------------------------------*/
 main               (int a_argc, char *a_argv[])
@@ -8,99 +19,53 @@ main               (int a_argc, char *a_argv[])
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
-   char        xwhich      [100];
-   int         xitem       = -1;
-   tPROC      *xproc       = NULL;
-   int         fd;
-   int         boot_recd   = 0;
-   char        backup2     [LEN_CMD];
-   tTSPEC      x_dur;
-   long        x_loop      = 0;
-   int         i           = 0;
    /*---(initialize)---------------------*/
+   printf ("\n");
+   printf ("%s\n", P_NAMESAKE);
+   printf ("heritage  : %s\n", P_HERITAGE);
+   printf ("imagery   : %s\n", P_IMAGERY);
+   printf ("purpose   : %s\n", P_PURPOSE);
+   printf ("version   : %s\n", PROG_version    ());
+   printf ("\n");
+   if (rc >= 0)  rc = PROG_preinit ();
    if (rc >= 0)  rc = yURG_logger  (a_argc, a_argv);
    if (rc >= 0)  rc = yURG_urgs    (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_init    (a_argv [0][0]);
+   if (rc >= 0)  rc = PROG_init    (a_argc, a_argv);
    if (rc >= 0)  rc = PROG_args    (a_argc, a_argv);
    if (rc >= 0)  rc = PROG_begin   ();
    /*---(defense)------------------------*/
    DEBUG_PROG  yLOG_value   ("startup"   , rc);
    --rce;  if (rc <  0) {
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      wait_sec ("its over",   rc,  20);
       PROG_end ();
       return rce;
    }
    /*---(read config)--------------------*/
-   /*> if (rc == 0)  rc = CONF_daemon  ();                                             <*/
-   /*> if (rc == 0)  rc = CONF_signal  ();                                            <*/
-   /*> if (rc == 0)  rc = CONF_open    ();                                            <* 
-    *> if (rc == 0)  rc = CONF_read    ();                                            <* 
-    *> while (rc == 0) {                                                              <* 
-    *>    rc = CONF_parse   ();                                                       <* 
-    *>    if (rc == 0)  rc = CONF_read    ();                                         <* 
-    *> }                                                                              <* 
-    *> DEBUG_TOPS   yLOG_break   ();                                                  <* 
-    *> if (rc > 0)   rc = 0;                                                          <* 
-    *> if (rc == 0)  rc = CONF_list    ();                                            <* 
-    *> if (rc == 0)  rc = CONF_report  ('b');                                         <* 
-    *> if (rc == 0)  rc = CONF_close   ();                                            <* 
-    *> if (rc == 0)  rc = CONF_tableview ();                                          <*/
-   /*---(defense)------------------------*/
-   if (rc != 0) {
-      DEBUG_TOPS   yLOG_value   ("rc"        , rc);
-      DEBUG_TOPS   yLOG_note    ("one of the CONF functions failed");
-      PROG_end    ();
-      exit (-2);
+   rc = base_config ();
+   DEBUG_PROG  yLOG_value   ("config"    , rc);
+   --rce;  if (rc <  0) {
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      wait_sec ("its over",   rc,  20);
+      PROG_end ();
+      return rce;
    }
-   /*---(prepare)------------------------*/
-   x_dur.tv_sec    = 0;
-   /*> x_dur.tv_nsec   = 100000; // 0.001 second                                      <*/
-   /*> x_dur.tv_nsec   = 100000000; // 0.1 second                                     <*/
-   x_dur.tv_nsec   = my.loop_msec * 1000000;
-   /*> yDLST_focus_on  (0);                                                           <*/
-   /*---(enter main loop)----------------*/
-   DEBUG_TOPS   yLOG_break   ();
-   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   while (my.done_done != 'y') {
-      /*---(checking)--------------------*/
-      DEBUG_LOOP   yLOG_break   ();
-      exec_check    ();
-      exec_finish   ();
-      exec_start    ();
-      exec_dispatch ();
-      /*---(sleeping)--------------------*/
-      nanosleep    (&x_dur, NULL);
-      /*---(write sec ASAP)--------------*/
-      if (boot_recd == 0 &&
-            access (WTMP, W_OK) == 0 &&
-            access (UTMP, W_OK) != 0) {
-         ySEC_startup ();
-         boot_recd = 1;
-      }
-
-      /*---(done)------------------------*/
-      ++x_loop;
-      DEBUG_LOOP   yLOG_value   ("loop#"      , x_loop);
-      if (x_loop > my.loop_max)  break;
+   /*---(modes)--------------------------*/
+   switch (my.run_mode) {
+   case MODE_VERIFY  :
+      /*---(nothing more to do */
+      break;
+   case MODE_NORMAL  :
+      rc = base_execute ();
+      break;
+   case MODE_DAEMON  :
+      rc = base_execute ();
+      rc = PROG_end ();
+      rc = base_kharon  ();
+      break;
    }
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   /*---(report out)---------------------*/
-   if (my.done_done == 'y') {
-      DEBUG_TOPS   yLOG_note    ("ALL JOBS COMPLETE");
-   } else {
-      DEBUG_TOPS   yLOG_note    ("STOPPED WITHOUT ALL JOBS COMPLETE");
-   }
-   /*> CONF_report   ('a');                                                           <*/
-   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
-   /*---(pass the torch)-----------------*/
-   strlcpy    (backup2, "/sbin/kharon --acheron --leisurely", LEN_CMD);
-   strlargs   (backup2, LEN_CMD, 20, &my.argc, my.argv);
-   printf ("arg count %d\n", my.argc);
-   for (i = 0; i < my.argc; ++i) {
-      printf ("arg %2d <<%s>>\n", i, my.argv [i]);
-   }
-   PROG_end   ();
-   if (my.pid == 1)   rc = execvp (*my.argv, my.argv);
+   /*---(wrapup)-------------------------*/
+   rc = PROG_end ();
    /*---(complete)-----------------------*/
    return 0;
 }

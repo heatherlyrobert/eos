@@ -3,30 +3,74 @@
 
 
 
+static char s_print     [LEN_RECD]  = "";
+
+
+
 /*====================------------------------------------====================*/
-/*===----                      fundamental actions                     ----===*/
+/*===----                    cleansing and cleaning                    ----===*/
 /*====================------------------------------------====================*/
-static void  o___PRIMATIVE_______o () { return; }
+static void  o___CLEAN___________o () { return; }
 
 char
-group__wipe             (tGROUP *a_dst)
+group__wipe             (tGROUP *a_group)
 {
    /*---(master)-------------------------*/
    DEBUG_INPT   yLOG_snote   ("wipe master");
-   a_dst->line        =    0;
-   a_dst->name    [0] = '\0';
-   a_dst->desc    [0] = '\0';
+   a_group->line        =    0;
+   a_group->name    [0] = '\0';
+   a_group->desc    [0] = '\0';
    /*---(processing)---------------------*/
    DEBUG_INPT   yLOG_snote   ("wipe processing");
-   a_dst->status      = GROUP_READY;
-   a_dst->requested   =    0;
-   a_dst->completed   =    0;
+   a_group->status      = GROUP_READY;
+   a_group->requested   =    0;
+   a_group->completed   =    0;
+   /*---(timing)-------------------------*/
+   a_group->beg         =    0;
+   a_group->end         =    0;
+   a_group->dur         =    0;
+   a_group->warning     =  '-';
    /*---(done)---------------------------*/
-   return 0;
+   return 1;
 }
 
-tGROUP*
-group__new              (void)
+char*
+group__memory           (tGROUP *a_group)
+{
+   strlcpy (s_print, "[", LEN_RECD);
+   if (a_group->line == 0)             strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   if (strlen (a_group->name) == 0)    strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   if (strlen (a_group->desc) == 0)    strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   strlcat (s_print, ".", LEN_RECD);
+   if (a_group->status == GROUP_READY) strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   if (a_group->requested == 0)        strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   if (a_group->completed == 0)        strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   strlcat (s_print, ".", LEN_RECD);
+   if (a_group->beg       == 0)        strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   if (a_group->end       == 0)        strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   if (a_group->warning   == '-')      strlcat (s_print, "_", LEN_RECD);
+   else                                strlcat (s_print, "X", LEN_RECD);
+   strlcat (s_print, "]", LEN_RECD);
+   return s_print;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                     allocation and freeing                   ----===*/
+/*====================------------------------------------====================*/
+static void  o___MEMORY__________o () { return; }
+
+char
+group__new                  (tGROUP **a_new)
 {
    /*---(locals)-----------+-----+-----+-*/
    int         rce         =  -10;
@@ -35,30 +79,65 @@ group__new              (void)
    tGROUP     *x_new       = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_senter  (__FUNCTION__);
-   /*---(create)-------------------------*/
-   while (++x_tries < 10) {
+   /*---(check return)-------------------*/
+   DEBUG_INPT   yLOG_spoint  (a_new);
+   --rce;  if (a_new == NULL) {
+      DEBUG_INPT   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT   yLOG_spoint  (*a_new);
+   --rce;  if (*a_new != NULL) {
+      DEBUG_INPT   yLOG_snote   ("already set");
+      DEBUG_INPT   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(default)------------------------*/
+   *a_new = NULL;
+   /*---(allocate)-----------------------*/
+   while (x_new == NULL) {
+      ++x_tries;
       x_new = (tGROUP *) malloc (sizeof (tGROUP));
-      if (x_new != NULL)     break;
+      if (x_tries > 3)   break;
    }
    DEBUG_INPT   yLOG_sint    (x_tries);
    DEBUG_INPT   yLOG_spoint  (x_new);
    --rce;  if (x_new == NULL) {
       DEBUG_INPT   yLOG_sexitr  (__FUNCTION__, rce);
-      return NULL;
+      return rce;
    }
    /*---(wipe)---------------------------*/
    group__wipe (x_new);
+   /*---(save return)--------------------*/
+   *a_new = x_new;
    /*---(complete)-----------------------*/
    DEBUG_INPT   yLOG_sexit   (__FUNCTION__);
-   return x_new;
+   return 0;
 }
 
 char
-group__populate         (tGROUP *a_dst)
+group__free             (tGROUP **a_old)
 {
-   a_dst->line = yPARSE_recdno ();
-   strlcpy (a_dst->name  , my.g_name  , LEN_NAME);
-   strlcpy (a_dst->desc  , my.g_desc  , LEN_DESC);
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   /*---(header)-------------------------*/
+   DEBUG_DATA   yLOG_senter  (__FUNCTION__);
+   /*---(check return)-------------------*/
+   DEBUG_DATA   yLOG_spoint  (a_old);
+   --rce;  if (a_old == NULL) {
+      DEBUG_DATA   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_DATA   yLOG_spoint  (*a_old);
+   --rce;  if (*a_old == NULL) {
+      DEBUG_DATA   yLOG_snote   ("never set");
+      DEBUG_DATA   yLOG_sexitr  (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(clear and return)---------------*/
+   free (*a_old);
+   *a_old = NULL;
+   /*---(complete)-----------------------*/
+   DEBUG_DATA   yLOG_sexit   (__FUNCTION__);
    return 0;
 }
 
@@ -70,146 +149,89 @@ group__populate         (tGROUP *a_dst)
 static void  o___ACTIONS_________o () { return; }
 
 char
-group__parse            (void)
+group_handler           (int n, uchar *a_verb)
 {
    /*---(locals)-----------+-----------+-*/
    char        rce         =  -10;
    int         rc          =    0;
-   int         x_fields    =    0;
-   char        t           [LEN_NAME];
-   tGROUP     *x_group     = NULL;
+   char        x_label     [LEN_LABEL] = "";
+   char        x_desc      [LEN_DESC]  = "";
+   tGROUP     *x_new       = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(prepare)------------------------*/
-   DEBUG_INPT  yLOG_note    ("clear out working area");
-   my.g_ready = '-';
-   strlcpy (my.g_name    , ""         , LEN_NAME);
-   strlcpy (my.g_desc    , ""         , LEN_DESC);
-   /*---(field count)--------------------*/
-   rc = yPARSE_ready (&x_fields);
-   DEBUG_INPT   yLOG_value   ("ready"     , rc);
-   --rce;  if (rc != 'y') {
+   /*---(defense)------------------------*/
+   DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
+   --rce;  if (a_verb == NULL) {
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   DEBUG_INPT   yLOG_value   ("fields"    , x_fields);
-   --rce; if (x_fields != 8) {
+   DEBUG_INPT  yLOG_info    ("a_verb"    , a_verb);
+   --rce;  if (strcmp (a_verb, "GROUP") != 0) {
+      DEBUG_INPT  yLOG_note    ("incorrect verb handler called");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   /*---(name)---------------------------*/
-   rc = yPARSE_popstr  (my.g_name);
-   DEBUG_INPT   yLOG_value   ("name"      , rc);
+   /*---(parse fields)-------------------*/
+   rc = yPARSE_scanf (a_verb, "LD", x_label, x_desc);
+   DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("g_name"    , my.g_name);
-   x_group = yDLST_list_find (my.g_name);
-   DEBUG_INPT   yLOG_point   ("x_group"   , x_group);
-   --rce;  if (x_group != NULL) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(desc)---------------------------*/
-   rc = yPARSE_popstr  (my.g_desc);
-   DEBUG_INPT   yLOG_value   ("desc"      , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_INPT   yLOG_info    ("g_desc"    , my.g_desc);
-   /*---(junk)---------------------------*/
-   rc = yPARSE_popstr  (t);
-   DEBUG_INPT   yLOG_value   ("junk"      , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(set ready)----------------------*/
-   my.g_ready = 'y';
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-group__link             (void)
-{
-   /*---(locals)-----------+-----------+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   char        x_before    [LEN_NAME];
-   int         c           =    0;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(run links)----------------------*/
-   while (1) {
-      /*---(name)---------------------------*/
-      rc = yPARSE_popstr  (x_before);
-      DEBUG_INPT   yLOG_value   ("popstr"    , rc);
-      --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return c;
-      }
-      DEBUG_INPT   yLOG_info    ("x_before"  , x_before);
-      DEBUG_INPT   yLOG_char    ("[0]"       , x_before [0]);
-      --rce;  if (x_before [0] == '-') {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return c;
-      }
-      rc = yDLST_seq_after (x_before);
-      --rce;  if (rc < 0) {
-         DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-         return c;
-      }
-      ++c;
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
-
-char
-group_create            (void)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rc          =    0;
-   tGROUP     *x_group     = NULL;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   /*---(parse the record)---------------*/
-   rc = group__parse ();
-   DEBUG_INPT   yLOG_value   ("parse"     , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    /*---(create data)--------------------*/
-   x_group = group__new ();
-   DEBUG_INPT   yLOG_point   ("x_group"   , x_group);
-   --rce;  if (x_group == NULL) {
+   rc = group__new (&x_new);
+   DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
+   --rce;  if (x_new == NULL) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(populate)-----------------------*/
-   rc = group__populate (x_group);
-   DEBUG_INPT   yLOG_value   ("populate"  , rc);
+   x_new->line = n;
+   strlcpy (x_new->name, x_label, LEN_LABEL);
+   strlcpy (x_new->desc, x_desc , LEN_DESC);
+   /*---(create list)--------------------*/
+   rc = yDLST_list_create (x_new->name, x_new);
+   DEBUG_INPT   yLOG_value   ("yDLST"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+after_handler           (int n, uchar *a_verb)
+{
+   /*---(locals)-----------+-----------+-*/
+   char        rce         =  -10;
+   int         rc          =    0;
+   char        x_label     [LEN_LABEL] = "";
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
+   --rce;  if (a_verb == NULL) {
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
+   DEBUG_INPT  yLOG_info    ("a_verb"    , a_verb);
+   --rce;  if (strcmp (a_verb, "AFTER") != 0) {
+      DEBUG_INPT  yLOG_note    ("incorrect verb handler called");
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
+   /*---(parse fields)-------------------*/
+   rc = yPARSE_scanf (a_verb, "L", x_label);
+   DEBUG_INPT  yLOG_value   ("scanf"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    /*---(create list)--------------------*/
-   rc = yDLST_list_create (x_group->name, x_group);
-   DEBUG_INPT   yLOG_value   ("create"    , rc);
-   --rce;  if (rc < 0) {
-      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(link)---------------------------*/
-   rc = group__link ();
-   DEBUG_INPT   yLOG_value   ("group"     , rc);
+   rc = yDLST_seq_after (x_label);
+   DEBUG_INPT   yLOG_value   ("after"     , rc);
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -230,51 +252,63 @@ char*            /*--> unit test accessor ------------------------------*/
 group__unit             (char *a_question, int a_num)
 {
    /*---(locals)-----------+-----+-----+-*/
+   char        rc          =    0;
    char        t           [LEN_RECD]  = "[ALPHA]";
    char        s           [LEN_RECD]  = "[OMEGA]";
    int         c           =    0;
    tGROUP     *x_group     = NULL;
+   void       *x_void      = NULL;
    tGROUP     *x_after     = NULL;
    char        x_ready     =  '-';
    int         x_fields    =    0;
    /*---(prepare)------------------------*/
    strlcpy  (unit_answer, "GROUP            : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
+   yDLST_backup ();
    if      (strcmp (a_question, "entry"   )        == 0) {
-      x_group = (tGROUP *) yDLST_list_entry (a_num, &c);
+      yDLST_list_by_index (a_num, NULL, &x_group);
       if (x_group != NULL) {
-         sprintf (t, "[%s]", x_group->name);
-         snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) : %2d%-30.30s    %2d  %2d", a_num, strlen (x_group->name), t, x_group->line, c);
+         sprintf (t, "%2d[%-.15s]", strlen (x_group->name), x_group->name);
+         sprintf (s, "%2d[%-.40s]", strlen (x_group->desc), x_group->desc);
+         snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) : %-19.19s  %2d  %s", a_num, t, x_group->line, s);
       } else {
-         snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) :  0[]                                 0   0", a_num);
+         snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) :  -[]                  -   -[]", a_num);
       }
    }
    else if (strcmp (a_question, "exec"    )        == 0) {
-      x_group = (tGROUP *) yDLST_list_entry (a_num, &c);
+      yDLST_list_by_index (a_num, NULL, &x_group);
       if (x_group != NULL) {
-         sprintf (t, "[%s]", x_group->name);
-         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) : %2d%-30.30s    %2d  %2d  %c", a_num, strlen (x_group->name), t, x_group->requested, x_group->completed, x_group->status);
+         sprintf (t, "%2d[%-.15s]", strlen (x_group->name), x_group->name);
+         strlcpy (s, "[", LEN_RECD);
+         rc = yDLST_seq_by_cursor ('<', '[', &x_void, NULL, &x_after);
+         while (rc >= 0 && x_void != NULL) {
+            if (c > 0)  strlcat (s, ", ", LEN_RECD);
+            if (x_after == NULL)  strlcat (s, "SEQ_ALPHA"    , LEN_RECD);
+            else                  strlcat (s, x_after->name  , LEN_RECD);
+            rc = yDLST_seq_by_cursor ('<', '>', &x_void, NULL, &x_after);
+            ++c;
+         }
+         strlcat (s, "]", LEN_RECD);
+         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) : %-19.19s  %2d  %2d  %c  %1d%s", a_num, t, x_group->requested, x_group->completed, x_group->status, c, s);
       } else {
-         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) :  0[]                                 0   0  -", a_num);
+         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) :  -[]                  -   -  -  -[]", a_num);
       }
-   }
-   else if (strcmp (a_question, "yparse"  )        == 0) {
-      x_ready = yPARSE_ready (&x_fields);
-      snprintf (unit_answer, LEN_RECD, "GROUP yparse     : %2d  %c", x_fields, x_ready);
    }
    else if (strcmp (a_question, "count"   )        == 0) {
       snprintf (unit_answer, LEN_RECD, "GROUP count      : %d", yDLST_list_count ());
    }
    else if (strcmp (a_question, "seq"     )        == 0) {
-      x_group = (tGROUP *) yDLST_seq_entry (a_num, &x_after);
-      if (x_group != NULL)  sprintf (t, "[%s]", x_group->name);
-      if (x_after != NULL)  sprintf (s, "[%s]", x_after->name);
+      /*> x_group = (tGROUP *) yDLST_seq_by_index ('*', a_num, NULL, NULL, &x_after);   <* 
+       *> yDLST_list_by_index (a_num, NULL, &x_group);                                  <* 
+       *> if (x_group != NULL)  sprintf (t, "[%s]", x_group->name);                     <* 
+       *> if (x_after != NULL)  sprintf (s, "[%s]", x_after->name);                     <*/
       if (x_group == NULL && x_after == NULL) {
          snprintf (unit_answer, LEN_RECD, "GROUP seq   (%2d) : []                     []", a_num);
       } else {
          snprintf (unit_answer, LEN_RECD, "GROUP seq   (%2d) : %-20.20s   %s", a_num, t, s);
       }
    }
+   yDLST_restore ();
    /*---(complete)-----------------------*/
    return unit_answer;
 }

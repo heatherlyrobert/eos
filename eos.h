@@ -1,30 +1,45 @@
 /*============================[[    beg-code    ]]============================*/
 
 /*===[[ HEADER ]]=============================================================*/
-/*
- *   focus         : (SA) system administration
- *   niche         : (in) initialization
- *   purpose       : simple, reliable, and transparent system initialization
- *
- *   namesake      : eos-rhododactylos (rosy-fingered)
- *   heritage      : titaness of daybreak, opens the gates of heaven for the sun
- *   imagery       : radiant winged woman with golden arms and rosy fingers
- *
- *   base_system   : gnu/linux   (powerful, ubiquitous, technical, and hackable)
- *   lang_name     : ansi-c      (wicked, limitless, universal, and everlasting)
- *   dependencies  : yLOG, yDLST, dash
- * 
- *   author        : heatherly
- *   created       : 2010-10
- *   size          : small       (approximately 1,000 slocL)
- *
- *   priorities    : direct, simple, brief, vigorous, and lucid (h.w. fowler)
- *   end goal      : loosely coupled, strict interface, maintainable, portable
- * 
- *   simplicity is prerequisite for reliability and security; but logging,
- *   tracing, and unit testing are signs of true wisdom
- *
- */
+/*345678901-12345678901-123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
+
+#define     P_FOCUS     "SA (system administration)"
+#define     P_NICHE     "in (initializtation)"
+#define     P_SUBJECT   "system initialization"
+#define     P_PURPOSE   "simple, reliable, and very transparent system initialization"
+
+#define     P_NAMESAKE  "eos-rhododactylos (rosy-fingered dawn)"
+#define     P_HERITAGE  "titaness of daybreak who opens the gates of heaven for the sun"
+#define     P_IMAGERY   "radiant worman with white wings, golden arms, and rosy fingers"
+#define     P_REASON    ""
+
+#define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
+
+#define     P_BASENAME  ""
+#define     P_FULLPATH  ""
+#define     P_SUFFIX    ""
+#define     P_CONTENT   ""
+
+#define     P_SYSTEM    "gnu/linux   (powerful, ubiquitous, technical, and hackable)"
+#define     P_LANGUAGE  "ansi-c      (wicked, limitless, universal, and everlasting)"
+#define     P_CODESIZE  "small       (appoximately 1,000 slocl)"
+#define     P_DEPENDS   "yDLST, yEXEC, ySEC, ySTR, yPARSE"
+
+#define     P_AUTHOR    "heatherlyrobert"
+#define     P_CREATED   "2010-10"
+
+#define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
+#define     P_VERMINOR  "2.1-, starting rebuild back up"
+#define     P_VERNUM    "2.1a"
+#define     P_VERTXT    "fully updated execution details and unit testing"
+
+#define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
+#define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
+#define     P_REMINDER  "there are many better options, but i *own* every byte of this one"
+
+/*345678901-12345678901-123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
+
+
 
 /*===[[ SUMMARY ]]============================================================*/
 /* 
@@ -261,11 +276,7 @@
 
 
 
-/*===[[ VERSIONING ]]=========================================================*/
-/* rapidly evolving version number to aid with visual change confirmation     */
-#define     VER_NUM   "2.0e"
-#define     VER_TXT   "checking for mounts is now ready and unit tested"
-
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-12345678901-12345678901-*/
 
 
 /*===[[ PRIVATE HEADERS ]]====================================================*/
@@ -312,20 +323,11 @@
 #include    <error.h>
 
 
-
-/*---(error codes)----------------------------------------------*/
-#define     ERR_NOT_ROOT          -1
-#define     ERR_NOT_PID_ONE       -2
-#define     ERR_NO_TMPFS          -3
-#define     ERR_NO_LOGGER         -4
+#include    <termios.h>
 
 
 
 /*---(rational limits)------------------------------------------*/
-#define     LEN_NAME        20     /* max name field            */
-#define     LEN_DESC        50     /* max desc field            */
-#define     LEN_CMD        200     /* max command len           */
-#define     LEN_RECD      1000     /* max record len            */
 #define     MAX_ARGV        20     /* max number of arguments   */
 
 /*---(structures)-----------------------------------------------*/
@@ -333,44 +335,45 @@
 struct cACCESSOR
 {
    /*---(files)----------------*/
-   char        quiet;                  /* bool : 0=normal, 1=quiet            */
-   char        updates;                /* bool : 0=normal, 1=quiet            */
-   int         logger;                 /* log file so that we don't close it  */
-   int         locker;                 /* lock file in /var/run               */
+   char        run_as;                 /* eos vs astraios vs unit             */
+   char        run_mode;               /* verify, daemon, normal              */
    char        done_done;              /* flag for all procs done             */
+   llong       sec;                    /* current epoch                       */
+   llong       msec;                   /* current epoch in milliseconds       */
+   int         tic;                    /* current loop                        */
    /*---(owner)----------------*/
    int         uid;                    /* uid of person who launched eos      */
-   char        who         [LEN_NAME]; /* user name who launched eos          */
+   char        who         [LEN_LABEL]; /* user name who launched eos          */
    int         pid;                    /* process id of eos                   */
    int         ppid;                   /* parent process id of eos            */
+   char        dev         [LEN_LABEL];     /* tty for output                 */
    /*---(commands)-------------*/
    char       *argv        [MAX_ARGV]; /* command in argv format              */
    int         argc;                   /* count of arguments                  */
    /*---(flags)----------------*/
    char        status_proc;            /* status of /proc filesystem          */
    char        status_log;             /* status of /var/log/yLOG filesystem  */
-   char        daemon;                 /* daemon mode                         */
-   char        init;                   /* is this an init run                 */
+   char        boot;                   /* is this an init run                 */
    char        test;                   /* is this a test run                  */
    /*---(files)-----------------*/
-   char        name_conf   [LEN_CMD];  /* name of configuration file          */
-   char        name_exec   [LEN_CMD];  /* name of execution detail file       */
-   char        name_perf   [LEN_CMD];  /* name of execution speed file        */
+   char        n_conf      [LEN_FULL];  /* name of configuration file          */
+   char        n_exec      [LEN_FULL];  /* name of execution detail file       */
+   char        n_perf      [LEN_FULL];  /* name of execution speed file        */
    int         c_recdno;               /* eos.conf record number              */
-   int         c_verb      [LEN_NAME]; /* eos.conf verb                       */
+   int         c_verb      [LEN_LABEL]; /* eos.conf verb                       */
    /*---(current group)---------*/
    char        g_ready;                /* group record checks out             */
-   char        g_name      [LEN_NAME]; /* short name for reference            */
+   char        g_name      [LEN_LABEL]; /* short name for reference            */
    char        g_desc      [LEN_DESC]; /* longer description                  */
    /*---(current proc)----------*/
    char        p_ready;                /* proc record checks out              */
-   char        p_name      [LEN_NAME]; /* short name for reference            */
+   char        p_name      [LEN_LABEL]; /* short name for reference            */
    char        p_type;                 /* process type                        */
    char        p_desc      [LEN_DESC]; /* longer description                  */
-   char        p_user      [LEN_NAME]; /* user name                           */
+   char        p_user      [LEN_LABEL]; /* user name                           */
    int         p_uid;                  /* user id to use to launch job        */
-   char        p_check     [LEN_CMD];  /* command to check existance          */
-   char        p_run       [LEN_CMD];  /* command to execute                  */
+   char        p_check     [LEN_FULL];  /* command to check existance          */
+   char        p_run       [LEN_FULL];  /* command to execute                  */
    /*---(arguments)-------------*/
    long        loop_msec;              /* wait time in milliseconds           */
    int         loop_max;               /* maximum loops allowed before quit   */
@@ -379,9 +382,18 @@ struct cACCESSOR
 
 
 
-/*---(directory names)--------------------------*/
-#define     RUN_EOS          'e'
-#define     RUN_ASTRAIOS     'a'
+/*---(run as)-----------------------------------*/
+#define     IAM_EOS          'e'
+#define     IAM_ASTRAIOS     'a'
+#define     IAM_UNIT         'u'
+#define     IAM_VALID        "eau"
+
+/*---(modes)------------------------------------*/
+#define     MODE_VERIFY      'v'
+#define     MODE_DAEMON      'd'
+#define     MODE_NORMAL      'n'
+#define     MODE_VALID       "vdn"
+
 
 /*---(directory names)--------------------------*/
 #define     DIR_ETC          "/etc/"
@@ -416,29 +428,40 @@ struct cACCESSOR
 #define     LOGGER           if (my.logger >= 1)
 
 
-#define     TYPE_BOOT        'b'
-#define     TYPE_CONFIG      'c'
-#define     TYPE_DAEMON      'd'
-#define     TYPE_LAUNCH      'l'
-#define     TYPE_MOUNT       'm'
-#define     TYPE_SERIAL      's'
-#define     TYPE_ALL         "bcdlms"
+#define     EOS_TYPE_ALL         "bcdemskuw"
+
+#define     EOS_TYPE_BOOT        'b'
+#define     EOS_TYPE_CONFIG      'c'
+#define     EOS_TYPE_DAEMON      'd'
+#define     EOS_TYPE_EXEC        'e'
+#define     EOS_TYPE_MOUNT       'm'
+#define     EOS_TYPE_SERIAL      's'
+
+#define     EOS_TYPE_KILL        'k'
+#define     EOS_TYPE_UMOUNT      'u'
+#define     EOS_TYPE_WRAPUP      'w'
 
 #define     GROUP_READY      '-'
 #define     GROUP_RUNNING    'R'
 #define     GROUP_DONE       'd'
 
 
+
 typedef struct cGROUP tGROUP;
 struct cGROUP {
    /*---(master)-------------------------*/
    int         line;                        /* line in eos.conf               */
-   char        name        [LEN_NAME];      /* short name for reference       */
+   char        name        [LEN_LABEL];      /* short name for reference       */
    char        desc        [LEN_DESC];      /* longer description             */
    /*---(processing)---------------------*/
+   char        status;                      /* ready, focused, done           */
    int         requested;                   /* count of procs in group        */
    int         completed;                   /* count of completed procs       */
-   char        status;                      /* ready, focused, done           */
+   /*---(timing)-------------------------*/
+   llong       beg;                         /* when group started             */
+   llong       end;                         /* when group finished            */
+   int         dur;                         /* duration open                  */
+   char        warning;                     /* trouble flag                   */
    /*---(done)---------------------------*/
 };
 
@@ -447,18 +470,32 @@ typedef struct  cPROC tPROC;
 struct cPROC {
    /*---(master)-------------------------*/
    int         line;                        /* line in eos.conf               */
-   char        name        [LEN_NAME];      /* short name for reference       */
+   char        name        [LEN_LABEL];      /* short name for reference       */
    char        type;                        /* process type                   */
    char        desc        [LEN_DESC];      /* longer description             */
-   char        user        [LEN_NAME];      /* user name                      */
+   /*---(command)------------------------*/
+   char        user        [LEN_LABEL];      /* user name                      */
    int         uid;                         /* user id to use to launch job   */
-   char        run         [LEN_CMD];       /* command to execute             */
-   /*---(processing)---------------------*/
-   llong       beg;                         /* start time                     */
+   char        run         [LEN_FULL];       /* command to execute             */
+   /*---(estimates)----------------------*/
+   int         est;                         /* expected duration in seconds   */
+   int         minest;                      /* lower limit estimate in msecs  */
+   int         maxest;                      /* upper limit estimate in msecs  */
+   /*---(flags)--------------------------*/
+   char        value;                       /* on a H-M-L scale               */
+   char        track;                       /* detailed tracking              */
+   char        strict;                      /* adherence to limits            */
+   char        lower;                       /* lower limit on duration        */
+   char        upper;                       /* upper limit on duration        */
+   char        remedy;                      /* limit violation remedy         */
+   char        handoff;                     /* handoff to kharon/haides       */
+   /*---(results)------------------------*/
+   llong       beg;                         /* start msec                     */
    int         rpid;                        /* process id of crond            */
    char        yexec;                       /* end code from yEXEC            */
    int         rc;                          /* return code                    */
-   llong       end;                         /* end time                       */
+   llong       end;                         /* end msec                       */
+   int         dur;                         /* duration in seconds            */
    /*---(done)---------------------------*/
 };
 
@@ -476,6 +513,7 @@ typedef struct rusage    tRUSAGE;
 typedef struct tm        tTIME;
 typedef struct dirent    tDIRENT;
 typedef struct timespec  tTSPEC;
+typedef struct termios   tTERMIOS;
 
 
 extern      char      verstring    [500];
@@ -496,10 +534,12 @@ char*       PROG_version       (void);
 /*> char        PROG_urgview       (int  a_argc, char *a_argv[]);                     <*/
 /*> char        PROG_mountproc     (void);                                            <*/
 /*> char        PROG_logtest       (void);                                            <*/
-char        PROG_init          (char a_which);
-char        PROG_args          (int  a_argc, char *a_argv[]);
-char        PROG_begin         (void);
-char        PROG_end           (void);
+char        PROG_preinit            (void);
+char        PROG_init               (int a_argc, char *a_argv[]);
+char        PROG_args               (int a_argc, char *a_argv[]);
+char        PROG_begin              (void);
+char        PROG_final              (void);
+char        PROG_end                (void);
 /*---(signals)-------------*/
 /*> void        PROG_signal        (int a_signal, siginfo_t *a_info, void *a_nada);   <*/
 /*---(unittest)------------*/
@@ -531,18 +571,68 @@ char        EXEC_children      (int);
 
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+char        base_file_verify        (uchar *a_name);
+char        base_file_cli           (char *a_terse, char *a_name);
+char        base_console            (void);
 char        base_config             (void);
+char        base_execute            (void);
+char        base_kharon             (void);
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
-char        group_create            (void);
+/*---(cleansing)------------*/
+char        group__wipe             (tGROUP *a_group);
+char*       group__memory           (tGROUP *a_group);
+/*---(memory)---------------*/
+char        group__new              (tGROUP **a_new);
+char        group__free             (tGROUP **a_old);
+/*---(existance)------------*/
+char        group_handler           (int n, uchar *a_verb);
+char        after_handler           (int n, uchar *a_verb);
+
 char*       group__unit             (char *a_question, int a_num);
 
-/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
-char        proc_create             (char a_type);
+
+
+/*---(cleansing)------------*/
+char        proc__wipe              (tPROC *a_proc);
+char*       proc__memory            (tPROC *a_proc);
+/*---(memory)---------------*/
+char        proc__new               (tPROC **a_new);
+char        proc__free              (tPROC **a_old);
+/*---(existance)------------*/
+int         proc__dur               (char *a_dur);
+char        proc__flags             (tPROC *a_new, char *a_flags);
+char        proc_handler            (int n, uchar *a_verb);
+/*---(exec)-----------------*/
+char        proc_mark_begin         (llong a_msec, int a_rpid);
+char        proc_mark_all_in_one    (llong a_msec, int a_rpid, char a_yexec);
+char        proc_mark_done          (llong a_msec, char a_yexec, int a_rc);
+char        proc_mark_clear         (void);
+/*---(unittest)-------------*/
 char*       proc__unit              (char *a_question, int a_num);
+
+
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 char        rptg_performance        (void);
+
+
+/*---(verify)---------------*/
+char        exec__verify_mount      (uchar *a_run);
+char        exec__verify_daemon     (char *a_run, int *a_rpid);
+char*       exec__unit              (char *a_question);
+char        exec__check_launch      (tPROC *a_proc, llong a_msec);
+char        exec__check_mount       (tPROC *a_proc, llong a_msec);
+char        exec__check_daemon      (tPROC *a_proc, llong a_msec);
+int         exec_check              (llong a_msec);
+char        exec_finish             (llong a_msec);
+char        exec_start              (llong a_msec);
+char        exec__dispatch_launch   (tPROC *a_proc, llong a_msec);
+char        exec__dispatch_mount    (tPROC *a_proc, llong a_msec);
+char        exec__dispatch_daemon   (tPROC *a_proc, llong a_msec);
+char        exec_dispatch           (llong a_msec);
+
 
 
 #endif
