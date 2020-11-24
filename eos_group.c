@@ -23,13 +23,16 @@ group__wipe             (tGROUP *a_group)
    /*---(processing)---------------------*/
    DEBUG_INPT   yLOG_snote   ("wipe processing");
    a_group->status      = GROUP_READY;
-   a_group->requested   =    0;
-   a_group->completed   =    0;
+   a_group->askd        =    0;
+   a_group->done        =    0;
    /*---(timing)-------------------------*/
    a_group->beg         =    0;
    a_group->end         =    0;
    a_group->dur         =    0;
-   a_group->warning     =  '-';
+   a_group->note        =  '-';
+   /*---(reporting)----------------------*/
+   a_group->col         =    0;
+   a_group->row         =    0;
    /*---(done)---------------------------*/
    return 1;
 }
@@ -37,28 +40,23 @@ group__wipe             (tGROUP *a_group)
 char*
 group__memory           (tGROUP *a_group)
 {
-   strlcpy (s_print, "[", LEN_RECD);
-   if (a_group->line == 0)             strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   if (strlen (a_group->name) == 0)    strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   if (strlen (a_group->desc) == 0)    strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   strlcat (s_print, ".", LEN_RECD);
-   if (a_group->status == GROUP_READY) strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   if (a_group->requested == 0)        strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   if (a_group->completed == 0)        strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   strlcat (s_print, ".", LEN_RECD);
-   if (a_group->beg       == 0)        strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   if (a_group->end       == 0)        strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   if (a_group->warning   == '-')      strlcat (s_print, "_", LEN_RECD);
-   else                                strlcat (s_print, "X", LEN_RECD);
-   strlcat (s_print, "]", LEN_RECD);
+   int         i           =    0;
+   strlcpy (s_print, "[___.___.____.__]", LEN_RECD);
+   ++i;   if (a_group->line    != 0)             s_print [i] = 'X';
+   ++i;   if (strlen (a_group->name) != 0)       s_print [i] = 'X';
+   ++i;   if (strlen (a_group->desc) != 0)       s_print [i] = 'X';
+   ++i;
+   ++i;   if (a_group->status  != GROUP_READY)   s_print [i] = 'X';
+   ++i;   if (a_group->askd    != 0)             s_print [i] = 'X';
+   ++i;   if (a_group->done    != 0)             s_print [i] = 'X';
+   ++i;
+   ++i;   if (a_group->beg     != 0)             s_print [i] = 'X';
+   ++i;   if (a_group->end     != 0)             s_print [i] = 'X';
+   ++i;   if (a_group->dur     != 0)             s_print [i] = 'X';
+   ++i;   if (a_group->note    != '-')           s_print [i] = 'X';
+   ++i;
+   ++i;   if (a_group->col     != 0)             s_print [i] = 'X';
+   ++i;   if (a_group->row     != 0)             s_print [i] = 'X';
    return s_print;
 }
 
@@ -292,11 +290,11 @@ group_mark_clear        (void)
    --rce;  if (x_group == NULL)  return rce;
    /*---(update proc)--------------------*/
    x_group->status    = GROUP_READY;
-   x_group->completed =    0;
+   x_group->done      =    0;
    x_group->beg       =    0;
    x_group->end       =    0;
    x_group->dur       =    0;
-   x_group->warning   =  '-';
+   x_group->note      =  '-';
    /*---(complete)-----------------------*/
    return 0;
 }
@@ -350,7 +348,7 @@ group__unit             (char *a_question, int a_num)
             ++c;
          }
          sprintf  (u, "%1d[%.30s]", c, s);
-         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) : %-19.19s %2d %2d %c  %-33.33s  %4d %4d %4d %c", a_num, t, x_group->requested, x_group->completed, x_group->status, u, x_group->beg, x_group->end, x_group->dur, x_group->warning);
+         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) : %-19.19s %2d %2d %c  %-33.33s  %4d %4d %4d %c", a_num, t, x_group->askd, x_group->done, x_group->status, u, x_group->beg, x_group->end, x_group->dur, x_group->note);
       } else {
          snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) :  -[]                 -  - -  -[]                                   -    -    - -", a_num);
       }

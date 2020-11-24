@@ -2,29 +2,32 @@
 #include    "eos.h"
 
 
-char        s_recd      [LEN_RECD];
-int         s_nrecd;
-static char       *nada        = "(none)";
-
-FILE       *f_conf      = NULL;
-
-
-char        unit_answer [LEN_RECD];
-
-
-
-
-
-int         requested   = 0;
-int         running     = 0;
-int         complete    = 0;
-
-
 
 /*====================------------------------------------====================*/
 /*===----                     command-line support                     ----===*/
 /*====================------------------------------------====================*/
 static void  o___CLI_____________o () { return; }
+
+static llong  s_time  =  0;
+
+llong             /* PURPOSE : timestamp in milliseconds      */
+base_msec               (void)
+{
+   /* second
+    * millisecond  ms  0.001 sec
+    * microsecond  us  0.000001 sec
+    * nanosecond   ns  0.000000001 sec
+    * picosecond   ps  0.000000000001 sec
+    */
+   llong       a           =   0;
+   tTSPEC      t;
+   clock_gettime (CLOCK_MONOTONIC, &t);
+   a += (llong) t.tv_sec  * 1000;
+   a += (llong) t.tv_nsec / 1000000;
+   if (s_time == 0)  s_time  = a;
+   else              a      -= s_time;
+   return a;
+}
 
 char
 base_file_verify        (uchar *a_name)
@@ -250,8 +253,8 @@ base_execute            (void)
       /*---(looping)---------------------*/
       DEBUG_LOOP   yLOG_break   ();
       DEBUG_LOOP   yLOG_value   ("loop#"      , my.tic);
-      my.sec = time (NULL);
-      DEBUG_LOOP   yLOG_value   ("my.sec"     , my.sec);
+      my.msec = base_msec ();
+      DEBUG_LOOP   yLOG_value   ("my.msec"    , my.msec);
       /*---(checking)--------------------*/
       rc = exec_check    (my.msec);
       rc = exec_finish   (my.msec);
@@ -372,6 +375,8 @@ base_config             (void)
 /*===----                         unit testing                         ----===*/
 /*====================------------------------------------====================*/
 static void  o___UNITTEST________o () { return; }
+
+char        unit_answer [LEN_RECD];
 
 char*        /*-> tbd --------------------------------[ light  [us.JC0.271.X1]*/ /*-[01.0000.00#.!]-*/ /*-[--.---.---.--]-*/
 base__unit              (char *a_question)

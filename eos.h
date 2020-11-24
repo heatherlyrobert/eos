@@ -30,8 +30,8 @@
 
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.1-, starting rebuild back up"
-#define     P_VERNUM    "2.1b"
-#define     P_VERTXT    "exec is now pretty well unit tested, groups added times"
+#define     P_VERNUM    "2.1c"
+#define     P_VERTXT    "new PERT chart is doing great on basics"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -455,13 +455,16 @@ struct cGROUP {
    char        desc        [LEN_DESC];      /* longer description             */
    /*---(processing)---------------------*/
    char        status;                      /* ready, focused, done           */
-   int         requested;                   /* count of procs in group        */
-   int         completed;                   /* count of completed procs       */
+   int         askd;                        /* count of procs in group        */
+   int         done;                        /* count of completed procs       */
    /*---(timing)-------------------------*/
    llong       beg;                         /* when group started             */
    llong       end;                         /* when group finished            */
    int         dur;                         /* duration open                  */
-   char        warning;                     /* trouble flag                   */
+   char        note;                        /* trouble flag                   */
+   /*---(reporting)----------------------*/
+   uchar       col;                         /* reporting col/horz             */
+   uchar       row;                         /* reporting row/vert             */
    /*---(done)---------------------------*/
 };
 
@@ -518,8 +521,6 @@ typedef struct termios   tTERMIOS;
 
 extern      char      verstring    [500];
 
-extern      int         requested;
-extern      int         running;
 extern      int         complete;
 
 
@@ -571,6 +572,7 @@ char        EXEC_children      (int);
 
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+llong       base_msec               (void);
 char        base_file_verify        (uchar *a_name);
 char        base_file_cli           (char *a_terse, char *a_name);
 char        base_console            (void);
@@ -619,6 +621,10 @@ char*       proc__unit              (char *a_question, int a_num);
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+char        rptg__pert_clear        (void);
+char        rptg__pert_col          (void);
+char        rptg__pert_row          (void);
+char        rptg_pert               (void);
 char        rptg_performance        (void);
 
 

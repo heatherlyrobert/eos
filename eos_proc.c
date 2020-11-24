@@ -352,7 +352,7 @@ proc_handler            (int n, uchar *a_verb)
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   ++x_group->requested;
+   ++x_group->askd;
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -405,7 +405,7 @@ proc_mark_all_in_one    (llong a_msec, int a_rpid, char a_yexec)
    /*---(update group)-------------------*/
    yDLST_line_list      (NULL, &x_group);
    --rce;  if (x_group == NULL)  return rce;
-   ++x_group->completed;
+   ++x_group->done;
    /*---(deactivate)---------------------*/
    yDLST_active_off ();
    /*---(complete)-----------------------*/
@@ -438,10 +438,10 @@ proc_mark_done          (llong a_msec, char a_yexec, int a_rc)
    /*---(update group)-------------------*/
    yDLST_line_list      (NULL, &x_group);
    --rce;  if (x_group == NULL)  return rce;
-   ++x_group->completed;
+   ++x_group->done;
    switch (a_yexec) {
    case 'n' : case 'r' : case 'A' :  break;
-   default                        :  x_group->warning = '#';  break;
+   default                        :  x_group->note = '#';  break;
    }
    /*---(deactivate)---------------------*/
    yDLST_active_off ();
@@ -463,7 +463,7 @@ proc_mark_clear         (void)
    /*---(update group)-------------------*/
    yDLST_line_list      (NULL, &x_group);
    --rce;  if (x_group == NULL)  return rce;
-   if (x_proc->end > 0)  --x_group->completed;
+   if (x_proc->end > 0)  --x_group->done;
    /*---(update proc)--------------------*/
    x_proc->beg         =    0;
    x_proc->rpid        =   -1;

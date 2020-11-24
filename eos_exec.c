@@ -3,12 +3,6 @@
 
 
 
-/*> int         requested   = 0;                                                      <* 
- *> int         running     = 0;                                                      <* 
- *> int         complete    = 0;                                                      <*/
-
-
-
 /*====================------------------------------------====================*/
 /*===----                      verify results                          ----===*/
 /*====================------------------------------------====================*/
@@ -404,7 +398,7 @@ exec_finish             (llong a_msec)
    DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p, %d", rc, x_group, c);
    /*---(walk through groups)------------*/
    while (rc >= 0 && x_group != NULL) {
-      DEBUG_LOOP   yLOG_complex ("GROUP"     , "%p, %-15.15s, %c, %2dr, %2dc", x_group, x_group->name, x_group->status, x_group->requested, x_group->completed);
+      DEBUG_LOOP   yLOG_complex ("GROUP"     , "%p, %-15.15s, %c, %2dr, %2dc", x_group, x_group->name, x_group->status, x_group->askd, x_group->done);
       /*---(filter not started)----------*/
       if (x_group->status == GROUP_READY) {
          DEBUG_LOOP   yLOG_note    ("not started, continue");
@@ -415,7 +409,7 @@ exec_finish             (llong a_msec)
          ++x_done;
       }
       /*---(check for done)--------------*/
-      else  if (x_group->requested == x_group->completed) {
+      else  if (x_group->askd == x_group->done) {
          group_mark_done (a_msec);
          ++x_done;
          ++c;
@@ -462,7 +456,7 @@ exec_start              (llong a_msec)
    DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p, %d", rc, x_group, c);
    /*---(walk through groups)------------*/
    while (rc >= 0 && x_group != NULL) {
-      DEBUG_LOOP   yLOG_complex ("GROUP"     , "%p, %-15.15s, %c, %2dr, %2dc", x_group, x_group->name, x_group->status, x_group->requested, x_group->completed);
+      DEBUG_LOOP   yLOG_complex ("GROUP"     , "%p, %-15.15s, %c, %2dr, %2dc", x_group, x_group->name, x_group->status, x_group->askd, x_group->done);
       /*---(filter out running)----------*/
       if (x_group->status == GROUP_RUNNING) {
          DEBUG_LOOP   yLOG_note    ("already started, continue");

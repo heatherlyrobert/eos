@@ -20,13 +20,8 @@ main               (int a_argc, char *a_argv[])
    char        rce         =  -10;
    char        rc          =    0;
    /*---(initialize)---------------------*/
-   printf ("\n");
-   printf ("%s\n", P_NAMESAKE);
-   printf ("heritage  : %s\n", P_HERITAGE);
-   printf ("imagery   : %s\n", P_IMAGERY);
-   printf ("purpose   : %s\n", P_PURPOSE);
-   printf ("version   : %s\n", PROG_version    ());
-   printf ("\n");
+   my.msec = base_msec ();
+   DEBUG_LOOP   yLOG_value   ("my.msec"    , my.msec);
    if (rc >= 0)  rc = PROG_preinit ();
    if (rc >= 0)  rc = yURG_logger  (a_argc, a_argv);
    if (rc >= 0)  rc = yURG_urgs    (a_argc, a_argv);
