@@ -102,10 +102,11 @@ exec__verify_daemon     (char *a_run, int *a_rpid)
    char       *p           = NULL;
    char        t           [LEN_RECD];
    char        x_base      [LEN_RECD];
+   int         x_rpid      =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    /*---(default)------------------------*/
-   if (a_rpid != NULL)  *a_rpid = -1;
+   if (a_rpid != NULL)  *a_rpid = 99999;
    /*---(defense)------------------------*/
    DEBUG_LOOP  yLOG_point   ("a_run"     , a_run);
    --rce;  if (a_run == NULL) {
@@ -131,13 +132,23 @@ exec__verify_daemon     (char *a_run, int *a_rpid)
    }
    strcpy (x_base, p + 1);
    DEBUG_LOOP  yLOG_info    ("x_base"    , x_base);
-   /*---(look for daemon)----------------*/
-   rc = yEXEC_find (x_base, a_rpid);
+   /*---(look for base name)-------------*/
+   rc = yEXEC_find (x_base, &x_rpid);
    DEBUG_LOOP  yLOG_value   ("find"      , rc);
    --rce;  if (rc < 0) {
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(look for name with path)--------*/
+   if (x_rpid == 99999)    rc += yEXEC_find (t, &x_rpid);
+   else                    rc += yEXEC_find (t, NULL);
+   DEBUG_LOOP  yLOG_value   ("find"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(save back)----------------------*/
+   if (a_rpid != NULL)  *a_rpid = x_rpid;
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
    return rc;
@@ -319,6 +330,74 @@ exec__check_daemon      (tPROC *a_proc, llong a_msec)
    return 1;
 }
 
+char
+exec__check_signal      (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        c           =    0;
+   int         x_check     =    0;
+   int         x_rpid      =    0;
+   int         x_return    =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_info    ("name"       , a_proc->name);
+   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
+   --rce;  if (a_proc->end > 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
+   if (a_msec < 0)  a_msec = 0;
+   if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
+   /*---(wait period)-----------------*/
+   x_check = a_proc->minest + a_proc->beg;
+   DEBUG_LOOP   yLOG_value   ("x_check"    , x_check);
+   if (a_msec < x_check) {
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(find existing)---------------*/
+   c = exec__verify_daemon (a_proc->run, &x_rpid);
+   DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
+   /*---(check non-kill)--------------*/
+   if (strchr (EOS_TYPE_NOSTOP, a_proc->type) != NULL) {
+      if (c >= 1) {
+         proc_mark_done  (a_msec, YEXEC_NORMAL, 0);
+         DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+         return 1;
+      } else {
+         rc = yEXEC_check (a_proc->name, a_proc->rpid, &x_return);
+         proc_mark_done  (a_msec, YEXEC_ERROR, x_return);
+         DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+         return 1;
+      }
+   }
+   /*---(check kills)-----------------*/
+   else {
+      if (c == 0) {
+         proc_mark_done  (a_msec, YEXEC_NORMAL, 0);
+         DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+         return 1;
+      } else {
+         proc_mark_done  (a_msec, YEXEC_ERROR, YEXEC_ERROR);
+         DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+         return 1;
+      }
+   }
+   /*---(complete)--------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 1;
+}
+
 int
 exec_check              (llong a_msec)
 {
@@ -352,8 +431,13 @@ exec_check              (llong a_msec)
       case EOS_TYPE_MOUNT  : case EOS_TYPE_UMOUNT :
          rc = exec__check_mount  (x_proc, a_msec);
          break;
-      case EOS_TYPE_EXEC   : case EOS_TYPE_CONFIG : case EOS_TYPE_BOOT   :
+      case EOS_TYPE_EXEC   : case EOS_TYPE_CONFIG :
+      case EOS_TYPE_BOOT   :
          rc = exec__check_launch (x_proc, a_msec);
+         break;
+      case EOS_TYPE_KILL   : case EOS_TYPE_WRAPUP :
+      case EOS_TYPE_RESET  : case EOS_TYPE_PING   :
+         rc  = exec__check_signal (x_proc, a_msec);
          break;
       default          :
          rc = exec__check_launch (x_proc, a_msec);
@@ -638,6 +722,54 @@ exec__dispatch_daemon   (tPROC *a_proc, llong a_msec)
 }
 
 char
+exec__dispatch_signal   (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        c           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_value   ("beg"        , a_proc->beg);
+   --rce;  if (a_proc->beg > 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
+   if (a_msec < 0)  a_msec = 0;
+   /*---(find it)---------------------*/
+   c = exec__verify_daemon (a_proc->run, &a_proc->rpid);
+   if (c <= 0) {
+      proc_mark_all_in_one (a_msec, a_proc->rpid, YEXEC_NOSUCH);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
+   /*---(send signal)-----------------*/
+   --rce;  switch (a_proc->type) {
+   case EOS_TYPE_KILL   :  kill (a_proc->rpid, SIGKILL);   break;
+   case EOS_TYPE_WRAPUP :  kill (a_proc->rpid, SIGTERM);   break;
+   case EOS_TYPE_RESET  :  kill (a_proc->rpid, SIGHUP );   break;
+   case EOS_TYPE_PING   :  kill (a_proc->rpid, SIGUSR2);   break;
+   case EOS_TYPE_STOP   :  kill (a_proc->rpid, SIGTSTP);   break;
+   case EOS_TYPE_CONT   :  kill (a_proc->rpid, SIGCONT);   break;
+   default :
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   proc_mark_begin (a_msec, a_proc->rpid);
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 1;
+}
+
+char
 exec_dispatch           (llong a_msec)
 {
    /*---(locals)-----------+-----+-----+-*/
@@ -687,12 +819,15 @@ exec_dispatch           (llong a_msec)
             rc  = exec__dispatch_mount  (x_proc, a_msec);
             break;
          case EOS_TYPE_BOOT   :
-            if (my.run_mode == MODE_NORMAL)  rc  = exec__dispatch_launch (x_proc, a_msec);
-            else                             proc_mark_all_in_one (a_msec, 0, YEXEC_ALREADY);
+            if (my.run_mode == EOS_RUN_NORMAL)  rc  = exec__dispatch_launch (x_proc, a_msec);
+            else                                 proc_mark_all_in_one (a_msec, 0, YEXEC_ALREADY);
             break;
          case EOS_TYPE_EXEC   : case EOS_TYPE_CONFIG : default :
             rc  = exec__dispatch_launch (x_proc, a_msec);
             break;
+         case EOS_TYPE_KILL   : case EOS_TYPE_WRAPUP :
+         case EOS_TYPE_RESET  : case EOS_TYPE_PING   :
+            rc  = exec__dispatch_signal (x_proc, a_msec);
          }
       }
       /*---(next)------------------------*/
@@ -714,16 +849,43 @@ exec_dispatch           (llong a_msec)
 /*====================------------------------------------====================*/
 static void  o___UNITTEST________o () { return; }
 
+int
+exec__signal            (char *a_recd)
+{
+   char        t           [LEN_RECD]  = "";
+   FILE       *f           = NULL;
+   int         c           =    0;
+   int         x_len       =    0;
+   strcpy (a_recd, "");
+   f = fopen ("/run/signal.txt", "rt");
+   if (f == NULL)  return 0;
+   while (1) {
+      fgets (t, LEN_RECD, f);
+      if (feof (f))  break;
+      ++c;
+   }
+   x_len = strlen (a_recd);
+   if (x_len > 0 && a_recd [x_len - 1] == '\n')  a_recd [--x_len] = '\0';
+   fclose (f);
+   return c;
+}
+
 char*        /*-> tbd --------------------------------[ light  [us.JC0.271.X1]*/ /*-[01.0000.00#.!]-*/ /*-[--.---.---.--]-*/
 exec__unit              (char *a_question)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rc          =    0;
+   char        t           [LEN_RECD]  = "";
+   int         c           =    0;
    /*---(defense)------------------------*/
    snprintf (unit_answer, LEN_RECD, "EXEC unit        : question unknown");
    /*---(simple)-------------------------*/
    if      (strcmp (a_question, "done"      )     == 0) {
       snprintf (unit_answer, LEN_RECD, "EXEC done        : %c", my.done_done);
+   }
+   else if (strcmp (a_question, "signal"    )     == 0) {
+      c = exec__signal (t);
+      snprintf (unit_answer, LEN_RECD, "EXEC done        : %2d [%s]", c, t);
    }
    /*---(complete)-----------------------*/
    return unit_answer;

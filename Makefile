@@ -39,8 +39,15 @@ include /usr/local/sbin/make_program
 #===(post-processing)======================================#
 # create a rule for...
 install_post       :
-#	gcc -o dumb_eos dumb_eos.c ${LIB_DEBUG}
-#	cp dumb_eos /sbin/
+	ln --force --physical /sbin/eos        /sbin/nyx
+	@sha1sum  /sbin/nyx
+	ln --force --physical /sbin/eos        /sbin/hypnos
+	@sha1sum  /sbin/hypnos
+	ln --force --physical /sbin/eos        /sbin/hannibal
+	@sha1sum  /sbin/hannibal
+	ln --force --physical /sbin/eos_debug  /sbin/nyx_debug
+	ln --force --physical /sbin/eos_debug  /sbin/hypnos_debug
+	ln --force --physical /sbin/eos_debug  /sbin/hannibal_debug
 
 
 #remove_post        :

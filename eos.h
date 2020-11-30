@@ -30,8 +30,8 @@
 
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.1-, starting rebuild back up"
-#define     P_VERNUM    "2.1c"
-#define     P_VERTXT    "new PERT chart is doing great on basics"
+#define     P_VERNUM    "2.1d"
+#define     P_VERTXT    "group/proc handles multiple field counts, better flags"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -321,6 +321,7 @@
 /*---(other)--------------------*/
 #include    <sys/utsname.h>
 #include    <error.h>
+#include      <sys/reboot.h>
 
 
 #include    <termios.h>
@@ -337,10 +338,11 @@ struct cACCESSOR
    /*---(files)----------------*/
    char        run_as;                 /* eos vs astraios vs unit             */
    char        run_mode;               /* verify, daemon, normal              */
+   char        halt;                   /* halt mode for nyx                   */
    char        done_done;              /* flag for all procs done             */
-   llong       sec;                    /* current epoch                       */
    llong       msec;                   /* current epoch in milliseconds       */
    int         tic;                    /* current loop                        */
+   char        verbose;
    /*---(owner)----------------*/
    int         uid;                    /* uid of person who launched eos      */
    char        who         [LEN_LABEL]; /* user name who launched eos          */
@@ -384,15 +386,19 @@ struct cACCESSOR
 
 /*---(run as)-----------------------------------*/
 #define     IAM_EOS          'e'
-#define     IAM_ASTRAIOS     'a'
+#define     IAM_NYX          'n'
+#define     IAM_HANNIBAL     'h'
+#define     IAM_HYPNOS       'y'
 #define     IAM_UNIT         'u'
-#define     IAM_VALID        "eau"
+#define     IAM_VALID        "enhyu"
 
 /*---(modes)------------------------------------*/
-#define     MODE_VERIFY      'v'
-#define     MODE_DAEMON      'd'
-#define     MODE_NORMAL      'n'
-#define     MODE_VALID       "vdn"
+#define     EOS_RUN_VERIFY   'v'
+#define     EOS_RUN_PRETEND  'p'
+#define     EOS_RUN_DAEMON   'd'
+#define     EOS_RUN_NORMAL   'n'
+#define     EOS_RUN_VALID    "vpdn"
+#define     EOS_VERBOSE      if (my.verbose  == 'y') 
 
 
 /*---(directory names)--------------------------*/
@@ -428,18 +434,32 @@ struct cACCESSOR
 #define     LOGGER           if (my.logger >= 1)
 
 
-#define     EOS_TYPE_ALL         "bcdemskuw"
 
+/*---(full execution)-------*/
 #define     EOS_TYPE_BOOT        'b'
 #define     EOS_TYPE_CONFIG      'c'
-#define     EOS_TYPE_DAEMON      'd'
 #define     EOS_TYPE_EXEC        'e'
+/*---(launch only)----------*/
+#define     EOS_TYPE_DAEMON      'd'
 #define     EOS_TYPE_MOUNT       'm'
 #define     EOS_TYPE_SERIAL      's'
-
+/*---(job control)----------*/
+#define     EOS_TYPE_STOP        'S'
+#define     EOS_TYPE_CONT        'C'
+#define     EOS_TYPE_RESET       'r'
+#define     EOS_TYPE_PING        'p'
+/*---(terminate)------------*/
 #define     EOS_TYPE_KILL        'k'
 #define     EOS_TYPE_UMOUNT      'u'
 #define     EOS_TYPE_WRAPUP      'w'
+/*---(groups)---------------*/
+#define     EOS_WAIT_LONG        "dswr"
+#define     EOS_WAIT_SHORT       "mukp"
+/*---(special)--------------*/
+#define     EOS_TYPE_LIMITS      "bce"
+#define     EOS_TYPE_NOSTOP      "SCrp"
+
+
 
 #define     GROUP_READY      '-'
 #define     GROUP_RUNNING    'R'
@@ -530,23 +550,26 @@ extern      char        unit_answer [LEN_RECD];
 int         main               (int a_argc, char *a_argv[]);
 
 /*===[[ EOS_PROG.C ]]=========================================================*/
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---(program)--------------*/
-char*       PROG_version       (void);
-/*> char        PROG_urgview       (int  a_argc, char *a_argv[]);                     <*/
-/*> char        PROG_mountproc     (void);                                            <*/
-/*> char        PROG_logtest       (void);                                            <*/
+char*       PROG_version            (void);
+char        PROG_verbose            (int a_argc, char *a_argv[]);
+char        PROG_runas              (int a_argc, char *a_argv[]);
+char        PROG_boot               (void);
 char        PROG_preinit            (void);
 char        PROG_init               (int a_argc, char *a_argv[]);
 char        PROG_args               (int a_argc, char *a_argv[]);
 char        PROG_begin              (void);
 char        PROG_final              (void);
 char        PROG_end                (void);
+char        PROG_shutdown           (void);
 /*---(signals)-------------*/
 /*> void        PROG_signal        (int a_signal, siginfo_t *a_info, void *a_nada);   <*/
 /*---(unittest)------------*/
-char        PROG_testfiles     (void);
-char        PROG_testquiet     (void);
-char        PROG_testloud      (void);
+char        PROG_testfiles          (void);
+char        PROG_testquiet          (void);
+char        PROG_testloud           (void);
+char*       prog__unit              (char *a_question, int a_num);
 
 /*===[[ EOS_CONF.C ]]=========================================================*/
 /*---(daemon)---------------*/
@@ -607,7 +630,7 @@ char        proc__new               (tPROC **a_new);
 char        proc__free              (tPROC **a_old);
 /*---(existance)------------*/
 int         proc__dur               (char *a_dur);
-char        proc__flags             (tPROC *a_new, char *a_flags);
+char        proc__flags             (tPROC *a_new, uchar *a_flags);
 char        proc_handler            (int n, uchar *a_verb);
 /*---(exec)-----------------*/
 char        proc_mark_begin         (llong a_msec, int a_rpid);
@@ -625,7 +648,8 @@ char        rptg__pert_clear        (void);
 char        rptg__pert_col          (void);
 char        rptg__pert_row          (void);
 char        rptg_pert               (void);
-char        rptg_performance        (void);
+char        rptg_gantt              (void);
+char        rptg_dump               (void);
 
 
 /*---(verify)---------------*/
@@ -635,12 +659,14 @@ char*       exec__unit              (char *a_question);
 char        exec__check_launch      (tPROC *a_proc, llong a_msec);
 char        exec__check_mount       (tPROC *a_proc, llong a_msec);
 char        exec__check_daemon      (tPROC *a_proc, llong a_msec);
+char        exec__check_signal      (tPROC *a_proc, llong a_msec);
 int         exec_check              (llong a_msec);
 char        exec_finish             (llong a_msec);
 char        exec_start              (llong a_msec);
 char        exec__dispatch_launch   (tPROC *a_proc, llong a_msec);
 char        exec__dispatch_mount    (tPROC *a_proc, llong a_msec);
 char        exec__dispatch_daemon   (tPROC *a_proc, llong a_msec);
+char        exec__dispatch_signal   (tPROC *a_proc, llong a_msec);
 char        exec_dispatch           (llong a_msec);
 
 

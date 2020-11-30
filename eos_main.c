@@ -22,12 +22,14 @@ main               (int a_argc, char *a_argv[])
    /*---(initialize)---------------------*/
    my.msec = base_msec ();
    DEBUG_LOOP   yLOG_value   ("my.msec"    , my.msec);
-   if (rc >= 0)  rc = PROG_preinit ();
-   if (rc >= 0)  rc = yURG_logger  (a_argc, a_argv);
-   if (rc >= 0)  rc = yURG_urgs    (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_init    (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_args    (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_begin   ();
+   if (rc >= 0)  rc = PROG_verbose    (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG_runas      (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG_boot       ();
+   if (rc >= 0)  rc = yURG_logger     (a_argc, a_argv);
+   if (rc >= 0)  rc = yURG_urgs       (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG_init       (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG_args       (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG_begin      ();
    /*---(defense)------------------------*/
    DEBUG_PROG  yLOG_value   ("startup"   , rc);
    --rce;  if (rc <  0) {
@@ -47,13 +49,16 @@ main               (int a_argc, char *a_argv[])
    }
    /*---(modes)--------------------------*/
    switch (my.run_mode) {
-   case MODE_VERIFY  :
-      /*---(nothing more to do */
+   case EOS_RUN_VERIFY  :
+      rptg_pert ();
       break;
-   case MODE_NORMAL  :
+   case EOS_RUN_NORMAL  :
       rc = base_execute ();
+      rptg_pert  ();
+      rptg_gantt ();
+      rptg_dump  ();
       break;
-   case MODE_DAEMON  :
+   case EOS_RUN_DAEMON  :
       rc = base_execute ();
       rc = PROG_end ();
       rc = base_kharon  ();

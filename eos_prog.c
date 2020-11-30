@@ -4,9 +4,9 @@
 
 
 /*====================------------------------------------====================*/
-/*===----                   standard program functions                 ----===*/
+/*===----                      supporting functions                    ----===*/
 /*====================------------------------------------====================*/
-static void      o___PROGRAM_________________o (void) {;}
+static void      o___SUUPPORT________________o (void) {;}
 
 char        verstring    [500];
 
@@ -29,8 +29,113 @@ PROG_version       (void)
    return verstring;
 }
 
+
+
+/*====================------------------------------------====================*/
+/*===----                      run-time behavior                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___BEHAVIOR________________o (void) {;}
+
+char*
+PROG_iam           (char a_iam)
+{
+   switch (a_iam) {
+   case IAM_EOS          :  return "eos-rhododactylos (rosy-fingered dawn)";  break;
+   case IAM_NYX          :  return "nyx-melaina (goddess of night/darkness)"; break;
+   case IAM_HYPNOS       :  return "hypnos-epidotes (giver of sleep)";        break;
+   case IAM_HANNIBAL     :  return "hannibal-barca (father of strategy)";     break;
+   default               :  return "unknown";                                 break;
+   }
+}
+
+char*
+PROG_runmode       (char a_run)
+{
+   switch (a_run) {
+   case EOS_RUN_VERIFY   :  return "verification";                            break;
+   case EOS_RUN_PRETEND  :  return "simulation";                              break;
+   case EOS_RUN_NORMAL   :  return "foreground";                              break;
+   case EOS_RUN_DAEMON   :  return "daemon";                                  break;
+   default               :  return "unknown";                                 break;
+   }
+}
+
+char
+PROG_verbose       (int a_argc, char *a_argv[])
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         i           =    0;
+   /*---(default)------------------------*/
+   my.verbose = '-';
+   /*---(locate loud)--------------------*/
+   for (i = 1; i < a_argc; ++i) {
+      if (a_argv [i][0] != '-')       continue;
+      if (a_argv [i][1] != '-')       continue;
+      if (strcmp (a_argv [i], "--loud") == 0)  my.verbose = 'y';
+      break;
+   }
+   /*---(complete)-----------------------*/
+   return 0;
+}
+
+
+char         /*--> detirmine behavior --------------------[ leaf-- [ ------ ]-*/
+PROG_runas              (int a_argc, char *a_argv[])
+{
+   /*---(defaults)-----------------------*/
+   my.run_as         = '-';
+   my.run_mode       = EOS_RUN_NORMAL;
+   /*---(specific)-----------------------*/
+   if      (strncmp (a_argv [0], "eos"     , 3) == 0)    my.run_as = IAM_EOS;
+   else if (strncmp (a_argv [0], "nyx"     , 3) == 0)    my.run_as = IAM_NYX;
+   else if (strncmp (a_argv [0], "hannibal", 8) == 0)    my.run_as = IAM_HANNIBAL;
+   else if (strncmp (a_argv [0], "hypnos"  , 6) == 0)    my.run_as = IAM_HYPNOS;
+   else {
+      return -1;
+   }
+   EOS_VERBOSE  printf ("\n%s job execution framework\n\n", PROG_iam (my.run_as));
+   if (strcmp (my.n_conf, "") == 0) {
+      switch (my.run_as) {
+      case IAM_EOS       : snprintf (my.n_conf   , 200, "%seos%s"     , DIR_ETC , FILE_CONF); break;
+      case IAM_NYX       : snprintf (my.n_conf   , 200, "%snyx%s"     , DIR_ETC , FILE_CONF); break;
+      case IAM_HYPNOS    : snprintf (my.n_conf   , 200, "%shypnos%s"  , DIR_ETC , FILE_CONF); break;
+      case IAM_UNIT      : snprintf (my.n_conf   , 200, "%sunit%s"    , DIR_UNIT, FILE_CONF); break;
+      }
+   }
+   if (strcmp (my.n_exec, "") == 0) {
+      switch (my.run_as) {
+      case IAM_EOS       : snprintf (my.n_exec   , 200, "%seos%s"     , DIR_YLOG, FILE_EXEC); break;
+      case IAM_NYX       : snprintf (my.n_exec   , 200, "%snyx%s"     , DIR_YLOG, FILE_EXEC); break;
+      case IAM_HYPNOS    : snprintf (my.n_exec   , 200, "%shypnos%s"  , DIR_YLOG, FILE_EXEC); break;
+      case IAM_HANNIBAL  : snprintf (my.n_exec   , 200, "%shannibal%s", DIR_YLOG, FILE_EXEC); break;
+      case IAM_UNIT      : snprintf (my.n_exec   , 200, "%sunit%s"    , DIR_UNIT, FILE_EXEC); break;
+      }
+   }
+   if (strcmp (my.n_perf, "") == 0) {
+      switch (my.run_as) {
+      case IAM_EOS       : snprintf (my.n_perf   , 200, "%seos%s"     , DIR_YLOG, FILE_PERF); break;
+      case IAM_NYX       : snprintf (my.n_perf   , 200, "%snyx%s"     , DIR_YLOG, FILE_PERF); break;
+      case IAM_HYPNOS    : snprintf (my.n_perf   , 200, "%shypnos%s"  , DIR_YLOG, FILE_PERF); break;
+      case IAM_HANNIBAL  : snprintf (my.n_perf   , 200, "%shannibal%s", DIR_YLOG, FILE_PERF); break;
+      case IAM_UNIT      : snprintf (my.n_perf   , 200, "%sunit%s"    , DIR_UNIT, FILE_PERF); break;
+      }
+   }
+   DEBUG_TOPS   yLOG_info    ("conf"      , my.n_conf);
+   DEBUG_TOPS   yLOG_info    ("exec"      , my.n_exec);
+   DEBUG_TOPS   yLOG_info    ("perf"      , my.n_perf);
+   /*---(complete)-----------------------*/
+   return 0;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      startup functions                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___STARTUP_________________o (void) {;}
+
 char         /*--> before even logger --------------------[ leaf-- [ ------ ]-*/
-PROG_preinit       (void)
+PROG_boot               (void)
 {
    /*---(locals)-----------+-----------+-*/
    char        rce         =  -10;
@@ -41,9 +146,10 @@ PROG_preinit       (void)
    int         c           =    0;
    int         x_tries     =    0;
    char        x_ylog      =  '-';
-   /*---(header)-------------------------*/
-   printf ("PROG_preinit : ");
+   /*---(quick out)----------------------*/
+   if (my.run_as != IAM_EOS)  return 0;
    /*---(remount /)----------------------*/
+   printf ("PROG_boot  : ");
    rc = mount ("/dev/sda4", "/", "ext4", MS_REMOUNT | MS_NOATIME, NULL);
    printf ("/ remounted (%d)", rc);
    /*---(check on /proc)-----------------*/
@@ -114,11 +220,9 @@ PROG_init          (int a_argc, char *a_argv[])
    DEBUG_TOPS   yLOG_info    ("yURG"    , yURG_version    ());
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   printf ("PROG_init    :");
+   EOS_VERBOSE  printf ("PROG_init    : ");
    /*---(set globals)--------------------*/
-   printf (" defaults");
-   my.run_as         = IAM_EOS;
-   my.run_mode       = MODE_DAEMON;
+   EOS_VERBOSE  printf ("defaults");
    my.done_done      = '-';
    my.test           = '-';
    my.loop_msec      = 100;
@@ -133,38 +237,34 @@ PROG_init          (int a_argc, char *a_argv[])
    /*---(check run as)-------------------*/
    DEBUG_TOPS   yLOG_info    ("valid"     , IAM_VALID);
    --rce;  if (strchr (IAM_VALID, x_which) == NULL) {
-      printf       (", run as %c failed (%d), FATAL\n", x_which, rc);
+      EOS_VERBOSE  printf       (", run as %c failed (%d), FATAL\n", x_which, rc);
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    my.run_as = x_which;
    DEBUG_TOPS   yLOG_char    (", run_as"    , my.run_as);
-   printf (", run as %c", my.run_as);
+   EOS_VERBOSE  printf (", run as %c", my.run_as);
    /*---(call whoami)--------------------*/
    rc = yEXEC_whoami (&my.pid, &my.ppid, &my.uid, NULL, &my.who, 'n');
    DEBUG_TOPS   yLOG_value   ("whoami"    , rc);
    --rce;  if (rc < 0) {
-      printf       (", whoami failed (%d), FATAL\n", rc);
+      EOS_VERBOSE  printf       (", whoami failed (%d), FATAL\n", rc);
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   printf (", uid %d, pid %d, ppid, %d", my.uid, my.pid, my.ppid);
+   EOS_VERBOSE  printf (", uid %d, pid %d, ppid, %d", my.uid, my.pid, my.ppid);
    DEBUG_TOPS   yLOG_value   ("pid"       , my.pid);
    DEBUG_TOPS   yLOG_value   ("ppid"      , my.ppid);
    DEBUG_TOPS   yLOG_value   ("uid"       , my.uid);
    DEBUG_TOPS   yLOG_info    ("who"       , my.who);
    /*---(check for root)-----------------*/
    --rce;  if (my.uid != 0) {
-      printf       (", check root failed, FATAL\n");;
+      EOS_VERBOSE  printf       (", check root failed, FATAL\n");;
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   /*---(configuration)------------------*/
-   snprintf (my.n_conf   , LEN_FULL, "%seos%s"     , DIR_ETC  , FILE_CONF);
-   snprintf (my.n_exec   , LEN_FULL, "%seos%s"     , DIR_YLOG , FILE_EXEC);
-   snprintf (my.n_perf   , LEN_FULL, "%seos%s"     , DIR_YLOG , FILE_PERF);
    /*---(complete)-----------------------*/
-   printf        (", done\n");
+   EOS_VERBOSE  printf        (", done\n");
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
@@ -184,24 +284,26 @@ PROG_args          (int a_argc, char *a_argv[])
    int         x_num       = 0;             /* numeric argument holder        */
    /*---(process)------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   printf       ("PROG_args    :");
+   EOS_VERBOSE  printf       ("PROG_args    : %d args", a_argc);
    for (i = 1; i < a_argc; ++i) {
       a = a_argv[i];
       if (a[0] == '@')       continue;
       ++x_args;
       DEBUG_ARGS  yLOG_info     ("argument"  , a);
-      printf (", %s", a);
+      EOS_VERBOSE  printf (", %s", a);
       /*---(run as)----------------------*/
-      if      (strcmp (a, "--eos"       ) == 0)     my.run_as    = IAM_EOS;
-      else if (strcmp (a, "--astraios"  ) == 0)     my.run_as    = IAM_ASTRAIOS;
+      if      (strcmp (a, "--eos"       ) == 0)  my.run_as    = IAM_EOS;
+      else if (strcmp (a, "--nyx"       ) == 0)  my.run_as    = IAM_NYX;
+      else if (strcmp (a, "--hypnos"    ) == 0)  my.run_as    = IAM_HYPNOS;
+      else if (strcmp (a, "--hannibal"  ) == 0)  my.run_as    = IAM_HANNIBAL;
       /*---(run modes)-------------------*/
-      else if (strcmp (a, "--daemon"    ) == 0)     my.run_mode  = MODE_DAEMON;
-      else if (strcmp (a, "--verify"    ) == 0)     my.run_mode  = MODE_VERIFY;
-      else if (strcmp (a, "--normal"    ) == 0)     my.run_mode  = MODE_NORMAL;
+      else if (strcmp (a, "--daemon"    ) == 0)  my.run_mode  = EOS_RUN_DAEMON;
+      else if (strcmp (a, "--verify"    ) == 0)  my.run_mode  = EOS_RUN_VERIFY;
+      else if (strcmp (a, "--normal"    ) == 0)  my.run_mode  = EOS_RUN_NORMAL;
       /*---(files)-----------------------*/
-      else if (strcmp (a, "--conf"      ) == 0)  TWOARG rc = base_file_cli    ("conf", a_argv [i]);
-      else if (strcmp (a, "--exec"      ) == 0)  TWOARG rc = base_file_cli    ("exec", a_argv [i]);
-      else if (strcmp (a, "--perf"      ) == 0)  TWOARG rc = base_file_cli    ("perf", a_argv [i]);
+      else if (strcmp (a, "--conf"      ) == 0)  TWOARG rc = base_file_cli ("conf", a_argv [i]);
+      else if (strcmp (a, "--exec"      ) == 0)  TWOARG rc = base_file_cli ("exec", a_argv [i]);
+      else if (strcmp (a, "--perf"      ) == 0)  TWOARG rc = base_file_cli ("perf", a_argv [i]);
       /*---(speeds)----------------------*/
       else if (strcmp(a, "--normal"      ) == 0) {
          my.loop_msec  = 10;
@@ -221,10 +323,10 @@ PROG_args          (int a_argc, char *a_argv[])
       }
    }
    /*---(verify)-------------------------*/
-   if (my.run_mode == MODE_DAEMON && my.pid != 1) {
-      my.run_mode = MODE_NORMAL;
+   if (my.run_mode == EOS_RUN_DAEMON && my.pid != 1) {
+      my.run_mode = EOS_RUN_NORMAL;
    }
-   printf (", mode %c", my.run_mode);
+   EOS_VERBOSE  printf (", mode %c", my.run_mode);
    /*---(display urgents)----------------*/
    DEBUG_ARGS   yLOG_note    ("summarization of argument processing");
    DEBUG_ARGS   yLOG_value   ("entries"   , x_total);
@@ -233,7 +335,7 @@ PROG_args          (int a_argc, char *a_argv[])
    DEBUG_ARGS   yLOG_value   ("loop_msec" , my.loop_msec);
    DEBUG_ARGS   yLOG_value   ("loop_max"  , my.loop_max);
    /*---(complete)-----------------------*/
-   printf        (", done\n");
+   EOS_VERBOSE  printf        (", done\n");
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return rc;
 }
@@ -253,11 +355,11 @@ PROG_begin         (void)
    char        x_recd      [LEN_RECD];
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   printf       ("PROG_begin   :");
+   EOS_VERBOSE  printf       ("PROG_begin   : ");
    /*---(daemonize)-----------------------------*/
-   if (my.run_mode == MODE_DAEMON) {
+   if (my.run_mode == EOS_RUN_DAEMON) {
       rc = yEXEC_daemon (yLOGS_lognum (), &my.pid);
-      printf       (" daemonizing (%d)", rc);
+      EOS_VERBOSE  printf       ("daemonizing (%d)", rc);
       DEBUG_TOPS   yLOG_value   ("daemonize" , rc);
       --rce;  if (rc < 0) {
          DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
@@ -266,30 +368,30 @@ PROG_begin         (void)
       DEBUG_TOPS   yLOG_note    ("operating as a semi-daemon (process one)");
       /*---(update console)---------------------*/
       rc = yEXEC_tty_open (my.dev, NULL, YEXEC_STDOUT, YEXEC_NO);
-      printf       (", tty_open (%d)", rc);
+      EOS_VERBOSE  printf       (", tty_open (%d)", rc);
       DEBUG_TOPS   yLOG_value   ("console"   , rc);
       --rce;  if (rc < 0) {
          DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      printf       (", semi-daemon");
+      EOS_VERBOSE  printf       (", semi-daemon");
    } else {
-      printf       (" no daemonizing");
+      EOS_VERBOSE  printf       ("not daemonizing");
       DEBUG_TOPS   yLOG_note    ("will not use semi-daemon mode");
    }
    /*---(setup signals)-------------------------*/
-   if (my.run_mode == MODE_DAEMON) {
-      printf       (", bullet-proof");
+   if (my.run_mode == EOS_RUN_DAEMON) {
+      EOS_VERBOSE  printf       (", bullet-proof");
       DEBUG_TOPS   yLOG_note    ("signals set to bullet-proof (dangerous)");
-      rc = yEXEC_signal (YEXEC_HARD, YEXEC_NO, YEXEC_NO, NULL);
+      rc = yEXEC_signal (YEXEC_HARD, YEXEC_NO, YEXEC_NO, NULL, NULL);
    } else {
-      printf       (", normal signals");
+      EOS_VERBOSE  printf       (", normal signals");
       DEBUG_TOPS   yLOG_note    ("signals set to soft for normal working");
-      rc = yEXEC_signal (YEXEC_SOFT, YEXEC_NO, YEXEC_NO, NULL);
+      rc = yEXEC_signal (YEXEC_SOFT, YEXEC_NO, YEXEC_NO, NULL, NULL);
    }
    DEBUG_TOPS   yLOG_value   ("signals"   , rc);
    --rce;  if (rc < 0) {
-      printf       (" failed, FATAL\n");
+      EOS_VERBOSE  printf       (" failed, FATAL\n");
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -301,37 +403,16 @@ PROG_begin         (void)
    rc = yPARSE_delimiters  ("§");
    /*---(set file names)-----------------*/
    DEBUG_ARGS   yLOG_note    ("setting file names");
-   printf       (", set (%c) file names", my.run_as);
-   /*> switch (my.run_as) {                                                           <* 
-    *> case IAM_EOS       :                                                           <* 
-    *>    snprintf (my.n_conf   , 200, "%seos%s"     , DIR_ETC  , FILE_CONF);      <* 
-    *>    snprintf (my.n_exec   , 200, "%seos%s"     , DIR_YLOG , FILE_EXEC);      <* 
-    *>    snprintf (my.n_perf   , 200, "%seos%s"     , DIR_YLOG , FILE_PERF);      <* 
-    *>    break;                                                                      <* 
-    *> case IAM_ASTRAIOS  :                                                           <* 
-    *>    snprintf (my.n_conf   , 200, "%sastraios%s", DIR_ETC  , FILE_CONF);      <* 
-    *>    snprintf (my.n_exec   , 200, "%sastraios%s", DIR_YLOG , FILE_EXEC);      <* 
-    *>    snprintf (my.n_perf   , 200, "%sastraios%s", DIR_YLOG , FILE_PERF);      <* 
-    *>    break;                                                                      <* 
-    *> case IAM_UNIT      :                                                           <* 
-    *>    snprintf (my.n_conf   , 200, "%sunit%s"    , DIR_UNIT , FILE_CONF);      <* 
-    *>    snprintf (my.n_exec   , 200, "%sunit%s"    , DIR_UNIT , FILE_EXEC);      <* 
-    *>    snprintf (my.n_perf   , 200, "%sunit%s"    , DIR_UNIT , FILE_PERF);      <* 
-    *>    break;                                                                      <* 
-    *> }                                                                              <*/
-   DEBUG_TOPS   yLOG_info    ("conf"      , my.n_conf);
-   DEBUG_TOPS   yLOG_info    ("exec"      , my.n_exec);
-   DEBUG_TOPS   yLOG_info    ("perf"      , my.n_perf);
    /*---(clear feedback file)-------------------*/
-   DEBUG_ARGS   yLOG_note    ("write execution file header");
-   f         = fopen     (my.n_exec, "w");
-   x_now     = time      (NULL);
-   x_broke   = localtime (&x_now);
-   strftime  (x_msg, 50, "%Ss %Mm %Hh %dd %mm  %ww", x_broke);
-   fprintf   (f, "eos start : %s\n", x_msg);
-   fclose    (f);
+   /*> DEBUG_ARGS   yLOG_note    ("write execution file header");                     <*/
+   /*> f         = fopen     (my.n_exec, "w");                                        <* 
+    *> x_now     = time      (NULL);                                                  <* 
+    *> x_broke   = localtime (&x_now);                                                <* 
+    *> strftime  (x_msg, 50, "%Ss %Mm %Hh %dd %mm  %ww", x_broke);                    <* 
+    *> fprintf   (f, "eos start : %s\n", x_msg);                                      <* 
+    *> fclose    (f);                                                                 <*/
    /*---(complete)------------------------------*/
-   printf       (", done\n");
+   EOS_VERBOSE  printf       (", done\n");
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
@@ -341,16 +422,72 @@ PROG_final              (void)
 {
 }
 
+
+
+/*====================------------------------------------====================*/
+/*===----                      shutdown functions                      ----===*/
+/*====================------------------------------------====================*/
+static void      o___SHUTDOWN________________o (void) {;}
+
 char         /*--: wrapup program execution --------------[ leaf   [ ------ ]-*/
 PROG_end           (void)
 {
    /*---(create utmp boot)----------------------*/
    yLOG_enter (__FUNCTION__);
-   rptg_performance ();
+   rptg_dump  ();
    yLOG_info  ("logger",   "shutting down logger");
    yLOG_exit  (__FUNCTION__);
    yLOGS_end   ();
    return 0;
+}
+
+char
+PROG_shutdown           (void)
+{
+   printf("nyx -- system shutdown\n");
+   /*---(locals)-------------------------*/
+   FILE     *f         = NULL;
+   int       rc        = 0;
+   int       pid       = 0;
+   /*---(mark shutdown)------------------*/
+   ySEC_shutdown ();
+   /*---(clean up the drives)------------*/
+   printf ("   - sync drives three times\n");
+   sync   ();
+   sync   ();
+   sync   ();
+   sleep  (1);
+   /*---(lock up this program)-----------*/
+   signal (SIGTERM, SIG_IGN);
+   signal (SIGSTOP, SIG_IGN);
+   signal (SIGKILL, SIG_IGN);
+   /*---(shutdown processes)-------------*/
+   /*> printf("   - send TERM message\n");                                            <* 
+    *> kill(-1, SIGTERM);                                                             <* 
+    *> sleep(1);                                                                      <*/
+   /*> printf("   - send KILL message\n");                                            <* 
+    *> kill(-1, SIGKILL);                                                             <* 
+    *> sleep(1);                                                                      <*/
+   /*---(kill slim)----------------------*/
+   /*> f = fopen ("/var/run/slim.pid", "r");                                          <* 
+    *> if (f != NULL) {                                                               <* 
+    *>    rc = fscanf (f, "%d", &pid);                                                <* 
+    *>    if (rc == 1) {                                                              <* 
+    *>       kill (pid, SIGTERM);                                                     <* 
+    *>    }                                                                           <* 
+    *>    fclose (f);                                                                 <* 
+    *> }                                                                              <*/
+   /*---(call the shutdown)--------------*/
+   if  (my.halt  == 'H') {
+      printf("   - halt\n");
+      rc = reboot (RB_POWER_OFF);
+   }
+   if  (my.halt  == 'R') {
+      printf("   - reboot\n");
+      rc = reboot (RB_AUTOBOOT);
+   }
+   /*---(these calls shouldn't come back)*/
+   return rc;
 }
 
 
@@ -488,10 +625,11 @@ prog__unit_quiet   (void)
 {
    int         x_argc      = 1;
    char       *x_argv [1]  = { "eos" };
+   PROG_runas     (x_argc, x_argv);
    yURG_logger    (x_argc, x_argv);
    yURG_urgs      (x_argc, x_argv);
    PROG_init      (x_argc, x_argv);
-   prog__unit_files ();
+   /*> prog__unit_files ();                                                           <*/
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();
    return 0;
@@ -502,10 +640,11 @@ prog__unit_loud    (void)
 {
    int         x_argc      = 5;
    char       *x_argv [5]  = { "eos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@yexec"  };
+   PROG_runas     (x_argc, x_argv);
    yURG_logger    (x_argc, x_argv);
    yURG_urgs      (x_argc, x_argv);
    PROG_init      (x_argc, x_argv);
-   prog__unit_files ();
+   /*> prog__unit_files ();                                                           <*/
    PROG_args      (x_argc, x_argv);
    PROG_begin     ();
    return 0;
@@ -521,6 +660,19 @@ prog__unit_end     (void)
    rmdir    (DIR_UNIT);
    PROG_end       ();
    return 0;
+}
+
+char*
+prog__unit              (char *a_question, int a_num)
+{
+   /*---(prepare)------------------------*/
+   strlcpy  (unit_answer, "RPTG             : question not understood", LEN_RECD);
+   /*---(crontab name)-------------------*/
+   if      (strcmp (a_question, "mode"    )        == 0) {
+      snprintf (unit_answer, LEN_RECD, "PROG mode        : iam (%c) %-40.40s, run (%c) %s", my.run_as, PROG_iam (my.run_as), my.run_mode, PROG_runmode (my.run_mode));
+   }
+   /*---(complete)-----------------------*/
+   return unit_answer;
 }
 
 

@@ -2,12 +2,19 @@
 #include    "eos.h"
 
 
+
+/*====================------------------------------------====================*/
+/*===----                        pert charting                         ----===*/
+/*====================------------------------------------====================*/
+static void      o___PERT____________________o (void) {;}
+
+
 #define  MAX_Y      70
 #define  MAX_X     300
 
-char     s_pert [MAX_Y][MAX_X];
-int      s_xcol   = 0;
-int      s_xrow   = 0;
+static char     s_pert [MAX_Y][MAX_X];
+static int      s_xcol   = 0;
+static int      s_xrow   = 0;
 
 
 char
@@ -37,34 +44,38 @@ rptg__pert_clear        (void)
    DEBUG_OUTP  yLOG_exit    (__FUNCTION__);
    return 0;
 }
+
 char
 rptg__pert_col          (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rc          =    0;
    tGROUP     *x_group     = NULL;
+   int         x_ngroup    =    0;
    tGROUP     *x_pred      = NULL;
+   int         x_npred     =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
-   rc = yDLST_list_by_cursor ('[', NULL, &x_group);
+   rc = yDLST_list_by_index  (x_ngroup, NULL, &x_group);
    DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p", rc, x_group);
    s_xcol = 0;
    /*---(walk through groups)------------*/
    while (rc >= 0) {
       if (x_group != NULL) {
-         if (x_group != NULL)  DEBUG_LOOP   yLOG_complex ("GROUP"     , "%3d, %p, %-15.15s, %2dr", rc, x_group, x_group->name, x_group->askd);
-         rc = yDLST_seq_by_cursor ('<', '[', NULL, NULL, &x_pred);
+         DEBUG_LOOP   yLOG_complex ("GROUP"     , "%3d, %p, %-15.15s, %2dr", rc, x_group, x_group->name, x_group->askd);
+         x_npred = 0;
+         rc = yDLST_seq_by_index  ('<', x_npred, NULL, NULL, &x_pred);
          while (rc >= 0) {
             if (x_group->col < 1)  x_group->col = 1;
-            if (x_group->col > s_xcol)  s_xcol = x_group->col;
             if (x_pred != NULL) {
                if (x_pred->col + 1 > x_group->col)  x_group->col = x_pred->col + 1;
             }
-            rc = yDLST_seq_by_cursor ('<', '>', NULL, NULL, &x_pred);
+            if (x_group->col > s_xcol)  s_xcol = x_group->col;
+            rc = yDLST_seq_by_index  ('<', ++x_npred, NULL, NULL, &x_pred);
          }
       }
-      rc = yDLST_list_by_cursor ('>', NULL, &x_group);
+      rc = yDLST_list_by_index  (++x_ngroup, NULL, &x_group);
    }
    ++s_xcol;
    /*---(complete)-----------------------*/
@@ -158,7 +169,7 @@ rptg__pert_row          (void)
    }
    /*---(complete)-----------------------*/
    DEBUG_OUTP  yLOG_exit    (__FUNCTION__);
-   return  rc;
+   return 0;
 }
 
 char
@@ -421,8 +432,91 @@ rptg_pert               (void)
 
 
 
+/*====================------------------------------------====================*/
+/*===----                        pert charting                         ----===*/
+/*====================------------------------------------====================*/
+static void      o___GANTT___________________o (void) {;}
+
+static int   s_gmax  = 0;
+static float s_scale = 0.0;
+
 char
-rptg_performance        (void)
+rptg__gantt_max         (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rc          =    0;
+   tGROUP     *x_group     = NULL;
+   int         x_ngroup    =    0;
+   /*---(prepare)------------------------*/
+   rc = yDLST_list_by_index  (x_ngroup, NULL, &x_group);
+   DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p", rc, x_group);
+   s_gmax = 0;
+   /*---(walk through groups)------------*/
+   while (rc >= 0) {
+      if (x_group != NULL) {
+         DEBUG_LOOP   yLOG_complex ("GROUP"     , "%3d, %p, %-15.15s, %2dr", rc, x_group, x_group->name, x_group->askd);
+         if (x_group->end > s_gmax)  s_gmax = x_group->end;
+      }
+      rc = yDLST_list_by_index  (++x_ngroup, NULL, &x_group);
+   }
+   s_scale = 200.0 / s_gmax;
+   return 0;
+}
+
+char
+rptg_gantt              (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rc          =    0;
+   tGROUP     *x_group     = NULL;
+   int         x_ngroup    =    0;
+   tPROC      *x_proc      = NULL;
+   int         x_nproc     =    0;
+   int         x_beg       =    0;
+   int         x_end       =    0;
+   int         i           =    0;
+   /*---(prepare)------------------------*/
+   rptg__gantt_max ();
+   rc = yDLST_list_by_index  (x_ngroup, NULL, &x_group);
+   DEBUG_LOOP   yLOG_complex ("head"      , "%3d, %p", rc, x_group);
+   /*---(walk through groups)------------*/
+   while (rc >= 0) {
+      if (x_group != NULL) {
+         DEBUG_LOOP   yLOG_complex ("GROUP"     , "%3d, %p, %-15.15s, %2dr", rc, x_group, x_group->name, x_group->askd);
+         x_beg = x_group->beg * s_scale;
+         x_end = x_group->end * s_scale;
+         printf ("\n");
+         for (i = 0    ; i < x_beg; i++)  printf (" ");
+         printf ("%s\n", x_group->name);
+         for (i = 0    ; i < x_beg; i++)  printf (" ");
+         printf ("[");
+         for (i = x_beg + 1; i < x_end - 1; i++)  printf ("=");
+         printf ("]\n");
+         rc = yDLST_line_by_index  ('-', x_nproc = 0, NULL, &x_proc);
+         while (rc >= 0) {
+            if (x_proc != NULL) {
+               for (i = 0    ; i < x_beg; i++)  printf (" ");
+               printf ("%s (%c)\n", x_proc->name, x_proc->yexec);
+            }
+            rc = yDLST_line_by_index  ('-', ++x_nproc, NULL, &x_proc);
+         }
+      }
+      rc = yDLST_list_by_index  (++x_ngroup, NULL, &x_group);
+   }
+   return 0;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                        pert charting                         ----===*/
+/*====================------------------------------------====================*/
+static void      o___DUMP____________________o (void) {;}
+
+
+
+char
+rptg_dump               (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -431,9 +525,6 @@ rptg_performance        (void)
    tGROUP     *x_group     = NULL;
    tPROC      *x_proc      = NULL;
    int         c           =    0;
-
-
-   return 0;
 
 
    /*---(header)-------------------------*/
@@ -456,21 +547,29 @@ rptg_performance        (void)
    }
    fprintf (f, "##   performance report with major tracking information\n");
    fprintf (f, "##\n");
-   fprintf (f, "##---group----------  ---proc-------------  ---description--------------------------  t  -rpid-  y  ret  ---beg----  ---end----  --dur-  btic  etic  dtic \n");
+   fprintf (f, "#num § ---group------- § ---proc-------- § ---description-------------------------- § t § ---user--- § uid- § -est-- § -minest- § -maxest- § --beg--- § -rpid- § y § ret- § --end--- § --dur- § ");
+   fprintf (f, "\n");
    /*---(check all groups)---------------*/
    for (yDLST_list_by_cursor ('[', NULL, &x_group); x_group != NULL; yDLST_list_by_cursor ('>', NULL, &x_group)) {
       for (yDLST_line_by_cursor ('-', '[', NULL, &x_proc); x_proc != NULL; yDLST_line_by_cursor ('-', '>', NULL, &x_proc)) {
          if (c % 5 == 0)  fprintf (f, "\n");
-         fprintf (f, "%-20.20s  %-20.20s  %-40.40s  %c  %6d  %c  %3d  %-10d  %-10d  %6d  %4d  %4d  %4d \n",
-               x_group->name, x_proc->name, x_proc->desc,
-               x_proc->type, x_proc->rpid, x_proc->yexec, x_proc->rc,
-               x_proc->beg, x_proc->end, x_proc->dur);
+         fprintf (f, "%4d § %-15.15s § %-15.15s § %-40.40s § %c § ",
+               x_proc->line, x_group->name, x_proc->name, x_proc->desc, x_proc->type);
+         fprintf (f, "%-10.10s § %4d § ",
+               x_proc->user, x_proc->uid);
+         fprintf (f, "%6d § %8d § %8d § ",
+               x_proc->est , x_proc->minest, x_proc->maxest);
+         fprintf (f, "%8d § %6d § %c § ",
+               x_proc->beg, x_proc->rpid, x_proc->yexec);
+         fprintf (f, "%4d § %8d § %6d § ",
+               x_proc->rc, x_proc->end, x_proc->dur);
+         fprintf (f, "\n");
          ++c;
       }
    }
    /*---(footer)-------------------------*/
    fprintf (f, "\n");
-   fprintf (f, "##---group----------  ---proc-------------  ---description--------------------------  t  -rpid-  y  ret  ---beg----  ---end----  --dur-  btic  etic  dtic \n");
+   fprintf (f, "#num § ---group------- § ---proc-------- § ---description-------------------------- § t § ---user--- § uid- § -est-- § -minest- § -maxest- § --beg--- § -rpid- § y § ret- § --end--- § --dur- § ");
    fprintf (f, "##\n");
    fprintf (f, "## complete with %d lines\n", c);
    /*---(close report file)--------------*/

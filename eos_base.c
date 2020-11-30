@@ -247,6 +247,7 @@ base_execute            (void)
    x_dur.tv_sec    = 0;
    x_dur.tv_nsec   = my.loop_msec * 1000000;
    /*---(enter main loop)----------------*/
+   EOS_VERBOSE  printf       ("\nexecution begins\n");
    DEBUG_TOPS   yLOG_break   ();
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    while (my.done_done != 'y') {
@@ -276,8 +277,10 @@ base_execute            (void)
    DEBUG_TOPS   yLOG_break   ();
    /*---(report out)---------------------*/
    if (my.done_done == 'y') {
+      EOS_VERBOSE  printf       ("all jobs complete\n");
       DEBUG_TOPS   yLOG_note    ("ALL JOBS COMPLETE");
    } else {
+      EOS_VERBOSE  printf       ("stopped without all jobs complete\n");
       DEBUG_TOPS   yLOG_note    ("STOPPED WITHOUT ALL JOBS COMPLETE");
    }
    /*---(complete)-----------------------*/
@@ -295,7 +298,7 @@ base_kharon             (void)
    int         i           = 0;
    /*---(defense)------------------------*/
    DEBUG_LOOP   yLOG_char    ("run_mode"   , my.run_mode);
-   --rce;  if (my.run_mode != MODE_DAEMON) {
+   --rce;  if (my.run_mode != EOS_RUN_DAEMON) {
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -356,7 +359,7 @@ base_config             (void)
    yDLST_purge ();
    DEBUG_INPT  yLOG_info    ("n_conf"     , my.n_conf);
    rc = yPARSE_autoread (my.n_conf, NULL, base_handler);
-   /*> rc = base_confi();                                                           <*/
+   EOS_VERBOSE  printf       ("\nconfiguration read\n");
    DEBUG_PROG  yLOG_value   ("config"    , rc);
    --rce;  if (rc <  0) {
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);

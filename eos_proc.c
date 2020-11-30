@@ -5,6 +5,35 @@
 
 static char s_print     [LEN_RECD]  = "";
 
+#define    MAX_VERBS       20
+typedef struct cVERB tVERB;
+struct cVERB {
+   char        abbr;
+   char        terse       [LEN_TERSE];
+   char        desc        [LEN_DESC];
+};
+static const tVERB  s_verbs [MAX_VERBS] = {
+   /*---(full execution)-------*/
+   { EOS_TYPE_BOOT   , "boot"      , "only perform during actual boot"   },
+   { EOS_TYPE_CONFIG , "config"    , "simple configuration update"       },
+   { EOS_TYPE_EXEC   , "exec"      , "execute and wait for a process"    },
+   /*---(launch only)----------*/
+   { EOS_TYPE_DAEMON , "daemon"    , "launch and confirm a daemon"       },
+   { EOS_TYPE_MOUNT  , "mount"     , "mount a file system"               },
+   { EOS_TYPE_SERIAL , "serial"    , "launch the first in a series"      },
+   /*---(job control)----------*/
+   { EOS_TYPE_STOP   , "stop"      , "pause a running process"           },
+   { EOS_TYPE_CONT   , "cont"      , "restart a paused process"          },
+   { EOS_TYPE_RESET  , "reset"     , "reload and refresh a daemon"       },
+   { EOS_TYPE_PING   , "ping"      , "ping a daemon for health"          },
+   /*---(terminate)------------*/
+   { EOS_TYPE_KILL   , "kill"      , "kill a running process"            },
+   { EOS_TYPE_WRAPUP , "wrapup"    , "gracefully terminate a process"    },
+   { EOS_TYPE_UMOUNT , "umount"    , "unmount a file system"             },
+   /*---(done)-----------------*/
+   { '-'             , "---"       , "---"                               },
+};
+
 
 
 /*====================------------------------------------====================*/
@@ -203,26 +232,37 @@ proc__dur               (char *a_dur)
 }
 
 char
-proc__flags             (tPROC *a_new, char *a_flags)
+proc__flags             (tPROC *a_new, uchar *a_flags)
 {
+   /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         x_len       =    0;
    char        i           =    0;
+   char        j           =    0;
    char        c           =  '-';
+   char        x_flags     [LEN_LABEL] = "- -   - - - -   -";
+   /*---(defense)------------------------*/
    --rce;  if (a_new   == NULL)  return rce;
-   --rce;  if (a_flags == NULL)  return rce;
-   x_len = strlen (a_flags);
-   if (x_len <= 0)  return 0;
-   --rce;  c = a_flags [i++];  if (strchr ("HML-"        , c) != NULL)   a_new->value   = c;  else return rce;
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (strchr ("Yy-"         , c) != NULL)   a_new->track   = c;  else return rce;
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (strchr ("Ssa-·"       , c) != NULL)   a_new->strict  = c;  else return rce;
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (strchr ("9876hqtz-·"  , c) != NULL)   a_new->lower   = c;  else return rce;
+   --rce;  if (a_flags != NULL) {
+      x_len = strlen (a_flags);
+      for (j = 0; j < x_len; ++j)   x_flags [j] = a_flags [j];
+   }
+   /*---(importance)---------------------*/
+   --rce;  c = x_flags [i++];  if (strchr ("HML-"        , c) != NULL)   a_new->value   = c;  else return rce;
+   /*---(tracking)-----------------------*/
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (strchr ("Yy-"         , c) != NULL)   a_new->track   = c;  else return rce;
+   /*---(strictness)---------------------*/
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (strchr ("Ssa-·"       , c) != NULL)   a_new->strict  = c;  else return rce;
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   /*---(minimum estimate)---------------*/
+   --rce;  c = x_flags [i++];  if (strchr ("=9876hqtz-·" , c) != NULL)   a_new->lower   = c;  else return rce;
+   a_new->minest = a_new->est * 1000;
    switch (a_new->lower) {
+   case '=' : a_new->minest *=  1.00;      break;
    case '9' : a_new->minest *=  0.90;      break;
    case '8' : a_new->minest *=  0.80;      break;  
    case '7' : a_new->minest *=  0.70;      break;  
@@ -233,9 +273,17 @@ proc__flags             (tPROC *a_new, char *a_flags)
    case '·' : break;
    default  : a_new->minest *=  0.00;      break;  
    }
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (strchr ("1234HDTQXZ-·", c) != NULL)   a_new->upper   = c;  else return rce;
+   if (strchr (EOS_WAIT_LONG , a_new->type) != NULL && a_new->minest < 2000) {
+      a_new->minest  = 2000;
+   } else if (strchr (EOS_WAIT_SHORT, a_new->type) != NULL && a_new->minest < 1000) {
+      a_new->minest  = 1000;
+   }
+   /*---(maximum estimate)---------------*/
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (strchr ("=1234HDTQXZ-·", c) != NULL)   a_new->upper   = c;  else return rce;
+   a_new->maxest = a_new->est * 1000;
    switch (a_new->upper) {
+   case '=' : a_new->maxest *=  1.00;      break;
    case '1' : a_new->maxest *=  1.10;      break;
    case '2' : a_new->maxest *=  1.20;      break;  
    case '3' : a_new->maxest *=  1.30;      break;  
@@ -248,12 +296,15 @@ proc__flags             (tPROC *a_new, char *a_flags)
    case '·' : break;
    default  : a_new->maxest  = 9999999;    break;  
    }
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (strchr ("Fkr]-"      , c) != NULL)   a_new->remedy  = c;  else return rce;
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (c != ' ')  return rce;
-   --rce;  c = a_flags [i++];  if (strchr ("kh-"        , c) != NULL)   a_new->handoff = c;  else return rce;
+   /*---(recovery)-----------------------*/
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (strchr ("Fkr]-"      , c) != NULL)   a_new->remedy  = c;  else return rce;
+   /*---(handoff)------------------------*/
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
+   --rce;  c = x_flags [i++];  if (strchr ("kh-"        , c) != NULL)   a_new->handoff = c;  else return rce;
+   /*---(complete)-----------------------*/
    return 0;
 }
 
@@ -263,13 +314,14 @@ proc_handler            (int n, uchar *a_verb)
    /*---(locals)-----------+-----------+-*/
    char        rce         =  -10;
    int         rc          =    0;
-   char       *x_valid     = " boot config daemon exec mount serial   kill umount wrapup ";
-   char        t           [LEN_LABEL] = "";
+   int         i           =    0;
+   int         c           =    0;
+   char        x_type      =  '-';
    char        x_label     [LEN_LABEL] = "";
    char        x_desc      [LEN_DESC]  = "";
    char        x_user      [LEN_LABEL] = "";
-   char        x_dur       [LEN_TERSE] = "";
-   char        x_flags     [LEN_LABEL] = "";
+   char        x_dur       [LEN_TERSE] = "0";
+   uchar       x_flags     [LEN_LABEL] = "- -   - - - -   -";
    char        x_run       [LEN_FULL]   = "";
    tPASSWD    *x_pass      = NULL;
    int         x_uid       =   -1;
@@ -284,32 +336,67 @@ proc_handler            (int n, uchar *a_verb)
       return rce;
    }
    DEBUG_INPT  yLOG_info    ("a_verb"    , a_verb);
-   sprintf (t, " %s ", a_verb);
-   --rce;  if (strstr (x_valid, t) == NULL) {
+   for (i = 0; i < MAX_VERBS; ++i) {
+      if (s_verbs [i].abbr == '-')                 break;
+      if (strcmp (s_verbs [i].terse, a_verb) != 0)  continue;
+      x_type = s_verbs [i].abbr;
+   }
+   EOS_VERBOSE  printf       ("  step  : %s", a_verb);
+   DEBUG_INPT   yLOG_char  ("x_type"      , x_type);
+   --rce;  if (x_type == '-') {
       DEBUG_INPT  yLOG_note    ("incorrect verb handler called");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
+   EOS_VERBOSE  printf       (", %c", x_type);
    /*---(parse fields)-------------------*/
-   rc = yPARSE_scanf (a_verb, "LDUTLF", x_label, x_desc, x_user, x_dur, x_flags, x_run);
-   DEBUG_INPT  yLOG_value   ("scanf"     , rc);
-   --rce;  if (rc < 0) {
+   rc = yPARSE_ready (&c);
+   DEBUG_INPT  yLOG_value   ("fields"    , c);
+   --rce;  if (c < 2) {
+      DEBUG_INPT  yLOG_note    ("failed, only a verb");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   /*---(check uid)--------------------------*/
-   x_pass = getpwnam (x_user);
-   DEBUG_INPT   yLOG_point   ("x_pass"    , x_pass);
-   --rce;  if (x_pass == NULL) {
-      DEBUG_INPT   yLOG_exitr (__FUNCTION__, rce);
+   EOS_VERBOSE  printf       (", %d fields", c);
+   if (c > 7)  c = 7;
+   switch (c) {
+   case 2 : rc = yPARSE_scanf (a_verb, "F"     , x_run);  break;
+   case 3 : rc = yPARSE_scanf (a_verb, "UF"    , x_user , x_run);  break;
+   case 4 : rc = yPARSE_scanf (a_verb, "LUF"   , x_label, x_user, x_run);  break;
+   case 5 : rc = yPARSE_scanf (a_verb, "LUTF"  , x_label, x_user, x_dur, x_run);  break;
+   case 6 : rc = yPARSE_scanf (a_verb, "LDUTF" , x_label, x_desc, x_user, x_dur, x_run);  break;
+   case 7 : rc = yPARSE_scanf (a_verb, "LDUTLF", x_label, x_desc, x_user, x_dur, x_flags, x_run);  break;
+   }
+   EOS_VERBOSE  printf       (", %d scanf", rc);
+   DEBUG_INPT  yLOG_value   ("scanf"     , rc);
+   --rce;  if (rc < 0) {
+      EOS_VERBOSE  printf       (", failed\n");
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   x_uid  = x_pass->pw_uid;
+   /*---(label)------------------------------*/
+   if (strcmp (x_label, "") == 0)   sprintf (x_label, "#%03d", n);
+   /*---(check uid)--------------------------*/
+   if (strcmp (x_user, "") == 0) {
+      strlcpy (x_user, my.who, LEN_LABEL);
+      x_uid = my.uid;
+   } else {
+      x_pass = getpwnam (x_user);
+      DEBUG_INPT   yLOG_point   ("x_pass"    , x_pass);
+      --rce;  if (x_pass == NULL) {
+         EOS_VERBOSE  printf       (", failed\n");
+         DEBUG_INPT   yLOG_exitr (__FUNCTION__, rce);
+         return rce;
+      }
+      x_uid  = x_pass->pw_uid;
+   }
    DEBUG_INPT   yLOG_value ("uid"         , x_uid);
    /*---(check its runable)--------------*/
    rc = yEXEC_runable (x_label, x_user, x_run, YEXEC_FULL);
    DEBUG_INPT   yLOG_value   ("runnable"  , rc);
+   EOS_VERBOSE  printf       (", runable %d", rc);
    --rce;  if (rc < 0) {
+      EOS_VERBOSE  printf       (", failed\n");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -317,31 +404,29 @@ proc_handler            (int n, uchar *a_verb)
    rc = proc__new (&x_new);
    DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
    --rce;  if (x_new == NULL) {
+      EOS_VERBOSE  printf       (", failed\n");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   EOS_VERBOSE  printf       (", new");
    /*---(populate)-----------------------*/
    x_new->line = n;
+   EOS_VERBOSE  printf       (", line %d", n);
    strlcpy (x_new->name, x_label, LEN_LABEL);
-   x_new->type    = a_verb [0];
-   DEBUG_INPT   yLOG_char  ("type"        , x_new->type);
+   EOS_VERBOSE  printf       (", %s", x_label);
+   x_new->type    = x_type;
    strlcpy (x_new->desc, x_desc , LEN_DESC);
    strlcpy (x_new->user, x_user , LEN_LABEL);
    x_new->uid     = x_uid;
    x_new->est     = proc__dur (x_dur);
-   if        (strchr ("dsw", x_new->type) != NULL && x_new->est < 2) {
-      x_new->minest  = x_new->maxest  = 2000;
-   } else if (strchr ("muk", x_new->type) != NULL && x_new->est < 1) {
-      x_new->minest  = x_new->maxest  = 1000;
-   } else {
-      x_new->minest  = x_new->maxest  = x_new->est * 1000;
-   }
    proc__flags (x_new, x_flags);
    strlcpy (x_new->run , x_run  , LEN_FULL);
    /*---(create line)--------------------*/
    rc = yDLST_line_create (x_label, x_new);
+   EOS_VERBOSE  printf       (", ydlst %d", rc);
    DEBUG_INPT   yLOG_value   ("create"    , rc);
    --rce;  if (rc < 0) {
+      EOS_VERBOSE  printf       (", failed\n");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -349,10 +434,12 @@ proc_handler            (int n, uchar *a_verb)
    yDLST_line_list (NULL, &x_group);
    DEBUG_INPT   yLOG_point   ("x_group"   , x_group);
    --rce;  if (x_group == NULL) {
+      EOS_VERBOSE  printf       (", failed\n");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    ++x_group->askd;
+   EOS_VERBOSE  printf       (", success\n");
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -379,6 +466,7 @@ proc_mark_begin         (llong a_msec, int a_rpid)
    /*---(update proc)--------------------*/
    x_proc->beg     = a_msec;
    x_proc->rpid    = a_rpid;
+   EOS_VERBOSE  printf       ("%6lld    proc %s begin\n", a_msec, x_proc->name);
    /*---(complete)-----------------------*/
    return 0;
 }
@@ -408,6 +496,7 @@ proc_mark_all_in_one    (llong a_msec, int a_rpid, char a_yexec)
    ++x_group->done;
    /*---(deactivate)---------------------*/
    yDLST_active_off ();
+   EOS_VERBOSE  printf       ("%6lld    proc %s begin/end (%c)\n", a_msec, x_proc->name, x_proc->yexec);
    /*---(complete)-----------------------*/
    return 0;
 }
@@ -431,7 +520,7 @@ proc_mark_done          (llong a_msec, char a_yexec, int a_rc)
    x_proc->dur     = x_proc->end - x_proc->beg;
    if (x_proc->dur < 0)  x_proc->dur = 0;
    /*---(remark on limits)---------------*/
-   if (strchr ("dwmu", x_proc->type) == NULL && a_yexec == 'n') {
+   if (strchr (EOS_TYPE_LIMITS, x_proc->type) != NULL && a_yexec == 'n') {
       if (x_proc->dur < x_proc->minest)  x_proc->yexec = '<';
       if (x_proc->dur > x_proc->maxest)  x_proc->yexec = '>';
    }
@@ -440,11 +529,12 @@ proc_mark_done          (llong a_msec, char a_yexec, int a_rc)
    --rce;  if (x_group == NULL)  return rce;
    ++x_group->done;
    switch (a_yexec) {
-   case 'n' : case 'r' : case 'A' :  break;
+   case 'n' : case 'r' : case 'A' : case '#' :             break;
    default                        :  x_group->note = '#';  break;
    }
    /*---(deactivate)---------------------*/
    yDLST_active_off ();
+   EOS_VERBOSE  printf       ("%6lld    proc %s end (%c)\n", a_msec, x_proc->name, x_proc->yexec);
    /*---(complete)-----------------------*/
    return 0;
 }

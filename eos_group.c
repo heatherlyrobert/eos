@@ -155,6 +155,7 @@ group_handler           (int n, uchar *a_verb)
    char        x_label     [LEN_LABEL] = "";
    char        x_desc      [LEN_DESC]  = "";
    tGROUP     *x_new       = NULL;
+   int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
@@ -169,31 +170,58 @@ group_handler           (int n, uchar *a_verb)
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
+   EOS_VERBOSE  printf       ("\nGROUP   : ");
    /*---(parse fields)-------------------*/
-   rc = yPARSE_scanf (a_verb, "LD", x_label, x_desc);
+   rc = yPARSE_ready (&c);
+   DEBUG_INPT  yLOG_value   ("fields"    , c);
+   --rce;  if (c < 2) {
+      DEBUG_INPT  yLOG_note    ("failed, only a verb");
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
+   EOS_VERBOSE  printf       (", %d fields", c);
+   if (c > 3)  c = 3;
+   switch (c) {
+   case  2 :
+      rc = yPARSE_scanf (a_verb, "L" , x_label);
+      break;
+   case  3 :
+      rc = yPARSE_scanf (a_verb, "LD", x_label, x_desc);
+      break;
+   }
+   EOS_VERBOSE  printf       ("%d scanf", rc);
    DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
+      EOS_VERBOSE  printf       (", failed\n");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    /*---(create data)--------------------*/
    rc = group__new (&x_new);
+   EOS_VERBOSE  printf       (", new");
    DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
    --rce;  if (x_new == NULL) {
+      EOS_VERBOSE  printf       (", failed\n");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(populate)-----------------------*/
    x_new->line = n;
+   EOS_VERBOSE  printf       (", line %d", n);
    strlcpy (x_new->name, x_label, LEN_LABEL);
+   EOS_VERBOSE  printf       (", %s", x_label);
    strlcpy (x_new->desc, x_desc , LEN_DESC);
    /*---(create list)--------------------*/
    rc = yDLST_list_create (x_new->name, x_new);
+   EOS_VERBOSE  printf       (", ydlst %d", rc);
    DEBUG_INPT   yLOG_value   ("yDLST"     , rc);
    --rce;  if (rc < 0) {
+      EOS_VERBOSE  printf       (", failed\n");
+      group__free (&x_new);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   EOS_VERBOSE  printf       (", success\n");
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -220,20 +248,26 @@ after_handler           (int n, uchar *a_verb)
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
+   EOS_VERBOSE  printf       ("  AFTER : ");
    /*---(parse fields)-------------------*/
    rc = yPARSE_scanf (a_verb, "L", x_label);
+   EOS_VERBOSE  printf       ("%d scanf", rc);
    DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
+      EOS_VERBOSE  printf       (", failed\n");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    /*---(create list)--------------------*/
    rc = yDLST_seq_after (x_label);
+   EOS_VERBOSE  printf       (", ydlst %d", rc);
    DEBUG_INPT   yLOG_value   ("after"     , rc);
    --rce;  if (rc < 0) {
+      EOS_VERBOSE  printf       (", failed\n");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   EOS_VERBOSE  printf       (", success\n");
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -258,6 +292,7 @@ group_mark_begin        (llong a_msec)
    --rce;  if (x_group->status != GROUP_READY)   return rce;
    x_group->status    = GROUP_RUNNING;
    x_group->beg       = a_msec;
+   EOS_VERBOSE  printf       ("%6lld group %s begin\n", a_msec, x_group->name);
    /*---(complete)-----------------------*/
    return 0;
 }
@@ -275,6 +310,7 @@ group_mark_done         (llong a_msec)
    x_group->status    = GROUP_DONE;
    x_group->end       = a_msec;
    x_group->dur       = x_group->end - x_group->beg;
+   EOS_VERBOSE  printf       ("%6lld group %s end\n", a_msec, x_group->name);
    /*---(complete)-----------------------*/
    return 0;
 }
