@@ -295,17 +295,23 @@ base_kharon             (void)
    char        rce         =  -10;
    char        rc          =    0;
    char        x_args      [LEN_FULL];
+   char        x_final     [LEN_FULL];
    int         i           = 0;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
+   EOS_VERBOSE  printf       ("base_kharon  : %c, %c, %d", my.run_as, my.run_mode, my.pid);
    DEBUG_LOOP   yLOG_char    ("run_mode"   , my.run_mode);
-   --rce;  if (my.run_mode != EOS_RUN_DAEMON) {
-      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
+   /*> --rce;  if (my.run_mode != EOS_RUN_DAEMON) {                                   <* 
+    *>    DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);                              <* 
+    *>    EOS_VERBOSE  printf       (", failed\n");                                   <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <*/
    /*---(pass the torch)-----------------*/
    /*> strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
-   strlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);
-   strlargs   (x_args, LEN_FULL, 20, &my.argc, my.argv);
+   /*> strlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
+   strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen", LEN_FULL);
+   strlparse  (x_args, NULL, x_final, 20, &my.argc, my.argv, LEN_FULL);
    DEBUG_LOOP   yLOG_value   ("argc"       , my.argc);
    DEBUG_VIEW   printf ("arg count %d\n", my.argc);
    for (i = 0; i < my.argc; ++i) {

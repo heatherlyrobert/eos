@@ -30,8 +30,8 @@
 
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.1-, starting rebuild back up"
-#define     P_VERNUM    "2.1d"
-#define     P_VERTXT    "group/proc handles multiple field counts, better flags"
+#define     P_VERNUM    "2.1e"
+#define     P_VERTXT    "fixed yEXEC privilege issue which was fatally process launching"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"

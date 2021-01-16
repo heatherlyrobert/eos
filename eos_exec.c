@@ -110,6 +110,7 @@ exec__verify_daemon     (char *a_run, int *a_rpid)
    /*---(defense)------------------------*/
    DEBUG_LOOP  yLOG_point   ("a_run"     , a_run);
    --rce;  if (a_run == NULL) {
+      if (a_rpid != NULL)  *a_rpid = rce;
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -127,6 +128,7 @@ exec__verify_daemon     (char *a_run, int *a_rpid)
    p = strrchr (t, '/');
    DEBUG_LOOP  yLOG_point   ("p"         , p);
    --rce;  if (p == NULL) {
+      if (a_rpid != NULL)  *a_rpid = rce;
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -187,9 +189,10 @@ exec__check_launch      (tPROC *a_proc, llong a_msec)
    if (a_msec < 0)  a_msec = 0;
    if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
    /*---(update)-------------------------*/
-   DEBUG_LOOP   yLOG_note    ("normal process launch checking");
-   rc = yEXEC_check (a_proc->name, a_proc->rpid, &x_return);
-   DEBUG_LOOP   yLOG_value   ("check"      , rc);
+   DEBUG_LOOP   yLOG_info    ("run"       , a_proc->run);
+   DEBUG_LOOP   yLOG_value   ("rpid"      , a_proc->rpid);
+   rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return);
+   DEBUG_LOOP   yLOG_char    ("check"      , rc);
    if (rc != YEXEC_RUNNING) {
       DEBUG_LOOP   yLOG_note    ("not running anymore");
       proc_mark_done  (a_msec, rc, x_return);
@@ -312,14 +315,14 @@ exec__check_daemon      (tPROC *a_proc, llong a_msec)
    c = exec__verify_daemon (a_proc->run, &x_rpid);
    DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
    while (c > 1) {
-      rc = yEXEC_check (a_proc->name, x_rpid, NULL);
+      rc = yEXEC_verify (a_proc->name, x_rpid, NULL);
       DEBUG_LOOP   yLOG_char    ("exit"       , rc);
       c  = exec__verify_daemon (a_proc->run, &x_rpid);
       DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
    }
    /*---(final daemon)----------------*/
    a_proc->rpid = x_rpid;
-   rc = yEXEC_check (a_proc->name, a_proc->rpid, &x_return);
+   rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return);
    switch (rc) {
    case  YEXEC_NOSUCH :  rc = YEXEC_RUNNING;  break;
    case  YEXEC_NORMAL :  rc = YEXEC_DIED;     break;
@@ -375,7 +378,7 @@ exec__check_signal      (tPROC *a_proc, llong a_msec)
          DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
          return 1;
       } else {
-         rc = yEXEC_check (a_proc->name, a_proc->rpid, &x_return);
+         rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return);
          proc_mark_done  (a_msec, YEXEC_ERROR, x_return);
          DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
          return 1;
@@ -622,7 +625,9 @@ exec__dispatch_launch   (tPROC *a_proc, llong a_msec)
    DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
    if (a_msec < 0)  a_msec = 0;
    /*---(run)-------------------------*/
-   x_rpid = yEXEC_run (a_proc->name, a_proc->user, a_proc->run, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, my.n_exec);
+   x_rpid = yEXEC_full (a_proc->name, a_proc->user, a_proc->run, YEXEC_DASH, YEXEC_FULL, YEXEC_FORK, my.n_exec);
+   DEBUG_LOOP   yLOG_info    ("user"      , a_proc->user);
+   DEBUG_LOOP   yLOG_value   ("uid"       , a_proc->uid);
    DEBUG_LOOP   yLOG_value   ("x_rpid"    , x_rpid);
    /*---(handle bad launch)-----------*/
    if (x_rpid <  0) {
@@ -633,6 +638,7 @@ exec__dispatch_launch   (tPROC *a_proc, llong a_msec)
    }
    /*---(update line)-----------------*/
    proc_mark_begin (a_msec, x_rpid);
+   /*> printf ("rpid = %d\n", a_proc->rpid);                                          <*/
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
    return 1;

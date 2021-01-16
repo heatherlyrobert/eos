@@ -22,6 +22,7 @@ main               (int a_argc, char *a_argv[])
    /*---(initialize)---------------------*/
    my.msec = base_msec ();
    DEBUG_LOOP   yLOG_value   ("my.msec"    , my.msec);
+   printf ("%s\n", P_ONELINE);
    if (rc >= 0)  rc = PROG_verbose    (a_argc, a_argv);
    if (rc >= 0)  rc = PROG_runas      (a_argc, a_argv);
    if (rc >= 0)  rc = PROG_boot       ();
@@ -47,23 +48,30 @@ main               (int a_argc, char *a_argv[])
       PROG_end ();
       return rce;
    }
-   /*---(modes)--------------------------*/
+   /*---(verify only)--------------------*/
+   if (my.run_mode == EOS_RUN_VERIFY) {
+      rc = PROG_end ();
+      return 0;
+   }
+   /*---(verify only)--------------------*/
    switch (my.run_mode) {
    case EOS_RUN_VERIFY  :
       rptg_pert ();
       break;
    case EOS_RUN_NORMAL  :
+   case EOS_RUN_DAEMON  :
       rc = base_execute ();
       rptg_pert  ();
       rptg_gantt ();
       rptg_dump  ();
       break;
-   case EOS_RUN_DAEMON  :
-      rc = base_execute ();
-      rc = PROG_end ();
-      rc = base_kharon  ();
-      break;
+   /*> case EOS_RUN_DAEMON  :                                                         <*/
+      /*> rc = base_execute ();                                                       <* 
+       *> rc = PROG_end ();                                                           <* 
+       *> rc = base_kharon  ();                                                       <* 
+       *> break;                                                                      <*/
    }
+   if (my.run_as == IAM_EOS && my.pid == 1)  base_kharon ();
    /*---(wrapup)-------------------------*/
    rc = PROG_end ();
    /*---(complete)-----------------------*/

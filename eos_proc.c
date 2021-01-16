@@ -296,6 +296,7 @@ proc__flags             (tPROC *a_new, uchar *a_flags)
    case '·' : break;
    default  : a_new->maxest  = 9999999;    break;  
    }
+   if (a_new->maxest < a_new->minest)  a_new->maxest = a_new->minest;
    /*---(recovery)-----------------------*/
    --rce;  c = x_flags [i++];  if (c != ' ' && c != '·')  return rce;
    --rce;  c = x_flags [i++];  if (strchr ("Fkr]-"      , c) != NULL)   a_new->remedy  = c;  else return rce;
