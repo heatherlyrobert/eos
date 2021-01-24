@@ -45,6 +45,8 @@ install_post       :
 	@sha1sum  /sbin/hypnos
 	ln --force --physical /sbin/eos        /sbin/hannibal
 	@sha1sum  /sbin/hannibal
+	ln --force --physical /sbin/eos        /sbin/@
+	@sha1sum  /sbin/@
 	ln --force --physical /sbin/eos_debug  /sbin/nyx_debug
 	ln --force --physical /sbin/eos_debug  /sbin/hypnos_debug
 	ln --force --physical /sbin/eos_debug  /sbin/hannibal_debug

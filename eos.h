@@ -30,8 +30,8 @@
 
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.1-, starting rebuild back up"
-#define     P_VERNUM    "2.1e"
-#define     P_VERTXT    "fixed yEXEC privilege issue which was fatally process launching"
+#define     P_VERNUM    "2.1f"
+#define     P_VERTXT    "created pretty nice, eight-precent done man files"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -400,6 +400,8 @@ struct cACCESSOR
 #define     EOS_RUN_VALID    "vpdn"
 #define     EOS_VERBOSE      if (my.verbose  == 'y') 
 
+#define     EOS_RPTG_VERBS   'V'
+#define     EOS_RPTG_CONTROL 'C'
 
 /*---(directory names)--------------------------*/
 #define     DIR_ETC          "/etc/"
@@ -446,18 +448,20 @@ struct cACCESSOR
 /*---(job control)----------*/
 #define     EOS_TYPE_STOP        'S'
 #define     EOS_TYPE_CONT        'C'
-#define     EOS_TYPE_RESET       'r'
-#define     EOS_TYPE_PING        'p'
+#define     EOS_TYPE_RESET       'R'
+#define     EOS_TYPE_PING        'P'
 /*---(terminate)------------*/
 #define     EOS_TYPE_KILL        'k'
 #define     EOS_TYPE_UMOUNT      'u'
 #define     EOS_TYPE_WRAPUP      'w'
 /*---(groups)---------------*/
-#define     EOS_WAIT_LONG        "dswr"
-#define     EOS_WAIT_SHORT       "mukp"
+#define     EOS_WAIT_LONG        "dswR"
+#define     EOS_WAIT_SHORT       "mukP"
 /*---(special)--------------*/
 #define     EOS_TYPE_LIMITS      "bce"
-#define     EOS_TYPE_NOSTOP      "SCrp"
+#define     EOS_TYPE_NOSTOP      "SCRP"
+/*---(helper)---------------*/
+#define     EOS_TYPE_DIV         '-'
 
 
 
@@ -507,11 +511,11 @@ struct cPROC {
    /*---(flags)--------------------------*/
    char        value;                       /* on a H-M-L scale               */
    char        track;                       /* detailed tracking              */
+   char        handoff;                     /* handoff to kharon/haides       */
    char        strict;                      /* adherence to limits            */
    char        lower;                       /* lower limit on duration        */
    char        upper;                       /* upper limit on duration        */
    char        remedy;                      /* limit violation remedy         */
-   char        handoff;                     /* handoff to kharon/haides       */
    /*---(results)------------------------*/
    llong       beg;                         /* start msec                     */
    int         rpid;                        /* process id of crond            */
@@ -629,7 +633,6 @@ char*       proc__memory            (tPROC *a_proc);
 char        proc__new               (tPROC **a_new);
 char        proc__free              (tPROC **a_old);
 /*---(existance)------------*/
-int         proc__dur               (char *a_dur);
 char        proc__flags             (tPROC *a_new, uchar *a_flags);
 char        proc_handler            (int n, uchar *a_verb);
 /*---(exec)-----------------*/
@@ -637,6 +640,8 @@ char        proc_mark_begin         (llong a_msec, int a_rpid);
 char        proc_mark_all_in_one    (llong a_msec, int a_rpid, char a_yexec);
 char        proc_mark_done          (llong a_msec, char a_yexec, int a_rc);
 char        proc_mark_clear         (void);
+/*---(reporting)------------*/
+char        proc_verblist           (void);
 /*---(unittest)-------------*/
 char*       proc__unit              (char *a_question, int a_num);
 

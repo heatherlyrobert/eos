@@ -67,17 +67,17 @@ PROG_verbose       (int a_argc, char *a_argv[])
    int         i           =    0;
    /*---(default)------------------------*/
    my.verbose = '-';
-   printf ("PROG_verbose : ");
-   printf ("%d", a_argc);
+   /*> printf ("PROG_verbose : ");                                                    <*/
+   /*> printf ("%d", a_argc);                                                         <*/
    /*---(locate loud)--------------------*/
    for (i = 1; i < a_argc; ++i) {
-      printf (", %s", a_argv [i]);
+      /*> printf (", %s", a_argv [i]);                                                <*/
       if (a_argv [i][0] != '-')       continue;
       if (a_argv [i][1] != '-')       continue;
       if (strcmp (a_argv [i], "--verbose") == 0)  my.verbose = 'y';
    }
-   printf (", %c", my.verbose);
-   printf (", done\n");
+   /*> printf (", %c", my.verbose);                                                   <*/
+   /*> printf (", done\n");                                                           <*/
    /*---(complete)-----------------------*/
    return 0;
 }
@@ -90,14 +90,21 @@ PROG_runas              (int a_argc, char *a_argv[])
    my.run_as         = '-';
    my.run_mode       = EOS_RUN_NORMAL;
    /*---(specific)-----------------------*/
+   /* must also trap _debug versions */
    if      (strncmp (a_argv [0], "eos"           ,  3) == 0)    my.run_as = IAM_EOS;
    else if (strncmp (a_argv [0], "/sbin/eos"     ,  9) == 0)    my.run_as = IAM_EOS;
+   else if (strcmp  (a_argv [0], "init"              ) == 0)    my.run_as = IAM_EOS;
    else if (strncmp (a_argv [0], "nyx"           ,  3) == 0)    my.run_as = IAM_NYX;
    else if (strncmp (a_argv [0], "/sbin/nyx"     ,  9) == 0)    my.run_as = IAM_NYX;
-   else if (strncmp (a_argv [0], "hannibal"      ,  8) == 0)    my.run_as = IAM_HANNIBAL;
-   else if (strncmp (a_argv [0], "/sbin/hannibal", 14) == 0)    my.run_as = IAM_EOS;
+   else if (strcmp  (a_argv [0], "shutdown"          ) == 0)    my.run_as = IAM_NYX;
+   else if (strcmp  (a_argv [0], "halt"              ) == 0)    my.run_as = IAM_NYX;
+   else if (strcmp  (a_argv [0], "restart"           ) == 0)    my.run_as = IAM_NYX;
    else if (strncmp (a_argv [0], "hypnos"        ,  6) == 0)    my.run_as = IAM_HYPNOS;
    else if (strncmp (a_argv [0], "/sbin/hypnos"  , 12) == 0)    my.run_as = IAM_HYPNOS;
+   else if (strncmp (a_argv [0], "hannibal"      ,  8) == 0)    my.run_as = IAM_HANNIBAL;
+   else if (strncmp (a_argv [0], "/sbin/hannibal", 14) == 0)    my.run_as = IAM_HANNIBAL;
+   else if (strcmp  (a_argv [0], "@"                 ) == 0)    my.run_as = IAM_HANNIBAL;
+   else if (strcmp  (a_argv [0], "/sbin/@"           ) == 0)    my.run_as = IAM_HANNIBAL;
    else {
       return -1;
    }
@@ -157,26 +164,26 @@ PROG_boot               (void)
    /*---(quick out)----------------------*/
    if (my.run_as != IAM_EOS)  return 0;
    /*---(remount /)----------------------*/
-   printf ("PROG_boot  : ");
+   EOS_VERBOSE  printf ("PROG_boot  : ");
    rc = mount ("/dev/sda4", "/", "ext4", MS_REMOUNT | MS_NOATIME, NULL);
-   printf ("/ remounted (%d)", rc);
+   EOS_VERBOSE  printf ("/ remounted (%d)", rc);
    /*---(check on /proc)-----------------*/
    /*> mkdir ("/proc", 0755);                                                         <*/
-   printf ("/proc");
+   EOS_VERBOSE  printf ("/proc");
    while (1) {
-      printf (" (%d)", x_tries);
+      EOS_VERBOSE  printf (" (%d)", x_tries);
       f = fopen ("/proc/mounts", "rt");
       if (f != NULL)    break;
       if (x_tries > 3)  break;
-      printf ("failed");
+      EOS_VERBOSE  printf ("failed");
       rc = mount ("proc"  , "/proc", "proc", 0, NULL);
       ++x_tries;
    }
    --rce;  if (f == NULL) {
-      printf ("FATAL\n");
+      EOS_VERBOSE  printf ("FATAL\n");
       return rce;
    }
-   printf ("success");
+   EOS_VERBOSE  printf ("success");
    /*---(show /proc/mounts)--------------*/
    while (1) {
       fgets (x_recd, 450, f);
@@ -192,16 +199,16 @@ PROG_boot               (void)
    }
    fclose (f);
    /*---(check on yLOG)------------------*/
-   printf (", yLOG");
+   EOS_VERBOSE  printf (", yLOG");
    if (x_ylog == 'y') {
-      printf (" already mounted");
+      EOS_VERBOSE  printf (" already mounted");
       return 0;
    } else {
       rc = mount ("varlog", "/var/log/yLOG", "tmpfs", MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_NOATIME, "size=500m");
-      printf (" mount %d", rc);
+      EOS_VERBOSE  printf (" mount %d", rc);
    }
    /*---(close)--------------------------*/
-   printf ("done\n");
+   EOS_VERBOSE  printf ("done\n");
    return 0;
 }
 
@@ -308,9 +315,13 @@ PROG_args          (int a_argc, char *a_argv[])
       else if (strcmp (a, "--hypnos"    ) == 0)  my.run_as    = IAM_HYPNOS;
       else if (strcmp (a, "--hannibal"  ) == 0)  my.run_as    = IAM_HANNIBAL;
       /*---(run modes)-------------------*/
-      else if (strcmp (a, "--daemon"    ) == 0)  my.run_mode  = EOS_RUN_DAEMON;
       else if (strcmp (a, "--verify"    ) == 0)  my.run_mode  = EOS_RUN_VERIFY;
+      else if (strcmp (a, "--pretend"   ) == 0)  my.run_mode  = EOS_RUN_PRETEND;
       else if (strcmp (a, "--normal"    ) == 0)  my.run_mode  = EOS_RUN_NORMAL;
+      else if (strcmp (a, "--daemon"    ) == 0)  my.run_mode  = EOS_RUN_DAEMON;
+      /*---(reporting)-------------------*/
+      else if (strcmp (a, "--show_verb" ) == 0)  my.run_mode  = EOS_RPTG_VERBS;
+      else if (strcmp (a, "--show_cntl" ) == 0)  my.run_mode  = EOS_RPTG_CONTROL;
       /*---(files)-----------------------*/
       else if (strcmp (a, "--conf"      ) == 0)  TWOARG rc = base_file_cli ("conf", a_argv [i]);
       else if (strcmp (a, "--exec"      ) == 0)  TWOARG rc = base_file_cli ("exec", a_argv [i]);
@@ -372,7 +383,7 @@ PROG_begin         (void)
       }
       DEBUG_TOPS   yLOG_note    ("operating as a semi-daemon (process one)");
       /*---(update console)---------------------*/
-      rc = yEXEC_tty_open (my.dev, NULL, YEXEC_STDOUT, YEXEC_NO);
+      rc = ySEC_open (my.dev, NULL, YEXEC_STDOUT, YEXEC_NO, YEXEC_NO);
       EOS_VERBOSE  printf       (", tty_open (%d)", rc);
       DEBUG_TOPS   yLOG_value   ("console"   , rc);
       --rce;  if (rc < 0) {
@@ -432,7 +443,7 @@ PROG_end           (void)
 {
    /*---(create utmp boot)----------------------*/
    yLOG_enter (__FUNCTION__);
-   rptg_dump  ();
+   /*> rptg_dump  ();                                                                 <*/
    yLOG_info  ("logger",   "shutting down logger");
    yLOG_exit  (__FUNCTION__);
    yLOGS_end   ();

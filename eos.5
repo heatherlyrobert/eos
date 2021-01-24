@@ -1,0 +1,279 @@
+.TH eos 5 2010-oct "linux" "configuration and data files"
+
+.SH NAME
+.B eos
+\- simple, reliable, and transparent system initialization
+
+.SH PATRON
+.B eos-rhododactylos
+(rosy-fingered dawn) titaness of daybreak
+
+.SH IMAGERY
+radiant worman with white wings, golden arms, and rosy fingers
+
+.SH SUMMARY
+eos is a standardized batch-processing control program which generalizes and
+removes complexity from invidual scripts/programs.  eos specifically drives
+system start-up, shut-down, and cleanup as well.
+
+.SH DOCUMENTATION FILES
+.nf
+eos (1)            command-line usage 
+.nf
+eos (5)      [***] configuration and data files
+.nf
+eos (7)            decision rationale, objectives, and overview
+
+.SH BATCH PROCESSING CONTROL FILES
+each input file is
+.B independent and self-contained
+not requiring any outside support, linking, or specific configuration.
+all contents are pure
+.B 8bit ascii
+text in a 
+.B column delimited format
+using the standard ascii field separator (0x1f, shown as § below).
+
+.B example...
+
+   GROUP    § NORMAL     § all the common verbs             § ···>
+     exec   § dhcpcd     § bring dhcp on-line               § ···>
+     config § hwclock    § set the clock from hardware      § ···>
+     once   § dmesg      § set the kernel logging level     § ···>
+   
+   GROUP    § BIG IRON   § more critial activities          § ···>
+     AFTER  § NORMAL     § · · · · · · · · · · · · · · · ·  § ···>
+     daemon § hestia     § start the hestia getty daemon    § ···>
+     mount  § sys_fs     § mount the sys filesystem         § ···>
+     serial § getty6     § place standard getty on tty6     § ···>
+   
+   GROUP    § PROCESS    § common process control actions   § ···>
+     AFTER  § NORMAL     § · · · · · · · · · · · · · · · ·  § ···>
+     stop   § hestia     § pause while defragging the disk  § ···>
+     cont   § hestia     § restart after defrag             § ···>
+     reset  § khronos    § get the most recent config       § ···>
+     ping   § artemis    § verify process cleanup active    § ···>
+
+   GROUP    § TERMINATE  § verbs for shutting down          § ···>
+     AFTER  § BIG IRON   § · · · · · · · · · · · · · · · ·  § ···>
+     AFTER  § PROCESS    § · · · · · · · · · · · · · · · ·  § ···>
+     kill   § dhcpcd     § take down dhcp                   § ···>
+     wrapup § hestia     § stopping online access           § ···>
+     umount § boot       § take boot filesystem off-line    § ···>
+
+.B resulting sequence of groups...
+
+   ³---³   ³-----------³   ³-----------³  
+   | è |---|   NORMAL  |-´-|  BIG IRON |-´
+   ³---³   ³-----------³ | ³-----------³ |
+                         |               |
+                         | ³-----------³ | ³-----------³   ³---³
+                         ´-|  PROCESS  |-´-| TERMINATE |---| ÿ |
+                           ³-----------³   ³-----------³   ³---³
+
+these files could be 7bit ascii; but, i love occasionally using my
+extended shrike font characters for clarity and aesthetics ;)
+
+.SH RECORD TYPES
+each execution record is complete in a single line.  there are 
+.B 15 types
+of execution records, all formatted very consistently and similarly.  each type
+of line is identified by a
+.B prefixed/leading verb.
+
+.B normal execution verbs (3)
+   exec      execute a process and wait for completion
+   config    simple, fast configuration update (synonym for exec)
+   once      only during actual boot/shutdown (synonym for exec)
+
+.B launch and remain (3)
+   daemon    launch and confirm a daemon
+   mount     mount and confirm a filesystem
+   serial    launch first in a continual sequence (synonym for daemon)
+
+.B process control (4)
+   stop      pause a running process
+   cont      restart a paused process
+   reset     reload and refresh a daemon/server
+   ping      request a health check from daemon/server
+
+.B termination  (3)
+   kill      violently kill a running process
+   wrapup    gracefully terminate a process
+   umount    unmount and confirm a filesystem
+
+.B grouping execution lines (2)
+   GROUP     tie multiple execution lines into a unit
+   AFTER     seqence groups finish-to-start
+
+the
+.B general layout
+of the records is
+.B seven fields.
+these fields can be incrementally cut down to only two by accepting defaults.
+   1) verb        standardized above as one of 15 words
+   2) label       short (12 char) specific, unique label in file
+   3) desc        longer (35 char) description for display-only
+   4) user        user name (12 char) to set permissions
+   5) duration    expected length of execution (5 char)
+   6) flags       batch control flags (7 char)
+   7) command     specific path, command, and options (200 char)
+
+.B examples of the only legal field variations
+   1        /bin/sleep
+   17       exec § /bin/sleep
+   147      exec § member § /bin/sleep
+   1457     exec § member § 2s § /bin/sleep
+   14567    exec § member § 2s § ny·ShDk § /bin/sleep
+   124567   exec § sleepy § member § 2s § ny·ShDk § /bin/sleep
+   1234567  exec § sleepy § ··· § member § 2s § ny·ShDk § /bin/sleep
+
+.B TO BE HONEST,
+batch files are much easier to read of all seven fields are included on every
+line and columns are perfectly aligned -- the eyes flow over content easier
+and troubles are easier to spot.  no lines need to be indented, it simply
+makes it easier to follow.
+
+.SH NORMAL EXECUTION VERBS
+eighty-five plus percent of batch processing will consist of these verbs.
+this is how programs are requested, fed command-line arguments, and controlled,
+i.e., the bread-and-butter of batch processing.
+
+.B exec,
+execute a process and wait for completion
+   -- change permissions to specific user (default current)
+   -- execute command with associated options
+   -- monitor min, exp, and max durations given dur/flags
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.B config,
+simple, fast configuration update
+   -- exact same as exec, but used for clarity to humans
+
+.B once,
+only during actual boot/shutdown
+   -- exact same as exec, but used for clarity to humans
+   -- will not be executed if pid is not 1
+
+.SH LAUNCH AND REMAIN VERBS
+these verbs are most common during startup/boot and cleanup activities.
+they differ from execution verbs in that the program/filesystem is expected
+to remain after completion.
+
+.B daemon,
+launch and confirm a daemon
+   -- change permissions to specific user (default current)
+   -- execute a daemon or server
+   -- wait for a standard amount of time (2s, altered by flags)
+   -- check that daemon/server is still running
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.B mount,
+mount and confirm a filesystem
+   -- change permissions to specific user (default current)
+   -- mount a specific filesystem
+   -- wait for a standard amount of time (1s, altered by flags)
+   -- check that filesystem is truly mounted
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.B serial,
+launch first in continual sequence
+   -- exact same as daemon, but used typically for gettys
+   -- communicates to system that it must be resurrected
+
+.SH PROCESS CONTROL VERBS
+in certain situations, like cleanup, it is important that processes and daemons
+are frozen so that the environment remains static.  it can also be useful to
+confirm and reload these same processes.
+
+.B stop,
+pause a running process
+   -- change permissions to specific user (default current)
+   -- find the process/daemon and send a SIGTSTP signal
+   -- confirm the process is stopped
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.B cont,
+restart a paused process
+   -- change permissions to specific user (default current)
+   -- find the process/daemon and send a SIGCONT signal
+   -- confirm the process is restarted
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.B reset,
+reload and refresh a daemon/server
+   -- change permissions to specific user (default current)
+   -- find the process/daemon and send a SIGHUP signal
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.B ping,
+request a health check from daemon/server
+   -- change permissions to specific user (default current)
+   -- find the process/daemon and send a SIGUSR2 signal
+   -- deamon writes a heartbeat file
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.SH TERMINATION VERBS
+these verbs are most common during shutdown and cleanup activies.
+
+.B kill,
+violently kill a running process
+   -- change permissions to specific user (default current)
+   -- find the process/daemon and send a SIGKILL signal
+   -- confirm the process is terminated
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.B wrapup,
+gracefully terminate a process
+   -- change permissions to specific user (default current)
+   -- find the process/daemon and send a SIGTERM signal
+   -- confirm the process is terminated
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.B umount,
+unmount and confirm a filesystem
+   -- change permissions to specific user (default current)
+   -- unmount a specific filesystem
+   -- wait for a standard amount of time (1s, altered by flags)
+   -- check that filesystem is truly unmounted
+   -- react to trouble as specified in flags
+   -- mark job complete given signals and return codes
+
+.SH GROUPING VERBS
+groups and sequencing is fundamental to more complex processing.  by default,
+all lines must be within a group.  every one.  unsequenced groups run
+immediately.
+
+.B GROUP,
+tie multiple execution lines into unit
+   -- all records after a GROUP line are within the group
+   -- group lines only require verb and label
+   -- user, duration, flags, and command are meaningless
+   -- all lines must be within a group
+   -- useful to use ALL CAPS labels on groups to make the clear
+   -- all lines in a group are executed at the start
+   -- a group does not finish until all lines have completed
+
+.B AFTER,
+sequence groups finish-to-start
+   -- sequences current group after, group label included
+   -- label field is related to other group
+   -- user, duration, flags, and command are meaningless
+   -- groups can have none, one, or multiple after verbs
+   -- sequences are auto-checked for loops and cycles
+
+.SH AUTHOR
+jelloshrike at gmail dot com
+
+.SH COLOPHON
+this page is part of a documentation package meant to make use of the
+heatherly tools easier and faster.

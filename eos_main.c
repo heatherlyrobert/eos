@@ -5,9 +5,9 @@ char
 wait_sec           (char *a_func, char a_rc, int a_sec)
 {
    int         i           =    0;
-   printf ("%-12.12s  : returned %d\n", a_func, a_rc);
+   EOS_VERBOSE printf ("%-12.12s  : returned %d\n", a_func, a_rc);
    for (i = 0; i < a_sec; ++i) {
-      printf ("sleep %d\n", i);
+      EOS_VERBOSE printf ("sleep %d\n", i);
       sleep (1);
    }
    return 0;
@@ -22,7 +22,7 @@ main               (int a_argc, char *a_argv[])
    /*---(initialize)---------------------*/
    my.msec = base_msec ();
    DEBUG_LOOP   yLOG_value   ("my.msec"    , my.msec);
-   printf ("%s\n", P_ONELINE);
+   EOS_VERBOSE printf ("%s\n", P_ONELINE);
    if (rc >= 0)  rc = PROG_verbose    (a_argc, a_argv);
    if (rc >= 0)  rc = PROG_runas      (a_argc, a_argv);
    if (rc >= 0)  rc = PROG_boot       ();
@@ -58,12 +58,18 @@ main               (int a_argc, char *a_argv[])
    case EOS_RUN_VERIFY  :
       rptg_pert ();
       break;
+   case EOS_RPTG_VERBS  :
+      proc_verblist ();
+      break;
+   case EOS_RPTG_CONTROL :
+      yEXEC_controls ();
+      break;
    case EOS_RUN_NORMAL  :
    case EOS_RUN_DAEMON  :
       rc = base_execute ();
-      rptg_pert  ();
-      rptg_gantt ();
-      rptg_dump  ();
+      /*> rptg_pert  ();                                                              <*/
+      /*> rptg_gantt ();                                                              <*/
+      /*> rptg_dump  ();                                                              <*/
       break;
    /*> case EOS_RUN_DAEMON  :                                                         <*/
       /*> rc = base_execute ();                                                       <* 
@@ -71,8 +77,8 @@ main               (int a_argc, char *a_argv[])
        *> rc = base_kharon  ();                                                       <* 
        *> break;                                                                      <*/
    }
-   if (my.run_as == IAM_EOS && my.pid == 1)  base_kharon ();
    /*---(wrapup)-------------------------*/
+   if (my.run_as == IAM_EOS && my.pid == 1)  base_kharon ();
    rc = PROG_end ();
    /*---(complete)-----------------------*/
    return 0;

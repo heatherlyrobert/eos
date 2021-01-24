@@ -310,7 +310,7 @@ base_kharon             (void)
    /*---(pass the torch)-----------------*/
    /*> strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
    /*> strlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
-   strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen", LEN_FULL);
+   strlcpy    (x_args, "/sbin/kharon_debug @@kitchen --acheron --leisurely --listen", LEN_FULL);
    strlparse  (x_args, NULL, x_final, 20, &my.argc, my.argv, LEN_FULL);
    DEBUG_LOOP   yLOG_value   ("argc"       , my.argc);
    DEBUG_VIEW   printf ("arg count %d\n", my.argc);

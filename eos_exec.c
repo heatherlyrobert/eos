@@ -323,11 +323,12 @@ exec__check_daemon      (tPROC *a_proc, llong a_msec)
    /*---(final daemon)----------------*/
    a_proc->rpid = x_rpid;
    rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return);
-   switch (rc) {
-   case  YEXEC_NOSUCH :  rc = YEXEC_RUNNING;  break;
-   case  YEXEC_NORMAL :  rc = YEXEC_DIED;     break;
-   }
-   proc_mark_done  (a_msec, rc, x_return);
+   /*> switch (rc) {                                                                  <* 
+    *> case  YEXEC_NOSUCH :  rc = YEXEC_RUNNING;  break;                              <* 
+    *> case  YEXEC_NORMAL :  rc = YEXEC_DIED;     break;                              <* 
+    *> }                                                                              <*/
+   if (c == 1)  proc_mark_done  (a_msec, YEXEC_RUNNING, x_return);
+   else         proc_mark_done  (a_msec, YEXEC_DIED   , x_return);
    /*---(complete)--------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
    return 1;

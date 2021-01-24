@@ -1,1 +1,102 @@
- 
+.TH eos 1 2010-oct "linux" "heatherly custom tools manual"
+
+.SH NAME
+.B eos
+\- simple, reliable, and transparent system initialization
+
+.SH PATRON
+.B eos-rhododactylos
+(rosy-fingered dawn) titaness of daybreak
+
+.SH IMAGERY
+radiant worman with white wings, golden arms, and rosy fingers
+
+.SH SUMMARY
+eos is a standardized batch-processing control program which generalizes and
+removes complexity from invidual scripts/programs.  eos specifically drives
+system start-up, shut-down, and cleanup as well.
+
+.SH DOCUMENTATION FILES
+.nf
+eos (1)      [***] command-line usage 
+.nf
+eos (5)            configuration and data files
+.nf
+eos (7)            decision rationale, objectives, and overview
+
+.SH SYNOPSIS
+.B system start-up
+   eos [OPTIONS]                       primary production version
+   eos_debug [URGENTS] [OPTIONS]       adds debugging and tracing
+   init [OPTIONS]                      posix named link
+
+.B system shutdown
+   eos --nyx [OPTIONS]                 command-line option
+   nyx [OPTIONS]                       primary production version
+   nyx_debug [URGENTS] [OPTIONS]       adds debugging and tracing
+   shutdown [OPTIONS]                  posix named link
+   halt [OPTIONS]                      posix named link
+   restart [OPTIONS]                   posix named link
+
+.B system clean-up
+   eos --hypnos [OPTIONS]              command-line option
+   hypnos [OPTIONS]                    primary production version
+   hypnos_debug [URGENTS] [OPTIONS]    adds debugging and tracing
+
+.B batch control
+   eos --hannibal [OPTIONS]            command-line option
+   hannibal [OPTIONS]                  primary production version
+   hannibal_debug [URGENTS] [OPTIONS]  adds debugging and tracing
+   @ [OPTIONS]                         short-cut production
+
+.SH RUN-TIME BEHAVIOR SWITCHING (shared)
+rather than directly running the four separate named programs, behavior
+can be switched by using one of four command line options.
+
+.B --eos,
+place in startup behavior, same as running eos
+
+.B --nyx,
+place in shutdown behavior, same as running nyx
+
+.B --hypnos,
+place in clean-up behavior, same as running hypnos
+
+.B --hannibal,
+place in batch control behavior, same as running hannibal
+
+.SH RUN-TIME MODES (shared)
+in addition to normal production mode, eos can run in several other modes as
+well as reporting.
+
+.B --verify,
+checks configation/input and exits
+
+.B --pretend,
+everything except actual process launching
+
+.B --normal,
+runs normally in foreground
+
+.B --daemon,
+runs in background as daemon
+
+.SH FILE LOCATIONS (shared)
+locations of the configuration/input, execution, and performance reporting files
+default, but can also be changed as necessary.  see eos (5) for file defaults.
+
+.B --conf ´´´,
+change configuration file name and location
+
+.B --exec ´´´,
+change execution notes file name and location
+
+.B --perf ´´´,
+change performance log file name and location
+
+.SH AUTHOR
+jelloshrike at gmail dot com
+
+.SH COLOPHON
+this page is part of a documentation package meant to make use of the
+heatherly tools easier and faster.

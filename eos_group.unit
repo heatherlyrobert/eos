@@ -1,7 +1,5 @@
 #!/usr/local/bin/koios
-#   koios-polos (north star) -- customized c unit testing meta-program and mini-language
-#   program under test  : eos_group
-#   auto-generated script file converted from a previous script version
+#   koios-polos (axis of heaven) unit testing meta-language
 
 
 
@@ -527,4 +525,4 @@ SCRP          (GROUP) verify marking groups during execution                   
 
 
 
-# end-of-file
+# end-of-file.  done, finito, completare, whimper [Ï´···
