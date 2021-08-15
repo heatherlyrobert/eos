@@ -201,15 +201,13 @@ exec__check_launch      (tPROC *a_proc, llong a_msec)
    }
    /*---(check limits)-------------------*/
    DEBUG_LOOP   yLOG_char    ("strict"     , a_proc->strict);
-   --rce;  if (a_proc->strict == 'S') {
-      x_dur = a_msec - a_proc->beg;
-      DEBUG_LOOP   yLOG_complex ("durs"       , "min %c %7d, max %c %7d, %7d", a_proc->lower, a_proc->minest, a_proc->upper, a_proc->maxest, x_dur);
-      if (x_dur > a_proc->maxest && a_proc->remedy == 'k') {
-         kill (a_proc->rpid, SIGTERM);
-         proc_mark_done  (a_msec, ']', -9);
-         DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
-         return 1;
-      }
+   x_dur = a_msec - a_proc->beg;
+   DEBUG_LOOP   yLOG_complex ("durs"       , "min %c %7d, max %c %7d, %7d", a_proc->lower, a_proc->minest, a_proc->upper, a_proc->maxest, x_dur);
+   rc = yEXEC_timing (a_proc->rpid, a_proc->strict, a_proc->maxest, x_dur, 2, 0);
+   if (rc == 'k') {
+      proc_mark_done  (a_msec, ']', -9);
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 1;
    }
    /*---(complete)-----------------------*/
    DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
@@ -767,8 +765,8 @@ exec__dispatch_signal   (tPROC *a_proc, llong a_msec)
    case EOS_TYPE_STOP   :  kill (a_proc->rpid, SIGTSTP);   break;
    case EOS_TYPE_CONT   :  kill (a_proc->rpid, SIGCONT);   break;
    default :
-      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
+                           DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+                           return rce;
    }
    proc_mark_begin (a_msec, a_proc->rpid);
    /*---(complete)-----------------------*/
@@ -826,8 +824,8 @@ exec_dispatch           (llong a_msec)
             rc  = exec__dispatch_mount  (x_proc, a_msec);
             break;
          case EOS_TYPE_BOOT   :
-            if (my.run_mode == EOS_RUN_NORMAL)  rc  = exec__dispatch_launch (x_proc, a_msec);
-            else                                 proc_mark_all_in_one (a_msec, 0, YEXEC_ALREADY);
+            IF_NORMAL  rc  = exec__dispatch_launch (x_proc, a_msec);
+            else       proc_mark_all_in_one (a_msec, 0, YEXEC_ALREADY);
             break;
          case EOS_TYPE_EXEC   : case EOS_TYPE_CONFIG : default :
             rc  = exec__dispatch_launch (x_proc, a_msec);

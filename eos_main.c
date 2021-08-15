@@ -19,18 +19,16 @@ main               (int a_argc, char *a_argv[])
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
-   /*---(initialize)---------------------*/
-   my.msec = base_msec ();
+   /*---(pre-startup)--------------------*/
+   my.msec = BASE_msec ();
    DEBUG_LOOP   yLOG_value   ("my.msec"    , my.msec);
-   EOS_VERBOSE printf ("%s\n", P_ONELINE);
-   if (rc >= 0)  rc = PROG_verbose    (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_runas      (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_boot       ();
-   if (rc >= 0)  rc = yURG_logger     (a_argc, a_argv);
-   if (rc >= 0)  rc = yURG_urgs       (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_init       (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_args       (a_argc, a_argv);
-   if (rc >= 0)  rc = PROG_begin      ();
+   /*---(pre_startup)--------------------*/
+   if (rc >= 0)  rc = PROG_prestart  (a_argc, a_argv, '-');
+   DEBUG_PROG  yLOG_value   ("prestart"  , rc);
+   if (rc >= 0)  rc = PROG_debugging (a_argc, a_argv, '-');
+   DEBUG_PROG  yLOG_value   ("debugging" , rc);
+   if (rc >= 0)  rc = PROG_startup   (a_argc, a_argv, '-');
+   DEBUG_PROG  yLOG_value   ("startup"   , rc);
    /*---(defense)------------------------*/
    DEBUG_PROG  yLOG_value   ("startup"   , rc);
    --rce;  if (rc <  0) {
@@ -40,22 +38,23 @@ main               (int a_argc, char *a_argv[])
       return rce;
    }
    /*---(read config)--------------------*/
-   rc = base_config ();
-   DEBUG_PROG  yLOG_value   ("config"    , rc);
-   --rce;  if (rc <  0) {
-      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
-      wait_sec ("its over",   rc,  20);
-      PROG_end ();
-      return rce;
-   }
+   /*> rc = base_config ();                                                           <* 
+    *> DEBUG_PROG  yLOG_value   ("config"    , rc);                                   <* 
+    *> --rce;  if (rc <  0) {                                                         <* 
+    *>    DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                               <* 
+    *>    wait_sec ("its over",   rc,  20);                                           <* 
+    *>    PROG_end ();                                                                <* 
+    *>    return rce;                                                                 <* 
+    *> }                                                                              <*/
    /*---(verify only)--------------------*/
-   if (my.run_mode == EOS_RUN_VERIFY) {
+   IF_VERIFY {
+      yURG_msg ('>', "called with VERIFY only, stopping run now");
       rc = PROG_end ();
       return 0;
    }
    /*---(verify only)--------------------*/
    switch (my.run_mode) {
-   case EOS_RUN_VERIFY  :
+   case CASE_VERIFY :
       rptg_pert ();
       break;
    case EOS_RPTG_VERBS  :
@@ -64,21 +63,16 @@ main               (int a_argc, char *a_argv[])
    case EOS_RPTG_CONTROL :
       yEXEC_controls ();
       break;
-   case EOS_RUN_NORMAL  :
-   case EOS_RUN_DAEMON  :
-      rc = base_execute ();
+   case CASE_NORMAL  :
+   case CASE_DAEMON :
+      rc = BASE_execute ();
       /*> rptg_pert  ();                                                              <*/
       /*> rptg_gantt ();                                                              <*/
       /*> rptg_dump  ();                                                              <*/
       break;
-   /*> case EOS_RUN_DAEMON  :                                                         <*/
-      /*> rc = base_execute ();                                                       <* 
-       *> rc = PROG_end ();                                                           <* 
-       *> rc = base_kharon  ();                                                       <* 
-       *> break;                                                                      <*/
    }
    /*---(wrapup)-------------------------*/
-   if (my.run_as == IAM_EOS && my.pid == 1)  base_kharon ();
+   if (my.run_as == IAM_EOS && my.pid == 1)  BASE_kharon ();
    rc = PROG_end ();
    /*---(complete)-----------------------*/
    return 0;

@@ -159,27 +159,29 @@ group_handler           (int n, uchar *a_verb)
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
+   yURG_msg (' ', "");
    DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
-   --rce;  if (a_verb == NULL) {
+   --rce;  if (a_verb == NULL || strlen (a_verb) <= 0) {
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      yURG_err ('f', "group_handler called with null/empty verb");
       return rce;
    }
    DEBUG_INPT  yLOG_info    ("a_verb"    , a_verb);
    --rce;  if (strcmp (a_verb, "GROUP") != 0) {
+      yURG_err ('f', "group_handler called with å%sæ verb", a_verb);
       DEBUG_INPT  yLOG_note    ("incorrect verb handler called");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   EOS_VERBOSE  printf       ("\nGROUP   : ");
    /*---(parse fields)-------------------*/
    rc = yPARSE_ready (&c);
    DEBUG_INPT  yLOG_value   ("fields"    , c);
    --rce;  if (c < 2) {
+      yURG_err ('F', "GROUP å%sæ on line %d with ONLY %d fields", x_label, n, c);
       DEBUG_INPT  yLOG_note    ("failed, only a verb");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   EOS_VERBOSE  printf       (", %d fields", c);
    if (c > 3)  c = 3;
    switch (c) {
    case  2 :
@@ -189,39 +191,34 @@ group_handler           (int n, uchar *a_verb)
       rc = yPARSE_scanf (a_verb, "LD", x_label, x_desc);
       break;
    }
-   EOS_VERBOSE  printf       ("%d scanf", rc);
    DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('F', "GROUP å%sæ on line %d with %d fields, yPARSE_scanf failed (%d)", x_label, n, c, rc);
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    /*---(create data)--------------------*/
    rc = group__new (&x_new);
-   EOS_VERBOSE  printf       (", new");
    DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
    --rce;  if (x_new == NULL) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_msg ('F', "GROUP å%sæ on line %d with %d fields, malloc failed (%d)", x_label, n, c, rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(populate)-----------------------*/
    x_new->line = n;
-   EOS_VERBOSE  printf       (", line %d", n);
    strlcpy (x_new->name, x_label, LEN_LABEL);
-   EOS_VERBOSE  printf       (", %s", x_label);
    strlcpy (x_new->desc, x_desc , LEN_DESC);
    /*---(create list)--------------------*/
    rc = yDLST_list_create (x_new->name, x_new);
-   EOS_VERBOSE  printf       (", ydlst %d", rc);
    DEBUG_INPT   yLOG_value   ("yDLST"     , rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_msg ('F', "GROUP å%sæ on line %d with %d fields, yDLST create failed (%d)", x_label, n, c, rc);
       group__free (&x_new);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   EOS_VERBOSE  printf       (", success\n");
+   yURG_msg ('>', "GROUP å%sæ on line %d with %d fields, %s", x_label, n, c, x_desc);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -238,36 +235,35 @@ after_handler           (int n, uchar *a_verb)
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
    DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
-   --rce;  if (a_verb == NULL) {
+   --rce;  if (a_verb == NULL || strlen (a_verb) <= 0) {
+      yURG_err ('f', "after_handler called with null/empty verb");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    DEBUG_INPT  yLOG_info    ("a_verb"    , a_verb);
    --rce;  if (strcmp (a_verb, "AFTER") != 0) {
+      yURG_err ('f', "after_handler called with å%sæ verb", a_verb);
       DEBUG_INPT  yLOG_note    ("incorrect verb handler called");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   EOS_VERBOSE  printf       ("  AFTER : ");
    /*---(parse fields)-------------------*/
    rc = yPARSE_scanf (a_verb, "L", x_label);
-   EOS_VERBOSE  printf       ("%d scanf", rc);
    DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('f', "AFTER å%sæ on line %d, yPARSE_scanf failed (%d)", x_label, n, rc);
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    /*---(create list)--------------------*/
    rc = yDLST_seq_after (x_label);
-   EOS_VERBOSE  printf       (", ydlst %d", rc);
    DEBUG_INPT   yLOG_value   ("after"     , rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('f', "AFTER å%sæ on line %d, yDLST create failed (%d)", x_label, n, rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   EOS_VERBOSE  printf       (", success\n");
+   yURG_msg ('-', "AFTER å%sæ on line %d", x_label, n);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -286,14 +282,26 @@ group_mark_begin        (llong a_msec)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    tGROUP     *x_group     = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(update group)-------------------*/
-   yDLST_list_by_cursor ('-', NULL, &x_group);
-   --rce;  if (x_group == NULL)                  return rce;
-   --rce;  if (x_group->status != GROUP_READY)   return rce;
+   yDLST_list_by_cursor (YDLST_DCURR, NULL, &x_group);
+   DEBUG_INPT  yLOG_point   ("x_group"   , x_group);
+   --rce;  if (x_group == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT  yLOG_char    ("status"    , x_group->status);
+   --rce;  if (x_group->status != GROUP_READY) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    x_group->status    = GROUP_RUNNING;
+   DEBUG_INPT  yLOG_char    ("status"    , x_group->status);
    x_group->beg       = a_msec;
    EOS_VERBOSE  printf       ("%6lld group %s begin\n", a_msec, x_group->name);
    /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -303,11 +311,22 @@ group_mark_done         (llong a_msec)
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    tGROUP     *x_group     = NULL;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(update group)-------------------*/
-   yDLST_list_by_cursor ('-', NULL, &x_group);
-   --rce;  if (x_group == NULL)                  return rce;
-   --rce;  if (x_group->status != GROUP_RUNNING) return rce;
+   yDLST_list_by_cursor (YDLST_DCURR, NULL, &x_group);
+   DEBUG_INPT  yLOG_point   ("x_group"   , x_group);
+   --rce;  if (x_group == NULL) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_INPT  yLOG_char    ("status"    , x_group->status);
+   --rce;  if (x_group->status != GROUP_RUNNING) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    x_group->status    = GROUP_DONE;
+   DEBUG_INPT  yLOG_char    ("status"    , x_group->status);
    x_group->end       = a_msec;
    x_group->dur       = x_group->end - x_group->beg;
    EOS_VERBOSE  printf       ("%6lld group %s end\n", a_msec, x_group->name);

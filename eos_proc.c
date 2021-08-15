@@ -219,10 +219,12 @@ proc__free              (tPROC **a_old)
 static void  o___ACTIONS_________o () { return; }
 
 char
-proc__flags             (tPROC *a_new, uchar *a_flags)
+proc__flags             (tPROC *a_new, uchar *a_flags, char *a_dur)
 {
    char        rc          =    0;
    int         x_floor     =    0;
+   char        x_terse     [LEN_HUND]  = "";
+   char        x_fancy     [LEN_RECD]  = "";
    if (strchr (EOS_WAIT_SHORT, a_new->type) != NULL) x_floor = 1000;
    if (strchr (EOS_WAIT_LONG , a_new->type) != NULL) x_floor = 2000;
    DEBUG_INPT  yLOG_complex ("x_floor"   , "%c, %d", a_new->type, x_floor);
@@ -232,6 +234,9 @@ proc__flags             (tPROC *a_new, uchar *a_flags)
          &(a_new->upper) , &(a_new->maxest), 
          &(a_new->remedy));
    DEBUG_INPT  yLOG_complex ("min/max"   , "%5d, %c %5d, %c %5d", a_new->est, a_new->lower, a_new->minest, a_new->upper, a_new->maxest);
+   yURG_msg ('+', "duration %s, est %5ds, min %c %5dms, max %c %5dms", a_dur, a_new->est, a_new->lower, a_new->minest, a_new->upper, a_new->maxest);
+   yEXEC_flags_feedback (x_terse, x_fancy);
+   yURG_msg ('+', "flags %s", x_fancy);
    if (strchr (EOS_WAIT_SHORT, a_new->type) != NULL) {
       DEBUG_INPT  yLOG_note    ("short type");
       if (a_new->est == 0 && a_new->upper == '-')  a_new->maxest = a_new->minest;
@@ -268,7 +273,8 @@ proc_handler            (int n, uchar *a_verb)
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
    DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
-   --rce;  if (a_verb == NULL) {
+   --rce;  if (a_verb == NULL || strlen (a_verb) <= 0) {
+      yURG_err ('f', "proc_handler called with null/empty verb");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
@@ -278,23 +284,22 @@ proc_handler            (int n, uchar *a_verb)
       if (strcmp (s_verbs [i].terse, a_verb) != 0)  continue;
       x_type = s_verbs [i].abbr;
    }
-   EOS_VERBOSE  printf       ("  step  : %s", a_verb);
    DEBUG_INPT   yLOG_char  ("x_type"      , x_type);
    --rce;  if (x_type == '-') {
+      yURG_err ('f', "proc_handler called with å%sæ verb", a_verb);
       DEBUG_INPT  yLOG_note    ("incorrect verb handler called");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   EOS_VERBOSE  printf       (", %c", x_type);
    /*---(parse fields)-------------------*/
    rc = yPARSE_ready (&c);
    DEBUG_INPT  yLOG_value   ("fields"    , c);
    --rce;  if (c < 2) {
+      yURG_err ('f', "step å%sæ on line %d with %d fields, too few", x_label, n, c);
       DEBUG_INPT  yLOG_note    ("failed, only a verb");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
-   EOS_VERBOSE  printf       (", %d fields", c);
    if (c > 7)  c = 7;
    switch (c) {
    case 2 : rc = yPARSE_scanf (a_verb, "F"     , x_run);  break;
@@ -304,74 +309,69 @@ proc_handler            (int n, uchar *a_verb)
    case 6 : rc = yPARSE_scanf (a_verb, "LDUTF" , x_label, x_desc, x_user, x_dur, x_run);  break;
    case 7 : rc = yPARSE_scanf (a_verb, "LDUTTF", x_label, x_desc, x_user, x_dur, x_flags, x_run);  break;
    }
-   EOS_VERBOSE  printf       (", %d scanf", rc);
    DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('f', "step å%sæ on line %d with %d fields, yPARSE_scanf failed", x_label, n, c);
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    /*---(label)------------------------------*/
    if (strcmp (x_label, "") == 0)   sprintf (x_label, "#%03d", n);
+   yURG_msg ('>', "  step å%sæ on line %d with %d fields, %s", x_label, n, c, x_desc);
    /*---(check user)-------------------------*/
-   if (strcmp (x_user, "") == 0)   strlcpy (x_user, my.who, LEN_LABEL);
+   if (strcmp (x_user, "") == 0)   strlcpy (x_user, my.m_who, LEN_LABEL);
    rc = yEXEC_userdata (x_user, &x_uid, NULL, NULL, NULL);
-   EOS_VERBOSE  printf       (", user %d", rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('f', "user requested failed å%sæ (%d)", my.m_who, rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_INPT   yLOG_value ("x_uid"       , x_uid);
+   yURG_msg ('+', "user requested successfully å%sæ (%d)", my.m_who, x_uid);
    /*---(check its runable)--------------*/
    rc = yEXEC_runable (x_label, x_user, x_run, YEXEC_FULL);
    DEBUG_INPT   yLOG_value   ("runnable"  , rc);
-   EOS_VERBOSE  printf       (", runable %d", rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('+', "command is NOT runable %2d å%sæ", strlen (x_run), x_run);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_msg ('+', "command is runable %2d å%sæ", strlen (x_run), x_run);
    /*---(create data)--------------------*/
    rc = proc__new (&x_new);
    DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
    --rce;  if (x_new == NULL) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('f', "proc line could not be allocated (%d)", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   EOS_VERBOSE  printf       (", new");
    /*---(populate)-----------------------*/
    x_new->line = n;
-   EOS_VERBOSE  printf       (", line %d", n);
    strlcpy (x_new->name, x_label, LEN_LABEL);
-   EOS_VERBOSE  printf       (", %s", x_label);
    x_new->type    = x_type;
    strlcpy (x_new->desc, x_desc , LEN_DESC);
    strlcpy (x_new->user, x_user , LEN_LABEL);
    x_new->uid     = x_uid;
    rc = yEXEC_dur_in_sec (x_dur, &(x_new->est));
-   proc__flags (x_new, x_flags);
+   proc__flags (x_new, x_flags, x_dur);
    strlcpy (x_new->run , x_run  , LEN_FULL);
    /*---(create line)--------------------*/
    rc = yDLST_line_create (x_label, x_new);
-   EOS_VERBOSE  printf       (", ydlst %d", rc);
    DEBUG_INPT   yLOG_value   ("create"    , rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('f', "yDLST line could not be created (%d)", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(update list)--------------------*/
-   yDLST_line_list (NULL, &x_group);
+   rc = yDLST_line_list (NULL, &x_group);
    DEBUG_INPT   yLOG_point   ("x_group"   , x_group);
    --rce;  if (x_group == NULL) {
-      EOS_VERBOSE  printf       (", failed\n");
+      yURG_err ('f', "yDLST group for line not found (%d)", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    ++x_group->askd;
-   EOS_VERBOSE  printf       (", success\n");
+   yURG_msg ('+', "å%sæ step is successfully created", a_verb);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -391,7 +391,7 @@ proc_mark_begin         (llong a_msec, int a_rpid)
    char        rce         =  -10;
    tPROC      *x_proc      = NULL;
    /*---(get current)--------------------*/
-   yDLST_line_by_cursor ('*', '-', NULL, &x_proc);
+   yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DCURR, NULL, &x_proc);
    /*---(defense)------------------------*/
    --rce;  if (x_proc      == NULL)  return rce;
    --rce;  if (x_proc->beg >  0)     return rce;
@@ -411,7 +411,7 @@ proc_mark_all_in_one    (llong a_msec, int a_rpid, char a_yexec)
    tPROC      *x_proc      = NULL;
    tGROUP     *x_group     = NULL;
    /*---(get current)--------------------*/
-   yDLST_line_by_cursor ('*', '-', NULL, &x_proc);
+   yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DCURR, NULL, &x_proc);
    /*---(defense)------------------------*/
    --rce;  if (x_proc      == NULL)  return rce;
    --rce;  if (x_proc->beg >  0)     return rce;
@@ -441,7 +441,7 @@ proc_mark_done          (llong a_msec, char a_yexec, int a_rc)
    tPROC      *x_proc      = NULL;
    tGROUP     *x_group     = NULL;
    /*---(get current)--------------------*/
-   yDLST_line_by_cursor ('*', '-', NULL, &x_proc);
+   yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DCURR, NULL, &x_proc);
    /*---(defense)------------------------*/
    --rce;  if (x_proc      == NULL)  return rce;
    --rce;  if (x_proc->end >  0)     return rce;
@@ -479,7 +479,7 @@ proc_mark_clear         (void)
    tPROC      *x_proc      = NULL;
    tGROUP     *x_group     = NULL;
    /*---(get current)--------------------*/
-   yDLST_line_by_cursor ('*', '-', NULL, &x_proc);
+   yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DCURR, NULL, &x_proc);
    /*---(defense)------------------------*/
    --rce;  if (x_proc      == NULL)  return rce;
    /*---(update group)-------------------*/
@@ -545,11 +545,11 @@ proc__unit              (char *a_question, int a_num)
    strlcpy  (unit_answer, "PROC             : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "count"   )        == 0) {
-      snprintf (unit_answer, LEN_RECD, "PROC count       : %d", yDLST_line_count ('*'));
+      snprintf (unit_answer, LEN_RECD, "PROC count       : %d", yDLST_line_count (YDLST_GLOBAL));
    }
    else if (strcmp (a_question, "name"    )        == 0) {
       /*> x_proc  = (tPROC  *) yDLST_line_entry (a_num, NULL);                        <*/
-      yDLST_line_by_index ('*', a_num, NULL, &x_proc);
+      yDLST_line_by_index (YDLST_GLOBAL, a_num, NULL, &x_proc);
       if (x_proc != NULL) {
          sprintf (t, "[%s]", x_proc->name);
          snprintf (unit_answer, LEN_RECD, "PROC name   (%2d) : %2d%-20.20s  %2d  %c", a_num, strlen (x_proc->name), t, x_proc->line, x_proc->type);
@@ -558,7 +558,7 @@ proc__unit              (char *a_question, int a_num)
       }
    }
    else if (strcmp (a_question, "entry"   )        == 0) {
-      yDLST_line_by_index ('*', a_num, NULL, &x_proc);
+      yDLST_line_by_index (YDLST_GLOBAL, a_num, NULL, &x_proc);
       yDLST_line_list     (NULL, &x_group);
       if (x_proc != NULL) {
          sprintf (s, "%2d[%.15s]", strlen (x_group->name), x_group->name);
@@ -570,7 +570,7 @@ proc__unit              (char *a_question, int a_num)
       }
    }
    else if (strcmp (a_question, "detail"  )        == 0) {
-      yDLST_line_by_index ('*', a_num, NULL, &x_proc);
+      yDLST_line_by_index (YDLST_GLOBAL, a_num, NULL, &x_proc);
       if (x_proc != NULL) {
          sprintf (s, "[%.10s]", x_proc->user);
          x_beg   = (x_proc->beg > 0) ? 'y' : '-';
@@ -587,7 +587,7 @@ proc__unit              (char *a_question, int a_num)
       }
    }
    else if (strcmp (a_question, "limits"  )        == 0) {
-      yDLST_line_by_index ('*', a_num, NULL, &x_proc);
+      yDLST_line_by_index (YDLST_GLOBAL, a_num, NULL, &x_proc);
       if (x_proc != NULL) {
          snprintf (unit_answer, LEN_RECD, "PROC limits (%2d) : est %4d   %c   lower %c %7d   upper %c %7d   %c", 
                a_num, x_proc->est, x_proc->strict,

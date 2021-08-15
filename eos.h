@@ -1,11 +1,12 @@
 /*============================[[    beg-code    ]]============================*/
 
 /*===[[ HEADER ]]=============================================================*/
+/*                     0         1         2         3         4         5         6         7*/
 /*345678901-12345678901-123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
 
 #define     P_FOCUS     "SA (system administration)"
 #define     P_NICHE     "in (initializtation)"
-#define     P_SUBJECT   "system initialization"
+#define     P_SUBJECT   "job execution framework"
 #define     P_PURPOSE   "simple, reliable, and very transparent system initialization"
 
 #define     P_NAMESAKE  "eos-rhododactylos (rosy-fingered dawn)"
@@ -30,8 +31,8 @@
 
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.1-, starting rebuild back up"
-#define     P_VERNUM    "2.1f"
-#define     P_VERTXT    "created pretty nice, eight-precent done man files"
+#define     P_VERNUM    "2.1h"
+#define     P_VERTXT    "exec unit testing working and clean"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -271,8 +272,8 @@
 
 
 /*===[[ HEADER GUARD ]]=======================================================*/
-#ifndef YINIT
-#define YINIT loaded
+#ifndef YEOS 
+#define YEOS  loaded
 
 
 
@@ -280,13 +281,20 @@
 
 
 /*===[[ PRIVATE HEADERS ]]====================================================*/
-#include    <yDLST.h>             /* heatherly specialty 4:2 list w/deps      */
-#include    <ySEC.h>              /* heatherly security logging               */
-#include    <yEXEC.h>             /* heatherly process control                */
-#include    <ySTR.h>              /* heatherly safe string library            */
+/*---(always)---------------*/
 #include    <yLOG.h>              /* heatherly logger                         */
 #include    <yURG.h>              /* heatherly debugging framework            */
+/*---(common)---------------*/
+#include    <ySTR.h>              /* heatherly safe string library            */
 #include    <yPARSE.h>            /* heatherly file parsing                   */
+/*---(optional)-------------*/
+#include    <yDLST.h>             /* heatherly specialty 4:2 list w/deps      */
+#include    <yEXEC.h>             /* heatherly process control                */
+#include    <yJOBS.h>             /* heatherly job execution and control      */
+#include    <ySEC.h>              /* heatherly security logging               */
+/*---(done)-----------------*/
+
+
 
 /*===[[ PUBLIC HEADERS ]]=====================================================*/
 /*---(big standards)------------*/
@@ -336,33 +344,43 @@
 struct cACCESSOR
 {
    /*---(files)----------------*/
-   char        run_as;                 /* eos vs astraios vs unit             */
-   char        run_mode;               /* verify, daemon, normal              */
-   char        halt;                   /* halt mode for nyx                   */
-   char        done_done;              /* flag for all procs done             */
-   llong       msec;                   /* current epoch in milliseconds       */
-   int         tic;                    /* current loop                        */
+   char        run_as;                      /* eos vs astraios vs unit        */
+   char        run_mode;                    /* verify, daemon, normal         */
+   char        run_file    [LEN_PATH];      /* file for verify, etc.          */
+   char        halt;                        /* halt mode for nyx              */
+   char        done_done;                   /* flag for all procs done        */
+   llong       msec;                        /* current epoch in milliseconds  */
+   int         tic;                         /* current loop                   */
    char        verbose;
    /*---(owner)----------------*/
-   int         uid;                    /* uid of person who launched eos      */
-   char        who         [LEN_LABEL]; /* user name who launched eos          */
-   int         pid;                    /* process id of eos                   */
-   int         ppid;                   /* parent process id of eos            */
+   int         m_uid;                       /* uid of person who launched eos */
+   char        m_who       [LEN_LABEL];     /* user name who launched eos     */
+   int         pid;                         /* process id of eos              */
+   int         ppid;                        /* parent process id of eos       */
    char        dev         [LEN_LABEL];     /* tty for output                 */
    /*---(commands)-------------*/
-   char       *argv        [MAX_ARGV]; /* command in argv format              */
-   int         argc;                   /* count of arguments                  */
+   char       *argv        [MAX_ARGV];      /* command in argv format         */
+   int         argc;                        /* count of arguments             */
    /*---(flags)----------------*/
-   char        status_proc;            /* status of /proc filesystem          */
-   char        status_log;             /* status of /var/log/yLOG filesystem  */
-   char        boot;                   /* is this an init run                 */
-   char        test;                   /* is this a test run                  */
+   char        status_proc;                 /* status /proc filesystem        */
+   char        status_log;                  /* status /var/log/yLOG filesystem*/
+   char        boot;                        /* is this an init run            */
+   char        test;                        /* is this a test run             */
    /*---(files)-----------------*/
-   char        n_conf      [LEN_FULL];  /* name of configuration file          */
-   char        n_exec      [LEN_FULL];  /* name of execution detail file       */
-   char        n_perf      [LEN_FULL];  /* name of execution speed file        */
-   int         c_recdno;               /* eos.conf record number              */
-   int         c_verb      [LEN_LABEL]; /* eos.conf verb                       */
+   char        n_conf      [LEN_FULL];      /* name of configuration file     */
+   char        n_exec      [LEN_FULL];      /* name of execution detail file  */
+   char        n_perf      [LEN_FULL];      /* name of execution speed file   */
+   int         c_recdno;                    /* eos.conf record number         */
+   int         c_verb      [LEN_LABEL];     /* eos.conf verb                  */
+   /*---(current file)----------*/
+   char        f_name      [LEN_HUND];      /* current file name              */
+   char        f_user      [LEN_LABEL];     /* current file user name         */
+   int         f_uid;                       /* current file user id           */
+   char        f_desc      [LEN_DESC];      /* current file description       */
+   char        f_dir       [LEN_PATH];      /* current file path              */
+   char        f_full      [LEN_PATH];      /* current file full name/path    */
+   int         f_lines;
+   char        f_note      [LEN_LABEL];
    /*---(current group)---------*/
    char        g_ready;                /* group record checks out             */
    char        g_name      [LEN_LABEL]; /* short name for reference            */
@@ -383,24 +401,90 @@ struct cACCESSOR
 } my;
 
 
+extern char g_silent   [LEN_LABEL];
+extern char g_confirm  [LEN_LABEL];
+extern char g_verbose  [LEN_LABEL];
 
-/*---(run as)-----------------------------------*/
-#define     IAM_EOS          'e'
-#define     IAM_NYX          'n'
-#define     IAM_HANNIBAL     'h'
-#define     IAM_HYPNOS       'y'
-#define     IAM_UNIT         'u'
-#define     IAM_VALID        "enhyu"
+extern char g_verify   [LEN_SHORT];
+extern char g_install  [LEN_SHORT];
+extern char g_list     [LEN_SHORT];
+extern char g_check    [LEN_SHORT];
+extern char g_audit    [LEN_SHORT];
+extern char g_fix      [LEN_SHORT];
+extern char g_remove   [LEN_SHORT];
+extern char g_daemon   [LEN_SHORT];
+extern char g_normal   [LEN_SHORT];
 
-/*---(modes)------------------------------------*/
-#define     EOS_RUN_VERIFY   'v'
-#define     EOS_RUN_PRETEND  'p'
-#define     EOS_RUN_DAEMON   'd'
-#define     EOS_RUN_NORMAL   'n'
-#define     EOS_RUN_VALID    "vpdn"
+
+/*===[[ ACTIONS ]]=============================*/
+/*---(simple)---------------*/
+#define     ACT_VERSION     '1'
+#define     ACT_HELP        '2'
+#define     IF_VERSION      if (my.run_mode == '1')
+#define     IF_HELP         if (my.run_mode == '2')
+/*---(checking)-------------*/
+#define     ACT_VERIFY      'v'
+#define     ACT_VVERIFY     'V'
+#define     ACT_CVERIFY     'ÿ'
+#define     IF_VERIFY       if (strchr (g_verify , my.run_mode) != NULL)
+#define     CASE_VERIFY     'v' : case 'V' : case 'ÿ' 
+/*---(incomming)------------*/
+#define     ACT_INSTALL     'i'
+#define     ACT_VINSTALL    'I'
+#define     ACT_CINSTALL    'ð'
+#define     IF_INSTALL      if (strchr (g_install, my.run_mode) != NULL)
+#define     CASE_INSTALL    'i' : case 'I' : case 'ð' 
+/*---(central/inventory)----*/
+#define     ACT_COUNT       'l'
+#define     ACT_LIST        'L'
+#define     IF_LIST         if (strchr (g_list   , my.run_mode) != NULL)
+#define     CASE_LIST       'l' : case 'L' 
+/*---(central/installed)----*/
+#define     ACT_CHECK       'c'
+#define     ACT_VCHECK      'C'
+#define     ACT_CCHECK      'ý'
+#define     IF_CHECK        if (strchr (g_check  , my.run_mode) != NULL)
+#define     CASE_CHECK      'c' : case 'C' : case 'ý' 
+/*---(central/security)-----*/
+#define     ACT_AUDIT       'a'
+#define     ACT_VAUDIT      'A'
+#define     ACT_CAUDIT      'è'
+#define     IF_AUDIT        if (strchr (g_audit  , my.run_mode) != NULL)
+#define     CASE_AUDIT      'a' : case 'A' : case 'è' 
+/*---(central/fix)----------*/
+#define     ACT_FIX         'f'
+#define     ACT_VFIX        'F'
+#define     ACT_CFIX        'ü'
+#define     IF_FIX          if (strchr (g_fix    , my.run_mode) != NULL)
+#define     CASE_FIX        'f' : case 'F' : case 'ü' 
+/*---(outgoing)-------------*/
+#define     ACT_REMOVE      'r'
+#define     ACT_VREMOVE     'R'
+#define     ACT_CREMOVE     'ø'
+#define     IF_REMOVE       if (strchr (g_remove , my.run_mode) != NULL)
+#define     CASE_REMOVE     'r' : case 'R' : case 'ø' 
+/*---(daemon)---------------*/
+#define     ACT_DAEMON      'd'
+#define     ACT_VDAEMON     'D'
+#define     ACT_CDAEMON     'ë'
+#define     IF_DAEMON       if (strchr (g_daemon , my.run_mode) != NULL)
+#define     CASE_DAEMON     'd' : case 'D' : case 'ë' 
+/*---(normal)---------------*/
+#define     ACT_NORMAL      'n'
+#define     ACT_VNORMAL     'N'
+#define     ACT_CNORMAL     'ô'
+#define     IF_NORMAL       if (strchr (g_normal , my.run_mode) != NULL)
+#define     CASE_NORMAL     'n' : case 'N' : case 'ô' 
+/*---(combination)----------*/
+#define     IF_SILENT       if (strchr (g_silent , my.run_mode) != NULL)
+#define     IF_VERBOSE      if (strchr (g_verbose, my.run_mode) != NULL)
+#define     IF_CONFIRM      if (strchr (g_confirm, my.run_mode) != NULL)
+
+
+
 #define     EOS_VERBOSE      if (my.verbose  == 'y') 
 
-#define     EOS_RPTG_VERBS   'V'
+#define     EOS_RPTG_VERBS   'r'
 #define     EOS_RPTG_CONTROL 'C'
 
 /*---(directory names)--------------------------*/
@@ -470,7 +554,6 @@ struct cACCESSOR
 #define     GROUP_DONE       'd'
 
 
-
 typedef struct cGROUP tGROUP;
 struct cGROUP {
    /*---(master)-------------------------*/
@@ -533,7 +616,6 @@ typedef const  int       cint;
 typedef const  long      clong;
 typedef const  char      cchar;
 
-typedef struct FILE      tFILE;
 typedef struct stat      tSTAT;
 typedef struct passwd    tPASSWD;
 typedef struct rusage    tRUSAGE;
@@ -555,16 +637,28 @@ int         main               (int a_argc, char *a_argv[]);
 
 /*===[[ EOS_PROG.C ]]=========================================================*/
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+/*> char        PROG__arg_init          (void);                                       <*/
+/*> char        PROG__arg_single        (char *a_levels, char n);                     <*/
+/*> char        PROG__arg_load          (void);                                       <*/
+/*> char        PROG__arg_clearmode     (void);                                       <*/
+/*> char        PROG__arg_handle        (int *i, char *a_arg, char *a_next);          <*/
 /*---(program)--------------*/
 char*       PROG_version            (void);
-char        PROG_verbose            (int a_argc, char *a_argv[]);
-char        PROG_runas              (int a_argc, char *a_argv[]);
-char        PROG_boot               (void);
-char        PROG_preinit            (void);
-char        PROG_init               (int a_argc, char *a_argv[]);
-char        PROG_args               (int a_argc, char *a_argv[]);
-char        PROG_begin              (void);
-char        PROG_final              (void);
+char*       PROG_usage              (void);
+/*---(prestart)-------------*/
+char        PROG__verbose           (int a_argc, char *a_argv[], char a_unit);
+char        PROG__runas             (int a_argc, char *a_argv[]);
+char        PROG__boot              (int a_argc, char *a_argv[]);
+char        PROG_prestart           (int a_argc, char *a_argv[], char a_unit);
+/*---(debugging)------------*/
+char        PROG_debugging          (int a_argc, char *a_argv[], char a_unit);
+/*---(startup)--------------*/
+char        PROG__init              (int a_argc, char *a_argv[]);
+char        PROG__args              (int a_argc, char *a_argv[]);
+char        PROG__begin             (void);
+char        PROG__final             (void);
+char        PROG_startup            (int a_argc, char *a_argv[], char a_unit);
+/*---(shutdown)-------------*/
 char        PROG_end                (void);
 char        PROG_shutdown           (void);
 /*---(signals)-------------*/
@@ -573,39 +667,33 @@ char        PROG_shutdown           (void);
 char        PROG_testfiles          (void);
 char        PROG_testquiet          (void);
 char        PROG_testloud           (void);
-char*       prog__unit              (char *a_question, int a_num);
-
-/*===[[ EOS_CONF.C ]]=========================================================*/
-/*---(daemon)---------------*/
-char        CONF_daemon        (void);
-/*> void        CONF_comm          (int a_sig, siginfo_t *a_info, void *a_nada);      <*/
-/*---(config)---------------*/
-char        CONF_open          (void);
-char        CONF_read          (void);
-char        CONF_parse         (void);
-char        CONF_list          (void);
-char        CONF_close         (void);
-char        CONF_report        (char);
-char        CONF_tableview     (void);
+char*       prog__unit              (char *a_question);
 
 /*===[[ EOS_EXEC.C ]]=========================================================*/
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---(processes)------------*/
-char        EXEC_checkmount    (char*);
-char        EXEC_launch        (void);
-char        EXEC_find          (int);
-char        EXEC_run           (tPROC*);
-char        EXEC_check         (void);
-char        EXEC_children      (int);
+char        EXEC_checkmount         (char*);
+char        EXEC_launch             (void);
+char        EXEC_find               (int);
+char        EXEC_run                (tPROC*);
+char        EXEC_check              (void);
+char        EXEC_children           (int);
 
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
-llong       base_msec               (void);
-char        base_file_verify        (uchar *a_name);
-char        base_file_cli           (char *a_terse, char *a_name);
-char        base_console            (void);
-char        base_config             (void);
-char        base_execute            (void);
-char        base_kharon             (void);
+char        BASE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler);
+char        FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc);
+llong       BASE_msec               (void);
+char        BASE_file_verify        (uchar *a_name);
+char        BASE_file_cli           (char *a_terse, char *a_name);
+char        BASE_console            (void);
+char        BASE_execute            (void);
+char        BASE_kharon             (void);
+
+
+
+/*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
 /*---(cleansing)------------*/
@@ -633,7 +721,7 @@ char*       proc__memory            (tPROC *a_proc);
 char        proc__new               (tPROC **a_new);
 char        proc__free              (tPROC **a_old);
 /*---(existance)------------*/
-char        proc__flags             (tPROC *a_new, uchar *a_flags);
+char        proc__flags             (tPROC *a_new, uchar *a_flags, char *a_dur);
 char        proc_handler            (int n, uchar *a_verb);
 /*---(exec)-----------------*/
 char        proc_mark_begin         (llong a_msec, int a_rpid);

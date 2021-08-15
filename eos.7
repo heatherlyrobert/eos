@@ -23,3 +23,81 @@ eos (1)            command-line usage
 eos (5)            configuration and data files
 .nf
 eos (7)      [***] decision rationale, objectives, and overview
+
+.SH SOFTWARE NICHE [[ DPCOV ]]
+
+.B definition (D).
+batch-processing is the shifting of tasks requiring no interaction into low
+usage windows in order to better balance resources, reduce present effort,
+and prepare for furture needs.
+
+.B previous (P).
+mainframe processing was the heyday of batch-processing.  engineers trying
+to get maximum value from big expensive machines became masters of design
+for load shifting.
+
+.B current (C).
+personal computers, tablets, and cell phones made everyone an idiot, demanding
+real-time information they could not use and vast amounts of rework, space,
+bandwith, and resources as a result.
+
+.B opportunity (O).
+computers can run 24 hours a day at little additional cost, but any reasonable
+survey of usage shows a few peak moments and easily 80+% unused capacity,
+especially all night.
+
+.B value (V).
+if i design well, i can use the 80% unused capacity (2x to 4x more resources),
+prepare ahead of time making me more efficient, and reduce wildly redundant
+activities.  why the hell not ?!?
+
+.SH PROBLEM STATEMENT [[ proact ]]
+
+.B problem (p).
+create a flexible, reliable, and transparent batch-processing control system
+that can run on any of my usenix systems, powering anything from startup and
+shutdown to nightly jobs and cleanup.
+
+.B directional opjectives (d)...
+   -- handle cleaner, simplier system startup (original intent)
+   -- add in a more fullsome and useful system shutdown (nyx)
+   -- add system cleanup cycle (hypnos)
+   -- generalize into a batch-processing system (hannibal)
+
+.B accepted functionality (a)...
+   -- single file configuration and setup to keep simple
+   -- each record is a process/job with all required information
+   -- records are grouped into blocks/units for control
+   -- groups are sequenced to satisfy dependecies
+   -- user can be specified to adjust permissions
+   -- duration and control flags used to control run-aways
+   -- performance reporting to allow analysis for future runs
+   -- verify mode to allow pre-runs to find issues early
+
+.B rejected functionalty (r)...
+   -- no real-time monitoring station
+   -- no databases adding demands and another failure point
+   -- no multi-system balancing and shifting
+   -- no auto-launch based on system load
+
+.B as always, all my applications must (#).  
+   -- run on any linux box from raspberry to cray
+   -- stay focused, small, tight, reliable, and secure
+   -- forgo sloppy, kitchen-sink languages, like python, java, or perl
+   -- stay away from dependency on external code libraries, like boost
+   -- only human-readable, 7-bit safe, ascii streams (not database)
+   -- have dedicated, maintained, automated unit testing
+   -- provide either detailed reporting or logging for debugging
+   -- use secure communications between systems where required
+   -- clean, clean code so i can maintain after long absences
+   -- no international, multi-lang, multi-byte support (freaking ever)
+   -- one-hundred percent keyboard driven and centric
+   -- all tables must be self describing with labels and queries
+   -- all data structures must include dumps, reports, and audits
+
+.SH AUTHOR
+jelloshrike at gmail dot com
+
+.SH COLOPHON
+this page is part of a documentation package meant to make use of the
+heatherly tools easier and faster.

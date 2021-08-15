@@ -540,10 +540,10 @@ rptg_dump               (void)
    /*---(header)-------------------------*/
    if (my.run_as == IAM_EOS) {
       fprintf (f, "##/sbin/eos (system initialization)\n");
-      fprintf (f, "##   eos-rhododactylos (rosy-fingered) -- simple, reliable, and transparent system initialization\n");
+      fprintf (f, "##   eos-rhododactylos (rosy-fingered dawn) -- simple, reliable, and transparent system initialization\n");
    } else {
       fprintf (f, "##/sbin/astraios (system shutdown)\n");
-      fprintf (f, "##   astraios-aiolos (sparkling) -- simple, reliable, and transparent system shutdown\n");
+      fprintf (f, "##   astraios-aeolus (sparkling wind father) -- simple, reliable, and transparent system shutdown\n");
    }
    fprintf (f, "##   performance report with major tracking information\n");
    fprintf (f, "##\n");

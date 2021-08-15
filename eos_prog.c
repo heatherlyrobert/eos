@@ -3,6 +3,238 @@
 
 
 
+/*> char          g_silent      [LEN_LABEL] = "";                                     <* 
+ *> char          g_confirm     [LEN_LABEL] = "";                                     <* 
+ *> char          g_verbose     [LEN_LABEL] = "";                                     <*/
+
+/*> char          g_verify      [LEN_SHORT] = "";                                     <* 
+ *> char          g_install     [LEN_SHORT] = "";                                     <* 
+ *> char          g_list        [LEN_SHORT] = "";                                     <* 
+ *> char          g_check       [LEN_SHORT] = "";                                     <* 
+ *> char          g_audit       [LEN_SHORT] = "";                                     <* 
+ *> char          g_fix         [LEN_SHORT] = "";                                     <* 
+ *> char          g_remove      [LEN_SHORT] = "";                                     <* 
+ *> char          g_daemon      [LEN_SHORT] = "";                                     <* 
+ *> char          g_normal      [LEN_SHORT] = "";                                     <*/
+
+/*> static  char  s_print       [LEN_RECD]  = "";                                     <*/
+
+/*> #define     MAX_OPTS    20                                                        <*/
+/*> typedef struct cOPTS  tOPTS;                                                                        <* 
+ *> struct cOPTS {                                                                                      <* 
+ *>    char        option      [LEN_LABEL];                                                             <* 
+ *>    char        levels      [LEN_SHORT];                                                             <* 
+ *>    char        desc        [LEN_DESC];                                                              <* 
+ *>    char        file        [LEN_TERSE];  /+ eos ast hyp han +/                                      <* 
+ *>    char        run_as;                                                                              <* 
+ *> };                                                                                                  <* 
+ *> static const tOPTS   s_opts [MAX_OPTS] = {                                                          <* 
+ *>    { "eos"      , "-··", "change to eos-mode"                           , "----", IAM_EOS      },   <* 
+ *>    { "astraios" , "-··", "change to astraios-mode"                      , "----", IAM_ASTRAIOS },   <* 
+ *>    { "hypnos"   , "-··", "change to hypnos-mode"                        , "----", IAM_HYPNOS   },   <* 
+ *>    { "heracles" , "-··", "change to heracles-mode"                      , "----", IAM_HERACLES },   <* 
+ *>    { "version"  , "1··", "present a short versioning string"            , "----", '·' },            <* 
+ *>    { "help"     , "2··", "present a simple help message"                , "----", '·' },            <* 
+ *>    { "verify"   , "vÿV", "verify local file for correctness"            , "FFFF", '·' },            <* 
+ *>    { "install"  , "iðI", "verify local file, then install centrally "   , "FFFF", '·' },            <* 
+ *>    { "count"    , "l··", "count all user-applicable central files"      , "··--", '·' },            <* 
+ *>    { "list"     , "L··", "list all user-applicable central files"       , "··--", '·' },            <* 
+ *>    { "check"    , "cýC", "check central file for correctness"           , "--FF", '·' },            <* 
+ *>    { "audit"    , "aèA", "audit central environment and all its files"  , "----", '·' },            <* 
+ *>    { "fix"      , "füF", "audit central environment and fix issues"     , "----", '·' },            <* 
+ *>    { "remove"   , "røR", "remove file from central location"            , "··FF", '·' },            <* 
+ *>    { "daemon"   , "dëD", "execute specific file in daemon-mode"         , "····", '·' },            <* 
+ *>    { "prickly"  , "p÷P", "execute specific file in prickly daemon-mode" , "····", '·' },            <* 
+ *>    { "normal"   , "nôN", "execute specific file in normal-mode"         , "----", '·' },            <* 
+ *>    { ""         , "···", ""                                             , "····", '·' },            <* 
+ *> };                                                                                                  <*/
+
+/*> char                                                                              <* 
+ *> PROG__arg_init          (void)                                                    <* 
+ *> {                                                                                 <* 
+ *>    strlcpy (g_silent , "", LEN_LABEL);                                            <* 
+ *>    strlcpy (g_confirm, "", LEN_LABEL);                                            <* 
+ *>    strlcpy (g_verbose, "", LEN_LABEL);                                            <* 
+ *>                                                                                   <* 
+ *>    strlcpy (g_verify , "", LEN_SHORT);                                            <* 
+ *>    strlcpy (g_install, "", LEN_SHORT);                                            <* 
+ *>    strlcpy (g_list   , "", LEN_SHORT);                                            <* 
+ *>    strlcpy (g_check  , "", LEN_SHORT);                                            <* 
+ *>    strlcpy (g_audit  , "", LEN_SHORT);                                            <* 
+ *>    strlcpy (g_fix    , "", LEN_SHORT);                                            <* 
+ *>    strlcpy (g_remove , "", LEN_SHORT);                                            <* 
+ *>    strlcpy (g_daemon , "", LEN_SHORT);                                            <* 
+ *>    strlcpy (g_normal , "", LEN_SHORT);                                            <* 
+ *>    return 0;                                                                      <* 
+ *> }                                                                                 <*/
+
+/*> char                                                                              <* 
+ *> PROG__arg_single        (char *a_levels, char n)                                  <* 
+ *> {                                                                                 <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                       <* 
+ *>    char        rce         =  -10;                                                <* 
+ *>    char        c           =  '·';                                                <* 
+ *>    char        t           [LEN_SHORT] = "";                                      <* 
+ *>    /+---(defense)------------------------+/                                       <* 
+ *>    --rce;  if (a_levels == NULL)              return rce;                         <* 
+ *>    --rce;  if (strlen (a_levels) != 3)        return rce;                         <* 
+ *>    --rce;  if (n        <  0)                 return rce;                         <* 
+ *>    --rce;  if (n        >  2)                 return rce;                         <* 
+ *>    /+---(get current)--------------------+/                                       <* 
+ *>    c = a_levels [n];                                                              <* 
+ *>    if (c == '·')                      return 0;                                   <* 
+ *>    if (c == ' ')                      return 0;                                   <* 
+ *>    if (c == '-')                      return 0;                                   <* 
+ *>    /+---(can not be in any place)--------+/                                       <* 
+ *>    --rce;  if (strchr (g_silent , c) != NULL) return rce;                         <* 
+ *>    --rce;  if (strchr (g_confirm, c) != NULL) return rce;                         <* 
+ *>    --rce;  if (strchr (g_verbose, c) != NULL) return rce;                         <* 
+ *>    /+---(load correctly)-----------------+/                                       <* 
+ *>    sprintf (t, "%c", c);                                                          <* 
+ *>    switch (n) {                                                                   <* 
+ *>    case  0  :   strlcat (g_silent , t, LEN_LABEL);   break;                       <* 
+ *>    case  1  :   strlcat (g_confirm, t, LEN_LABEL);   break;                       <* 
+ *>    case  2  :   strlcat (g_verbose, t, LEN_LABEL);   break;                       <* 
+ *>    }                                                                              <* 
+ *>    /+---(load by action)-----------------+/                                       <* 
+ *>    switch (a_levels [0]) {                                                        <* 
+ *>    case 'v' :   strlcat (g_verify , t, LEN_SHORT);   break;                       <* 
+ *>    case 'i' :   strlcat (g_install, t, LEN_SHORT);   break;                       <* 
+ *>    case 'l' :   strlcat (g_list   , t, LEN_SHORT);   break;                       <* 
+ *>    case 'L' :   strlcat (g_list   , t, LEN_SHORT);   break;                       <* 
+ *>    case 'c' :   strlcat (g_check  , t, LEN_SHORT);   break;                       <* 
+ *>    case 'a' :   strlcat (g_audit  , t, LEN_SHORT);   break;                       <* 
+ *>    case 'f' :   strlcat (g_fix    , t, LEN_SHORT);   break;                       <* 
+ *>    case 'r' :   strlcat (g_remove , t, LEN_SHORT);   break;                       <* 
+ *>    case 'd' :   strlcat (g_daemon , t, LEN_SHORT);   break;                       <* 
+ *>    case 'n' :   strlcat (g_normal , t, LEN_SHORT);   break;                       <* 
+ *>    }                                                                              <* 
+ *>    /+---(complete)-----------------------+/                                       <* 
+ *>    return 0;                                                                      <* 
+ *> }                                                                                 <*/
+
+/*> char                                                                              <* 
+ *> PROG__arg_load          (void)                                                    <* 
+ *> {                                                                                 <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                       <* 
+ *>    char        rc          =    0;                                                <* 
+ *>    int         i           =    0;                                                <* 
+ *>    char        c           =  '·';                                                <* 
+ *>    char        t           [LEN_SHORT] = "";                                      <* 
+ *>    char       *p           = NULL;                                                <* 
+ *>    PROG__arg_init ();                                                             <* 
+ *>    for (i = 0; i < MAX_OPTS; ++i) {                                               <* 
+ *>       p = s_opts [i].levels;                                                      <* 
+ *>       if (p [0] == '\0')  break;                                                  <* 
+ *>       if (rc >= 0)  rc = PROG__arg_single (p, 0);                                 <* 
+ *>       if (rc >= 0)  rc = PROG__arg_single (p, 1);                                 <* 
+ *>       if (rc >= 0)  rc = PROG__arg_single (p, 2);                                 <* 
+ *>       if (rc <  0)  break;                                                        <* 
+ *>    }                                                                              <* 
+ *>    return rc;                                                                     <* 
+ *> }                                                                                 <*/
+
+/*> char                                                                              <* 
+ *> PROG__arg_clearmode     (void)                                                    <* 
+ *> {                                                                                 <* 
+ *>    my.run_mode = '-';                                                             <* 
+ *>    strlcpy (my.run_file , "", LEN_PATH);                                          <* 
+ *>    return 0;                                                                      <* 
+ *> }                                                                                 <*/
+
+/*> char                                                                                               <* 
+ *> PROG__arg_handle        (int *i, char *a_arg, char *a_next)                                        <* 
+ *> {                                                                                                  <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                                        <* 
+ *>    char        rce         =  -10;                                                                 <* 
+ *>    char        rc          =    0;                                                                 <* 
+ *>    int         j           =    0;                                                                 <* 
+ *>    char       *p           = NULL;                                                                 <* 
+ *>    char        c           =  '·';                                                                 <* 
+ *>    char        f           =  '·';                                                                 <* 
+ *>    /+---(defense)------------------------+/                                                        <* 
+ *>    --rce;  if (i     == NULL)              return rce;                                             <* 
+ *>    --rce;  if (a_arg == NULL)              return rce;                                             <* 
+ *>    --rce;  if (strlen (a_arg) <= 4) {                                                              <* 
+ *>       yURG_err ('F', "option å%sæ too short, must be > 4 chars", a_arg);                           <* 
+ *>       return rce;                                                                                  <* 
+ *>    }                                                                                               <* 
+ *>    --rce;  if (strncmp (a_arg, "--", 2) != 0) {                                                    <* 
+ *>       yURG_err ('F', "option å%sæ must start with the prefix å--æ", a_arg);                        <* 
+ *>       return rce;                                                                                  <* 
+ *>    }                                                                                               <* 
+ *>    --rce;  if (my.run_mode != '-') {                                                               <* 
+ *>       yURG_err ('F', "run action already set (%c), can not update to å%sæ", my.run_mode, a_arg);   <* 
+ *>       return rce;                                                                                  <* 
+ *>    }                                                                                               <* 
+ *>    /+---(walk options)-------------------+/                                                        <* 
+ *>    for (j = 0; j < MAX_OPTS; ++j) {                                                                <* 
+ *>       p = s_opts [j].option;                                                                       <* 
+ *>       if (p [0] == '\0')  break;                                                                   <* 
+ *>       if (strcmp (a_arg + 2, p) == 0) {                                                            <* 
+ *>          c = s_opts [j].levels [0];                                                                <* 
+ *>          break;                                                                                    <* 
+ *>       }                                                                                            <* 
+ *>       if (a_arg [2] == 'c' && strcmp (a_arg + 3, p) == 0) {                                        <* 
+ *>          c = s_opts [j].levels [1];                                                                <* 
+ *>          break;                                                                                    <* 
+ *>       }                                                                                            <* 
+ *>       if (a_arg [2] == 'v' && strcmp (a_arg + 3, p) == 0) {                                        <* 
+ *>          c = s_opts [j].levels [2];                                                                <* 
+ *>          break;                                                                                    <* 
+ *>       }                                                                                            <* 
+ *>    }                                                                                               <* 
+ *>    /+---(handle failure)-----------------+/                                                        <* 
+ *>    --rce;  if (c == '·') {                                                                         <* 
+ *>       yURG_err ('F', "option å%sæ not found in database", a_arg);                                  <* 
+ *>       return rce;                                                                                  <* 
+ *>    }                                                                                               <* 
+ *>    /+---(handle runas changes)-----------+/                                                        <* 
+ *>    --rce;  if (c == '-') {                                                                         <* 
+ *>       if (s_opts [j].run_as == '·') {                                                              <* 
+ *>          yURG_err ('F', "option å%sæ used as a mode change, but not legal", a_arg);                <* 
+ *>          return rce;                                                                               <* 
+ *>       }                                                                                            <* 
+ *>       my.run_as = s_opts [j].run_as;                                                               <* 
+ *>       PROG__arg_clearmode ();                                                                      <* 
+ *>       return 2;                                                                                    <* 
+ *>    }                                                                                               <* 
+ *>    /+---(handle run mode changes)--------+/                                                        <* 
+ *>    my.run_mode = c;                                                                                <* 
+ *>    /+---(get file flag)------------------+/                                                        <* 
+ *>    switch (my.run_as) {                                                                            <* 
+ *>    case IAM_EOS      : f = s_opts [j].file [0];        break;                                      <* 
+ *>    case IAM_ASTRAIOS : f = s_opts [j].file [1];        break;                                      <* 
+ *>    case IAM_HYPNOS   : f = s_opts [j].file [2];        break;                                      <* 
+ *>    case IAM_HERACLES : f = s_opts [j].file [3];        break;                                      <* 
+ *>    }                                                                                               <* 
+ *>    /+---(handle option not allowed)------+/                                                        <* 
+ *>    --rce;  if (f == '·') {                                                                         <* 
+ *>       yURG_err ('F', "action å%sæ not allowed for run-as (%c)", a_arg, my.run_as);                 <* 
+ *>       PROG__arg_clearmode ();                                                                      <* 
+ *>       return rce;                                                                                  <* 
+ *>    }                                                                                               <* 
+ *>    /+---(handle simple option)-----------+/                                                        <* 
+ *>    if (f == '-')    return 0;                                                                      <* 
+ *>    /+---(handle file flag)---------------+/                                                        <* 
+ *>    --rce;  if (f != 'F') {                                                                         <* 
+ *>       yURG_err ('F', "action å%sæ not configured correctly", a_arg);                               <* 
+ *>       PROG__arg_clearmode ();                                                                      <* 
+ *>       return rce;                                                                                  <* 
+ *>    }                                                                                               <* 
+ *>    --rce;  if (a_next == NULL) {                                                                   <* 
+ *>       yURG_err ('F', "action å%sæ requires a file name as an argument", a_arg);                    <* 
+ *>       PROG__arg_clearmode ();                                                                      <* 
+ *>       return rce;                                                                                  <* 
+ *>    }                                                                                               <* 
+ *>    strlcpy (my.run_file, a_next, LEN_PATH);                                                        <* 
+ *>    ++(*i);                                                                                         <* 
+ *>    /+---(complete)-----------------------+/                                                        <* 
+ *>    return 1;                                                                                       <* 
+ *> }                                                                                                  <*/
+
+
+
 /*====================------------------------------------====================*/
 /*===----                      supporting functions                    ----===*/
 /*====================------------------------------------====================*/
@@ -29,112 +261,184 @@ PROG_version       (void)
    return verstring;
 }
 
+char       /* PURPOSE : display usage help information -----------------------*/
+PROG__usage             (void)
+{
+   printf ("see man pages for a better understanding of eos...\n");
+   printf ("  man 1 eos    command-line initiation, use, and options\n");
+   printf ("  man 5 eos    structure of config, files, and streams\n");
+   printf ("  man 7 eos    decision rationale, scope, and objectives\n");
+   exit   (0);
+}
+
+/*> char*                                                                             <* 
+ *> PROG_iam           (char a_iam)                                                   <* 
+ *> {                                                                                 <* 
+ *>    switch (a_iam) {                                                               <* 
+ *>    case IAM_EOS          :                                                        <* 
+ *>       return "eos-rhododactylos (rosy-fingered dawn)";                            <* 
+ *>       break;                                                                      <* 
+ *>    case IAM_ASTRAIOS     :                                                        <* 
+ *>       return "astraios-aeolus (sparkling wind father)";                           <* 
+ *>       break;                                                                      <* 
+ *>    case IAM_HYPNOS       :                                                        <* 
+ *>       return "hypnos-epidotes (giver of sleep)";                                  <* 
+ *>       break;                                                                      <* 
+ *>    case IAM_HERACLES     :                                                        <* 
+ *>       return "heracles-promachus (leader in battle)";                             <* 
+ *>       break;                                                                      <* 
+ *>    default               :                                                        <* 
+ *>       return "unknown";                                                           <* 
+ *>       break;                                                                      <* 
+ *>    }                                                                              <* 
+ *>    return "eh?";                                                                  <* 
+ *> }                                                                                 <*/
+
+/*> char*                                                                             <* 
+ *> PROG_runmode       (char a_run)                                                   <* 
+ *> {                                                                                 <* 
+ *>    switch (a_run) {                                                               <* 
+ *>    case CASE_VERIFY  :                                                            <* 
+ *>       strcpy (s_print, "verify");                                                 <* 
+ *>       break;                                                                      <* 
+ *>    case CASE_INSTALL :                                                            <* 
+ *>       strcpy (s_print, "install");                                                <* 
+ *>       break;                                                                      <* 
+ *>    case CASE_LIST    :                                                            <* 
+ *>       strcpy (s_print, "list");                                                   <* 
+ *>       break;                                                                      <* 
+ *>    case CASE_CHECK   :                                                            <* 
+ *>       strcpy (s_print, "check");                                                  <* 
+ *>       break;                                                                      <* 
+ *>    case CASE_AUDIT   :                                                            <* 
+ *>       strcpy (s_print, "audit");                                                  <* 
+ *>       break;                                                                      <* 
+ *>    case CASE_FIX     :                                                            <* 
+ *>       strcpy (s_print, "fix");                                                    <* 
+ *>       break;                                                                      <* 
+ *>    case CASE_DAEMON  :                                                            <* 
+ *>       strcpy (s_print, "daemon");                                                 <* 
+ *>       break;                                                                      <* 
+ *>    case CASE_NORMAL  :                                                            <* 
+ *>       strcpy (s_print, "normal");                                                 <* 
+ *>       break;                                                                      <* 
+ *>    default           :                                                            <* 
+ *>       strcpy (s_print, "unknown");                                                <* 
+ *>       break;                                                                      <* 
+ *>    }                                                                              <* 
+ *>    IF_SILENT         strcat (s_print, " (silent)");                               <* 
+ *>    else IF_CONFIRM   strcat (s_print, " (confirm)");                              <* 
+ *>    else IF_VERBOSE   strcat (s_print, " (verbose)");                              <* 
+ *>    else              strcat (s_print, " (unknown)");                              <* 
+ *>    return s_print;                                                                <* 
+ *> }                                                                                 <*/
+
 
 
 /*====================------------------------------------====================*/
-/*===----                      run-time behavior                       ----===*/
+/*===----                     pre-startup functions                    ----===*/
 /*====================------------------------------------====================*/
-static void      o___BEHAVIOR________________o (void) {;}
-
-char*
-PROG_iam           (char a_iam)
-{
-   switch (a_iam) {
-   case IAM_EOS          :  return "eos-rhododactylos (rosy-fingered dawn)";  break;
-   case IAM_NYX          :  return "nyx-melaina (goddess of night/darkness)"; break;
-   case IAM_HYPNOS       :  return "hypnos-epidotes (giver of sleep)";        break;
-   case IAM_HANNIBAL     :  return "hannibal-barca (father of strategy)";     break;
-   default               :  return "unknown";                                 break;
-   }
-}
-
-char*
-PROG_runmode       (char a_run)
-{
-   switch (a_run) {
-   case EOS_RUN_VERIFY   :  return "verification";                            break;
-   case EOS_RUN_PRETEND  :  return "simulation";                              break;
-   case EOS_RUN_NORMAL   :  return "foreground";                              break;
-   case EOS_RUN_DAEMON   :  return "daemon";                                  break;
-   default               :  return "unknown";                                 break;
-   }
-}
+static void      o___PRESTART________________o (void) {;}
 
 char
-PROG_verbose       (int a_argc, char *a_argv[])
+PROG__verbose           (int a_argc, char *a_argv[], char a_unit)
 {
    /*---(locals)-----------+-----+-----+-*/
    int         i           =    0;
+   char        x_loud      =  '-';
    /*---(default)------------------------*/
    my.verbose = '-';
-   /*> printf ("PROG_verbose : ");                                                    <*/
-   /*> printf ("%d", a_argc);                                                         <*/
-   /*---(locate loud)--------------------*/
+   yURG_msg_std ();  yURG_msg_mute ();
+   yURG_err_std ();  yURG_err_mute ();
+   /*---(handle unit test)---------------*/
+   if (a_unit == 'y' || a_unit == 'k') {
+      yURG_msg_tmp ();
+      yURG_err_tmp ();
+   }
+   /*---(check for pre-loud)-------------*/
    for (i = 1; i < a_argc; ++i) {
       /*> printf (", %s", a_argv [i]);                                                <*/
       if (a_argv [i][0] != '-')       continue;
       if (a_argv [i][1] != '-')       continue;
-      if (strcmp (a_argv [i], "--verbose") == 0)  my.verbose = 'y';
+      if (strcmp (a_argv [i], "--vdaemon" ) == 0)   x_loud = 'y';
    }
-   /*> printf (", %c", my.verbose);                                                   <*/
-   /*> printf (", done\n");                                                           <*/
+   /*---(set loud)-----------------------*/
+   if (x_loud == 'y' && getpid () == 1) {
+      yURG_msg_live ();
+      my.verbose = 'y';
+   }
+   yURG_err_live ();
    /*---(complete)-----------------------*/
    return 0;
 }
 
-
 char         /*--> detirmine behavior --------------------[ leaf-- [ ------ ]-*/
-PROG_runas              (int a_argc, char *a_argv[])
+PROG__runas             (int a_argc, char *a_argv[])
 {
+   char        s           [LEN_HUND]  = "";
    /*---(defaults)-----------------------*/
    my.run_as         = '-';
-   my.run_mode       = EOS_RUN_NORMAL;
+   my.run_mode       = '-';
    /*---(specific)-----------------------*/
+   yURG_msg ('>', "%s %s", P_NAMESAKE, P_SUBJECT);
    /* must also trap _debug versions */
    if      (strncmp (a_argv [0], "eos"           ,  3) == 0)    my.run_as = IAM_EOS;
    else if (strncmp (a_argv [0], "/sbin/eos"     ,  9) == 0)    my.run_as = IAM_EOS;
    else if (strcmp  (a_argv [0], "init"              ) == 0)    my.run_as = IAM_EOS;
-   else if (strncmp (a_argv [0], "nyx"           ,  3) == 0)    my.run_as = IAM_NYX;
-   else if (strncmp (a_argv [0], "/sbin/nyx"     ,  9) == 0)    my.run_as = IAM_NYX;
-   else if (strcmp  (a_argv [0], "shutdown"          ) == 0)    my.run_as = IAM_NYX;
-   else if (strcmp  (a_argv [0], "halt"              ) == 0)    my.run_as = IAM_NYX;
-   else if (strcmp  (a_argv [0], "restart"           ) == 0)    my.run_as = IAM_NYX;
+   else if (strncmp (a_argv [0], "astraios"      ,  8) == 0)    my.run_as = IAM_ASTRAIOS;
+   else if (strncmp (a_argv [0], "/sbin/astraios", 14) == 0)    my.run_as = IAM_ASTRAIOS;
+   else if (strcmp  (a_argv [0], "shutdown"          ) == 0)    my.run_as = IAM_ASTRAIOS;
+   else if (strcmp  (a_argv [0], "halt"              ) == 0)    my.run_as = IAM_ASTRAIOS;
+   else if (strcmp  (a_argv [0], "restart"           ) == 0)    my.run_as = IAM_ASTRAIOS;
    else if (strncmp (a_argv [0], "hypnos"        ,  6) == 0)    my.run_as = IAM_HYPNOS;
    else if (strncmp (a_argv [0], "/sbin/hypnos"  , 12) == 0)    my.run_as = IAM_HYPNOS;
-   else if (strncmp (a_argv [0], "hannibal"      ,  8) == 0)    my.run_as = IAM_HANNIBAL;
-   else if (strncmp (a_argv [0], "/sbin/hannibal", 14) == 0)    my.run_as = IAM_HANNIBAL;
-   else if (strcmp  (a_argv [0], "@"                 ) == 0)    my.run_as = IAM_HANNIBAL;
-   else if (strcmp  (a_argv [0], "/sbin/@"           ) == 0)    my.run_as = IAM_HANNIBAL;
+   else if (strncmp (a_argv [0], "heracles"      ,  8) == 0)    my.run_as = IAM_HERACLES;
+   else if (strncmp (a_argv [0], "/sbin/heracles", 14) == 0)    my.run_as = IAM_HERACLES;
+   else if (strcmp  (a_argv [0], "H"                 ) == 0)    my.run_as = IAM_HERACLES;
+   else if (strcmp  (a_argv [0], "/sbin/H"           ) == 0)    my.run_as = IAM_HERACLES;
    else {
       return -1;
    }
-   EOS_VERBOSE  printf ("\n%s job execution framework\n\n", PROG_iam (my.run_as));
+   yJOBS_iam (my.run_as, s);
+   yURG_msg ('-', "run as (%c) %s", my.run_as, s);
    if (strcmp (my.n_conf, "") == 0) {
       switch (my.run_as) {
       case IAM_EOS       : snprintf (my.n_conf   , 200, "%seos%s"     , DIR_ETC , FILE_CONF); break;
-      case IAM_NYX       : snprintf (my.n_conf   , 200, "%snyx%s"     , DIR_ETC , FILE_CONF); break;
+      case IAM_UEOS      : snprintf (my.n_conf   , 200, "%seos%s"     , DIR_UNIT, FILE_CONF); break;
+      case IAM_ASTRAIOS  : snprintf (my.n_conf   , 200, "%sastraios%s", DIR_ETC , FILE_CONF); break;
+      case IAM_UASTRAIOS : snprintf (my.n_conf   , 200, "%sastraios%s", DIR_UNIT, FILE_CONF); break;
       case IAM_HYPNOS    : snprintf (my.n_conf   , 200, "%shypnos%s"  , DIR_ETC , FILE_CONF); break;
-      case IAM_UNIT      : snprintf (my.n_conf   , 200, "%sunit%s"    , DIR_UNIT, FILE_CONF); break;
+      case IAM_UHYPNOS   : snprintf (my.n_conf   , 200, "%shypnos%s"  , DIR_UNIT, FILE_CONF); break;
       }
    }
+   yURG_msg ('-', "conf å%sæ", my.n_conf);
    if (strcmp (my.n_exec, "") == 0) {
       switch (my.run_as) {
-      case IAM_EOS       : snprintf (my.n_exec   , 200, "%seos%s"     , DIR_YLOG, FILE_EXEC); break;
-      case IAM_NYX       : snprintf (my.n_exec   , 200, "%snyx%s"     , DIR_YLOG, FILE_EXEC); break;
-      case IAM_HYPNOS    : snprintf (my.n_exec   , 200, "%shypnos%s"  , DIR_YLOG, FILE_EXEC); break;
-      case IAM_HANNIBAL  : snprintf (my.n_exec   , 200, "%shannibal%s", DIR_YLOG, FILE_EXEC); break;
-      case IAM_UNIT      : snprintf (my.n_exec   , 200, "%sunit%s"    , DIR_UNIT, FILE_EXEC); break;
+      case IAM_EOS       :
+      case IAM_UEOS      : snprintf (my.n_exec   , 200, "%seos%s"     , DIR_YLOG, FILE_EXEC); break;
+      case IAM_ASTRAIOS  :
+      case IAM_UASTRAIOS : snprintf (my.n_exec   , 200, "%sastraios%s", DIR_YLOG, FILE_EXEC); break;
+      case IAM_HYPNOS    :
+      case IAM_UHYPNOS   : snprintf (my.n_exec   , 200, "%shypnos%s"  , DIR_YLOG, FILE_EXEC); break;
+      case IAM_HERACLES  :
+      case IAM_UHERACLES : snprintf (my.n_exec   , 200, "%sheracles%s", DIR_YLOG, FILE_EXEC); break;
       }
    }
+   yURG_msg ('-', "exec å%sæ", my.n_exec);
    if (strcmp (my.n_perf, "") == 0) {
       switch (my.run_as) {
-      case IAM_EOS       : snprintf (my.n_perf   , 200, "%seos%s"     , DIR_YLOG, FILE_PERF); break;
-      case IAM_NYX       : snprintf (my.n_perf   , 200, "%snyx%s"     , DIR_YLOG, FILE_PERF); break;
-      case IAM_HYPNOS    : snprintf (my.n_perf   , 200, "%shypnos%s"  , DIR_YLOG, FILE_PERF); break;
-      case IAM_HANNIBAL  : snprintf (my.n_perf   , 200, "%shannibal%s", DIR_YLOG, FILE_PERF); break;
-      case IAM_UNIT      : snprintf (my.n_perf   , 200, "%sunit%s"    , DIR_UNIT, FILE_PERF); break;
+      case IAM_EOS       :
+      case IAM_UEOS      : snprintf (my.n_perf   , 200, "%seos%s"     , DIR_YLOG, FILE_PERF); break;
+      case IAM_ASTRAIOS  :
+      case IAM_UASTRAIOS : snprintf (my.n_perf   , 200, "%sastraios%s", DIR_YLOG, FILE_PERF); break;
+      case IAM_HYPNOS    :
+      case IAM_UHYPNOS   : snprintf (my.n_perf   , 200, "%shypnos%s"  , DIR_YLOG, FILE_PERF); break;
+      case IAM_HERACLES  :
+      case IAM_UHERACLES : snprintf (my.n_perf   , 200, "%sheracles%s", DIR_YLOG, FILE_PERF); break;
       }
    }
+   yURG_msg ('-', "perf å%sæ", my.n_perf);
+   yURG_msg (' ', "");
    DEBUG_TOPS   yLOG_info    ("conf"      , my.n_conf);
    DEBUG_TOPS   yLOG_info    ("exec"      , my.n_exec);
    DEBUG_TOPS   yLOG_info    ("perf"      , my.n_perf);
@@ -142,19 +446,14 @@ PROG_runas              (int a_argc, char *a_argv[])
    return 0;
 }
 
-
-
-/*====================------------------------------------====================*/
-/*===----                      startup functions                       ----===*/
-/*====================------------------------------------====================*/
-static void      o___STARTUP_________________o (void) {;}
-
 char         /*--> before even logger --------------------[ leaf-- [ ------ ]-*/
-PROG_boot               (void)
+PROG__boot              (int a_argc, char *a_argv[])
 {
-   /*---(locals)-----------+-----------+-*/
+   /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
+   int         i           =    0;
+   char       *a           = NULL;          /* current argument               */
    FILE       *f           = NULL;          /* generic file pointer           */
    char        x_recd      [LEN_RECD];
    int         x_len       =    0;
@@ -162,28 +461,33 @@ PROG_boot               (void)
    int         x_tries     =    0;
    char        x_ylog      =  '-';
    /*---(quick out)----------------------*/
-   if (my.run_as != IAM_EOS)  return 0;
+   for (i = 1; i < a_argc; ++i) {
+      a = a_argv[i];
+      if (a == NULL) return rce;
+      if (a[0] == '@')       continue;
+      if (strcmp (a, "--eos") == 0)  my.run_as    = IAM_EOS;
+   }
+   if (my.run_as != IAM_EOS) return 0;
+   if (getpid () != 1)       return 0;
    /*---(remount /)----------------------*/
-   EOS_VERBOSE  printf ("PROG_boot  : ");
+   yURG_msg ('>', "eos boot preparation...");
    rc = mount ("/dev/sda4", "/", "ext4", MS_REMOUNT | MS_NOATIME, NULL);
-   EOS_VERBOSE  printf ("/ remounted (%d)", rc);
+   yURG_msg ('-', "remounted /dev/sda4 (%d)", rc);
    /*---(check on /proc)-----------------*/
    /*> mkdir ("/proc", 0755);                                                         <*/
-   EOS_VERBOSE  printf ("/proc");
    while (1) {
-      EOS_VERBOSE  printf (" (%d)", x_tries);
       f = fopen ("/proc/mounts", "rt");
       if (f != NULL)    break;
       if (x_tries > 3)  break;
-      EOS_VERBOSE  printf ("failed");
       rc = mount ("proc"  , "/proc", "proc", 0, NULL);
       ++x_tries;
    }
    --rce;  if (f == NULL) {
-      EOS_VERBOSE  printf ("FATAL\n");
+      yURG_err ('f', "/proc could not be mounted in 3 tries");
       return rce;
    }
-   EOS_VERBOSE  printf ("success");
+   if (x_tries == 0)  yURG_msg ('-', "/proc already successfully mounted");
+   else               yURG_msg ('-', "/proc successfully mounted after (%d) tries", x_tries);
    /*---(show /proc/mounts)--------------*/
    while (1) {
       fgets (x_recd, 450, f);
@@ -193,163 +497,319 @@ PROG_boot               (void)
       /*> printf ("%2d [%s]\n", c, x_recd);                                           <*/
       ++c;
       if (strstr (x_recd, "yLOG") != NULL) {
-         /*> printf ("yLOG temporary logging ramdisk found\n");                       <*/
+         yURG_msg ('-', "/var/log/yLOG already successfully mounted");
          x_ylog = 'y';
       }
    }
    fclose (f);
+   if (x_ylog == '-')  yURG_msg ('-', "/var/log/yLOG not yet mounted");
    /*---(check on yLOG)------------------*/
-   EOS_VERBOSE  printf (", yLOG");
-   if (x_ylog == 'y') {
-      EOS_VERBOSE  printf (" already mounted");
-      return 0;
-   } else {
+   if (x_ylog != 'y') {
       rc = mount ("varlog", "/var/log/yLOG", "tmpfs", MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_NOATIME, "size=500m");
-      EOS_VERBOSE  printf (" mount %d", rc);
+      yURG_msg ('-', "/var/log/yLOG mounted successfully (%d)", rc);
    }
+   yURG_msg ('-', "");
    /*---(close)--------------------------*/
-   EOS_VERBOSE  printf ("done\n");
    return 0;
 }
 
+char
+PROG_prestart           (int a_argc, char *a_argv[], char a_unit)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(startup)------------------------*/
+   if (rc >= 0)  rc = PROG__verbose   (a_argc, a_argv, a_unit);
+   if (rc >= 0)  rc = PROG__runas     (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG__boot      (a_argc, a_argv);
+   DEBUG_TOPS  yLOG_value   ("prestart"  , rc);
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                    debugging startup                         ----===*/
+/*====================------------------------------------====================*/
+static void      o___DEBUGGING_______________o (void) {;}
+
+char
+PROG_debugging          (int a_argc, char *a_argv[], char a_unit)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(startup)------------------------*/
+   if (rc >= 0)  rc = yURG_logger  (a_argc, a_argv);
+   if (rc >= 0)  rc = yURG_urgs    (a_argc, a_argv);
+   DEBUG_TOPS  yLOG_value   ("debugging" , rc);
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      startup functions                       ----===*/
+/*====================------------------------------------====================*/
+static void      o___STARTUP_________________o (void) {;}
+
 char         /*--: pre-argument initialization -----------[ leaf-- [ ------ ]-*/
-PROG_init          (int a_argc, char *a_argv[])
+PROG__init              (int a_argc, char *a_argv[])
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    int         rc          =    0;
    FILE       *f           = NULL;          /* generic file pointer           */
    int         x_pos       =   -1;
-   char        x_which     =  '-';
-   char        x_base      [LEN_LABEL] = "";
    /*---(log header)---------------------*/
    DEBUG_TOPS   yLOG_info    ("namesake", P_NAMESAKE);
    DEBUG_TOPS   yLOG_info    ("heritage", P_HERITAGE);
    DEBUG_TOPS   yLOG_info    ("imagery" , P_IMAGERY);
    DEBUG_TOPS   yLOG_info    ("purpose" , P_PURPOSE);
+   DEBUG_TOPS   yLOG_note    ("BASE SOFTWARE");
    DEBUG_TOPS   yLOG_info    ("eos"     , PROG_version    ());
-   DEBUG_TOPS   yLOG_info    ("yPARSE"  , yPARSE_version  ());
-   DEBUG_TOPS   yLOG_info    ("yDLST"   , yDLST_version   ());
-   DEBUG_TOPS   yLOG_info    ("yEXEC"   , yEXEC_version   ());
-   DEBUG_TOPS   yLOG_info    ("ySTR"    , ySTR_version    ());
+   DEBUG_TOPS   yLOG_note    ("EVERYWHERE LIBRARIES");
    DEBUG_TOPS   yLOG_info    ("yLOG"    , yLOGS_version   ());
    DEBUG_TOPS   yLOG_info    ("yURG"    , yURG_version    ());
+   DEBUG_TOPS   yLOG_note    ("COMMON LIBRARIES");
+   DEBUG_TOPS   yLOG_info    ("ySTR"    , ySTR_version    ());
+   DEBUG_TOPS   yLOG_info    ("yPARSE"  , yPARSE_version  ());
+   DEBUG_TOPS   yLOG_note    ("SPECIFIC LIBRARIES");
+   DEBUG_TOPS   yLOG_info    ("yDLST"   , yDLST_version   ());
+   DEBUG_TOPS   yLOG_info    ("yEXEC"   , yEXEC_version   ());
+   DEBUG_TOPS   yLOG_info    ("yJOBS"   , yJOBS_version   ());
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   EOS_VERBOSE  printf ("PROG_init    : ");
+   yURG_msg ('>', "program initialization...");
    /*---(set globals)--------------------*/
-   EOS_VERBOSE  printf ("defaults");
+   yURG_msg ('-', "set defaults for major globals");
    my.done_done      = '-';
    my.test           = '-';
    my.loop_msec      = 100;
    my.loop_max       = my.loop_msec * 10 * 240; /* four minutes */
    strlcpy (my.dev, "/dev/tty1", LEN_LABEL);
-   /*---(check run as)-------------------*/
-   x_pos = strlproj (a_argv [0], x_base);
-   x_which = x_base [0];
-   /*> printf ("%-20.20s (%c) %s\n", a_argv [0], x_which, x_base);                    <*/
-   /*> DEBUG_TOPS   yLOG_value   ("x_pos"     , x_pos);                               <*/
-   /*> if (x_pos < 0)   x_which = IAM_EOS;                                            <* 
-    *> else             x_which = a_argv [0][x_pos];                                  <*/
-   DEBUG_TOPS   yLOG_char    ("x_which"   , x_which);
-   /*---(check run as)-------------------*/
-   DEBUG_TOPS   yLOG_info    ("valid"     , IAM_VALID);
-   --rce;  if (strchr (IAM_VALID, x_which) == NULL) {
-      EOS_VERBOSE  printf       (", run as %c failed (%d), FATAL\n", x_which, rc);
-      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   my.run_as = x_which;
-   DEBUG_TOPS   yLOG_char    (", run_as"    , my.run_as);
-   EOS_VERBOSE  printf (", run as %c", my.run_as);
+   /*> PROG__arg_load ();                                                             <*/
    /*---(call whoami)--------------------*/
-   rc = yEXEC_whoami (&my.pid, &my.ppid, &my.uid, NULL, &my.who, 'n');
+   rc = yEXEC_whoami (&my.pid, &my.ppid, &my.m_uid, NULL, &my.m_who, 'n');
    DEBUG_TOPS   yLOG_value   ("whoami"    , rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (", whoami failed (%d), FATAL\n", rc);
+      yURG_err ('f', "yEXEC_whoami failed (%d)", rc);
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   EOS_VERBOSE  printf (", uid %d, pid %d, ppid, %d", my.uid, my.pid, my.ppid);
+   yURG_msg ('-', "yEXEC_whoami returned %d pid, %d uid, %s user", my.pid, my.m_uid, my.m_who);
    DEBUG_TOPS   yLOG_value   ("pid"       , my.pid);
    DEBUG_TOPS   yLOG_value   ("ppid"      , my.ppid);
-   DEBUG_TOPS   yLOG_value   ("uid"       , my.uid);
-   DEBUG_TOPS   yLOG_info    ("who"       , my.who);
-   /*---(check for root)-----------------*/
-   --rce;  if (my.uid != 0) {
-      EOS_VERBOSE  printf       (", check root failed, FATAL\n");;
-      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
+   DEBUG_TOPS   yLOG_value   ("uid"       , my.m_uid);
+   DEBUG_TOPS   yLOG_info    ("who"       , my.m_who);
+   yURG_msg ('-', "");
    /*---(complete)-----------------------*/
-   EOS_VERBOSE  printf        (", done\n");
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
-#define  TWOARG  if (++i >= a_argc)  yURG_error ("FATAL, %s argument requires an additional string", a, --rc); else 
+char
+PROG__setaction         (cchar a_act, cchar *a_file)
+{
+   if (my.run_mode != '-')  {
+      yURG_err ('F', "can not set multiple actions.  already %c, requested %c", my.run_mode, a_act);
+      return -98;
+   }
+   my.run_mode = a_act;
+   strlcpy (my.run_file, a_file, LEN_PATH);
+   /*> printf ("s_act = %c, s_file = %s\n", s_act, s_file);                           <*/
+   return 0;
+}
+
+#define    TWOARG         if (x_two == 1)
+#define    ELSEONE(r)     else { yURG_err ('F', "action å%sæ requires a file name as an argument", a);  rc = r; }
+
+/*> char         /+--: evaluate command line arguments -------[ leaf   [ ------ ]-+/                                                 <* 
+ *> PROG__args_OLD          (int a_argc, char *a_argv[])                                                                             <* 
+ *> {                                                                                                                                <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                                                                      <* 
+ *>    char        rce         =  -10;                                                                                               <* 
+ *>    char        rc          =    0;                                                                                               <* 
+ *>    int         i           =    0;                                                                                               <* 
+ *>    char       *a           = NULL;          /+ current argument               +/                                                 <* 
+ *>    int         x_len       =    0;          /+ argument length                +/                                                 <* 
+ *>    int         x_total     =    0;          /+ total argument count           +/                                                 <* 
+ *>    int         x_args      =    0;          /+ argument count                 +/                                                 <* 
+ *>    int         x_num       =    0;          /+ numeric argument holder        +/                                                 <* 
+ *>    char        x_two       =    0;                                                                                               <* 
+ *>    /+---(process)------------------------+/                                                                                      <* 
+ *>    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);                                                                                     <* 
+ *>    yURG_msg ('>', "command line arguments handling...");                                                                         <* 
+ *>    yURG_msg ('-', "total of %d arguments, including name", a_argc);                                                              <* 
+ *>    /+---(defaults)------------------------------+/                                                                               <* 
+ *>    my.run_mode = '-';                                                                                                            <* 
+ *>    strlcpy (my.run_file, "", LEN_PATH);                                                                                          <* 
+ *>    /+---(walk args)-----------------------------+/                                                                               <* 
+ *>    for (i = 1; i < a_argc; ++i) {                                                                                                <* 
+ *>       /+---(prepare)---------------------+/                                                                                      <* 
+ *>       a = a_argv[i];                                                                                                             <* 
+ *>       if (a == NULL) {                                                                                                           <* 
+ *>          yURG_err ('f', "arg %d is NULL", i);                                                                                    <* 
+ *>          DEBUG_TOPS   yLOG_note    ("FATAL, found a null argument, really bad news");                                            <* 
+ *>          DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);                                                                          <* 
+ *>          return rce;                                                                                                             <* 
+ *>       }                                                                                                                          <* 
+ *>       /+---(debugging--------------------+/                                                                                      <* 
+ *>       if (a[0] == '@')       continue;                                                                                           <* 
+ *>       /+---(two arg check)---------------+/                                                                                      <* 
+ *>       ++x_args;                                                                                                                  <* 
+ *>       DEBUG_ARGS  yLOG_info     ("argument"  , a);                                                                               <* 
+ *>       if (i < a_argc - 1) x_two = 1; else x_two = 0;                                                                             <* 
+ *>       if (x_two == 0)  yURG_msg ('-', "%d = %s, single arg only", i, a);                                                         <* 
+ *>       else             yURG_msg ('-', "%d = %s, possible two arg", i, a);                                                        <* 
+ *>       /+---(run as)----------------------+/                                                                                      <* 
+ *>       if      (strcmp (a, "--eos"       ) == 0)  my.run_as    = IAM_EOS;                                                         <* 
+ *>       else if (strcmp (a, "--astraios"  ) == 0)  my.run_as    = IAM_ASTRAIOS;                                                    <* 
+ *>       else if (strcmp (a, "--hypnos"    ) == 0)  my.run_as    = IAM_HYPNOS;                                                      <* 
+ *>       else if (strcmp (a, "--heracles"  ) == 0)  my.run_as    = IAM_HERACLES;                                                    <* 
+ *>       /+---(verify local)----------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--verify"    ) == 0)  { TWOARG  rc = PROG__setaction (ACT_VERIFY  , a_argv [++i]); ELSEONE (-1);  }   <* 
+ *>       else if (strcmp (a, "--cverify"   ) == 0)  { TWOARG  rc = PROG__setaction (ACT_CVERIFY , a_argv [++i]); ELSEONE (-2);  }   <* 
+ *>       else if (strcmp (a, "--vverify"   ) == 0)  { TWOARG  rc = PROG__setaction (ACT_VVERIFY , a_argv [++i]); ELSEONE (-3);  }   <* 
+ *>       /+---(incomming)-------------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--install"   ) == 0)  { TWOARG  rc = PROG__setaction (ACT_INSTALL , a_argv [++i]); ELSEONE (-4);  }   <* 
+ *>       else if (strcmp (a, "--cinstall"  ) == 0)  { TWOARG  rc = PROG__setaction (ACT_CINSTALL, a_argv [++i]); ELSEONE (-5);  }   <* 
+ *>       else if (strcmp (a, "--vinstall"  ) == 0)  { TWOARG  rc = PROG__setaction (ACT_VINSTALL, a_argv [++i]); ELSEONE (-6);  }   <* 
+ *>       /+---(outgoing)--------------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--remove"    ) == 0)  { TWOARG  rc = PROG__setaction (ACT_REMOVE  , a_argv [++i]); ELSEONE (-7);  }   <* 
+ *>       else if (strcmp (a, "--cremove"   ) == 0)  { TWOARG  rc = PROG__setaction (ACT_CREMOVE , a_argv [++i]); ELSEONE (-8);  }   <* 
+ *>       else if (strcmp (a, "--vremove"   ) == 0)  { TWOARG  rc = PROG__setaction (ACT_VREMOVE , a_argv [++i]); ELSEONE (-9);  }   <* 
+ *>       /+---(check installed)-------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--count"    ) == 0)   { PROG__setaction (ACT_COUNT   , ""); }                                         <* 
+ *>       else if (strcmp (a, "--list"     ) == 0)   { PROG__setaction (ACT_LIST    , ""); }                                         <* 
+ *>       else if (strcmp (a, "--check"     ) == 0)  { TWOARG  rc = PROG__setaction (ACT_CHECK   , a_argv [++i]); ELSEONE (-10); }   <* 
+ *>       else if (strcmp (a, "--ccheck"    ) == 0)  { TWOARG  rc = PROG__setaction (ACT_CCHECK  , a_argv [++i]); ELSEONE (-11); }   <* 
+ *>       else if (strcmp (a, "--vcheck"    ) == 0)  { TWOARG  rc = PROG__setaction (ACT_VCHECK  , a_argv [++i]); ELSEONE (-12); }   <* 
+ *>       /+---(check security)--------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--audit"     ) == 0)  { PROG__setaction (ACT_AUDIT   , ""); }                                         <* 
+ *>       else if (strcmp (a, "--caudit"    ) == 0)  { PROG__setaction (ACT_CAUDIT  , ""); }                                         <* 
+ *>       else if (strcmp (a, "--vaudit"    ) == 0)  { PROG__setaction (ACT_VAUDIT  , ""); }                                         <* 
+ *>       /+---(fix implementation-----------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--fix"       ) == 0)  { PROG__setaction (ACT_FIX     , ""); }                                         <* 
+ *>       else if (strcmp (a, "--cfix"      ) == 0)  { PROG__setaction (ACT_CFIX    , ""); }                                         <* 
+ *>       else if (strcmp (a, "--vfix"      ) == 0)  { PROG__setaction (ACT_VFIX    , ""); }                                         <* 
+ *>       /+---(daemon)----------------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--daemon"    ) == 0)  { PROG__setaction (ACT_DAEMON  , ""); }                                         <* 
+ *>       else if (strcmp (a, "--cdaemon"   ) == 0)  { PROG__setaction (ACT_CDAEMON , ""); }                                         <* 
+ *>       else if (strcmp (a, "--vdaemon"   ) == 0)  { PROG__setaction (ACT_VDAEMON , ""); }                                         <* 
+ *>       /+---(normal)----------------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--normal"    ) == 0)  { PROG__setaction (ACT_NORMAL  , ""); }                                         <* 
+ *>       else if (strcmp (a, "--cnormal"   ) == 0)  { PROG__setaction (ACT_CNORMAL , ""); }                                         <* 
+ *>       else if (strcmp (a, "--vnormal"   ) == 0)  { PROG__setaction (ACT_VNORMAL , ""); }                                         <* 
+ *>       /+---(reporting)-------------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--show_verb" ) == 0)  my.run_mode  = EOS_RPTG_VERBS;                                                  <* 
+ *>       else if (strcmp (a, "--show_cntl" ) == 0)  my.run_mode  = EOS_RPTG_CONTROL;                                                <* 
+ *>       /+---(files)-----------------------+/                                                                                      <* 
+ *>       /+> else if (strcmp (a, "--conf"      ) == 0)  { TWOARG rc = BASE_file_cli ("conf", a_argv [i]);  } <*                     <* 
+ *>        *> else if (strcmp (a, "--exec"      ) == 0)  { TWOARG rc = BASE_file_cli ("exec", a_argv [i]);  } <*                     <* 
+ *>        *> else if (strcmp (a, "--perf"      ) == 0)  { TWOARG rc = BASE_file_cli ("perf", a_argv [i]);  } <+/                    <* 
+ *>       /+---(other)-----------------------+/                                                                                      <* 
+ *>       else if (strcmp (a, "--help"      ) == 0)  PROG__usage ();                                                                 <* 
+ *>       /+---(speeds)----------------------+/                                                                                      <* 
+ *>       else if (strcmp(a, "--normal"      ) == 0) {                                                                               <* 
+ *>          my.loop_msec  = 10;                                                                                                     <* 
+ *>          my.loop_max   = 1000;                                                                                                   <* 
+ *>       }                                                                                                                          <* 
+ *>       else if (strcmp(a, "--fast"        ) == 0) {                                                                               <* 
+ *>          my.loop_msec  = 1;                                                                                                      <* 
+ *>          my.loop_max   = 10000;                                                                                                  <* 
+ *>       }                                                                                                                          <* 
+ *>       else if (strcmp(a, "--slow"        ) == 0) {                                                                               <* 
+ *>          my.loop_msec  = 100;                                                                                                    <* 
+ *>          my.loop_max   = 100;                                                                                                    <* 
+ *>       }                                                                                                                          <* 
+ *>       else if (strcmp(a, "--short"       ) == 0) {                                                                               <* 
+ *>          my.loop_msec  = 100;                                                                                                    <* 
+ *>          my.loop_max   = 20;                                                                                                     <* 
+ *>       }                                                                                                                          <* 
+ *>       /+---(unknown)---------------------+/                                                                                      <* 
+ *>       else  {                                                                                                                    <* 
+ *>          yURG_err ('F', "requested action å%sæ not understood or incomplete", a);                                                <* 
+ *>          rc = -99;                                                                                                               <* 
+ *>       }                                                                                                                          <* 
+ *>       if (rc < 0)  break;                                                                                                        <* 
+ *>    }                                                                                                                             <* 
+ *>    /+---(verify)-------------------------+/                                                                                      <* 
+ *>    yURG_msg ('-', "run as (%c) %s", my.run_as, PROG_iam (my.run_as));                                                            <* 
+ *>    yURG_msg ('-', "mode   (%c) %s", my.run_mode, PROG_runmode (my.run_mode));                                                    <* 
+ *>    yURG_msg ('-', "msec   %d", my.loop_msec);                                                                                    <* 
+ *>    yURG_msg ('-', "max    %d", my.loop_max);                                                                                     <* 
+ *>    /+---(display urgents)----------------+/                                                                                      <* 
+ *>    DEBUG_ARGS   yLOG_note    ("summarization of argument processing");                                                           <* 
+ *>    DEBUG_ARGS   yLOG_value   ("entries"   , x_total);                                                                            <* 
+ *>    DEBUG_ARGS   yLOG_value   ("arguments" , x_args);                                                                             <* 
+ *>    DEBUG_ARGS   yLOG_char    ("test"      , my.test);                                                                            <* 
+ *>    DEBUG_ARGS   yLOG_value   ("loop_msec" , my.loop_msec);                                                                       <* 
+ *>    DEBUG_ARGS   yLOG_value   ("loop_max"  , my.loop_max);                                                                        <* 
+ *>    yURG_msg ('-', "");                                                                                                           <* 
+ *>    /+---(complete)-----------------------+/                                                                                      <* 
+ *>    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);                                                                                     <* 
+ *>    return rc;                                                                                                                    <* 
+ *> }                                                                                                                                <*/
+
 
 char         /*--: evaluate command line arguments -------[ leaf   [ ------ ]-*/
-PROG_args          (int a_argc, char *a_argv[])
+PROG__args              (int a_argc, char *a_argv[])
 {
    /*---(locals)-----------+-----+-----+-*/
-   int         i           =    0;
+   char        rce         =  -10;
    char        rc          =    0;
+   int         i           =    0;
    char       *a           = NULL;          /* current argument               */
-   int         x_len       = 0;             /* argument length                */
-   int         x_total     = 0;             /* total argument count           */
-   int         x_args      = 0;             /* argument count                 */
-   int         x_num       = 0;             /* numeric argument holder        */
+   char       *b           = NULL;          /* next argument                  */
+   int         x_len       =    0;          /* argument length                */
+   int         x_total     =    0;          /* total argument count           */
+   int         x_args      =    0;          /* argument count                 */
+   int         x_num       =    0;          /* numeric argument holder        */
+   char        x_two       =    0;
+   char        s           [LEN_HUND]  = "";
+   char        t           [LEN_HUND]  = "";
    /*---(process)------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   EOS_VERBOSE  printf       ("PROG_args    : %d args", a_argc);
+   yURG_msg ('>', "command line arguments handling...");
+   yURG_msg ('-', "total of %d arguments, including name", a_argc);
+   /*---(defaults)------------------------------*/
+   /*> PROG__arg_clearmode ();                                                        <*/
+   /*---(walk args)-----------------------------*/
    for (i = 1; i < a_argc; ++i) {
-      a = a_argv[i];
-      if (a[0] == '@')       continue;
+      /*---(prepare)---------------------*/
+      a = a_argv [i];
+      if (a == NULL) {
+         yURG_err ('f', "arg %d is NULL", i);
+         DEBUG_TOPS   yLOG_note    ("FATAL, found a null argument, really bad news");
+         DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      if (i < a_argc - 1)  b = a_argv [i + 1];
+      else                 b = NULL;
+      /*---(debugging--------------------*/
+      if (a [0] == '@')       continue;
+      /*---(two arg check)---------------*/
       ++x_args;
       DEBUG_ARGS  yLOG_info     ("argument"  , a);
-      EOS_VERBOSE  printf (", %s", a);
-      /*---(run as)----------------------*/
-      if      (strcmp (a, "--eos"       ) == 0)  my.run_as    = IAM_EOS;
-      else if (strcmp (a, "--nyx"       ) == 0)  my.run_as    = IAM_NYX;
-      else if (strcmp (a, "--hypnos"    ) == 0)  my.run_as    = IAM_HYPNOS;
-      else if (strcmp (a, "--hannibal"  ) == 0)  my.run_as    = IAM_HANNIBAL;
-      /*---(run modes)-------------------*/
-      else if (strcmp (a, "--verify"    ) == 0)  my.run_mode  = EOS_RUN_VERIFY;
-      else if (strcmp (a, "--pretend"   ) == 0)  my.run_mode  = EOS_RUN_PRETEND;
-      else if (strcmp (a, "--normal"    ) == 0)  my.run_mode  = EOS_RUN_NORMAL;
-      else if (strcmp (a, "--daemon"    ) == 0)  my.run_mode  = EOS_RUN_DAEMON;
-      /*---(reporting)-------------------*/
-      else if (strcmp (a, "--show_verb" ) == 0)  my.run_mode  = EOS_RPTG_VERBS;
-      else if (strcmp (a, "--show_cntl" ) == 0)  my.run_mode  = EOS_RPTG_CONTROL;
-      /*---(files)-----------------------*/
-      else if (strcmp (a, "--conf"      ) == 0)  TWOARG rc = base_file_cli ("conf", a_argv [i]);
-      else if (strcmp (a, "--exec"      ) == 0)  TWOARG rc = base_file_cli ("exec", a_argv [i]);
-      else if (strcmp (a, "--perf"      ) == 0)  TWOARG rc = base_file_cli ("perf", a_argv [i]);
-      /*---(speeds)----------------------*/
-      else if (strcmp(a, "--normal"      ) == 0) {
-         my.loop_msec  = 10;
-         my.loop_max   = 1000;
-      }
-      else if (strcmp(a, "--fast"        ) == 0) {
-         my.loop_msec  = 1;
-         my.loop_max   = 10000;
-      }
-      else if (strcmp(a, "--slow"        ) == 0) {
-         my.loop_msec  = 100;
-         my.loop_max   = 100;
-      }
-      else if (strcmp(a, "--short"       ) == 0) {
-         my.loop_msec  = 100;
-         my.loop_max   = 20;
-      }
+      /*> rc = PROG__arg_handle (&i, a, b);                                           <*/
+      rc = yJOBS_args_handle (&(my.run_as), &(my.run_mode), my.run_file, &i, a, b);
+      if (rc < 0)  break;
    }
    /*---(verify)-------------------------*/
-   /*> if (my.run_as == IAM_EOS && my.pid == 1)    my.run_mode  = EOS_RUN_NORMAL;     <* 
-    *> else if (my.run_mode == EOS_RUN_DAEMON && my.pid != 1) {                       <* 
-    *>    my.run_mode = EOS_RUN_NORMAL;                                               <* 
-    *> }                                                                              <*/
-   EOS_VERBOSE  printf (", mode %c", my.run_mode);
+   yJOBS_iam  (my.run_as  , s);
+   yJOBS_mode (my.run_mode, t);
+   yURG_msg ('-', "run as (%c) %s", my.run_as, s);
+   yURG_msg ('-', "mode   (%c) %s", my.run_mode, t);
+   yURG_msg ('-', "msec   %d", my.loop_msec);
+   yURG_msg ('-', "max    %d", my.loop_max);
    /*---(display urgents)----------------*/
    DEBUG_ARGS   yLOG_note    ("summarization of argument processing");
    DEBUG_ARGS   yLOG_value   ("entries"   , x_total);
@@ -357,78 +817,167 @@ PROG_args          (int a_argc, char *a_argv[])
    DEBUG_ARGS   yLOG_char    ("test"      , my.test);
    DEBUG_ARGS   yLOG_value   ("loop_msec" , my.loop_msec);
    DEBUG_ARGS   yLOG_value   ("loop_max"  , my.loop_max);
+   yURG_msg ('-', "");
    /*---(complete)-----------------------*/
-   EOS_VERBOSE  printf        (", done\n");
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return rc;
 }
 
 char         /*--: final preparation for execution -------[ leaf   [ ------ ]-*/
-PROG_begin         (void)
+PROG__begin             (void)
 {
    /*---(locals)-----------+-------------*/
    char        rce         =  -10;
    char        rc          =    0;
+   char        s           [LEN_HUND]  = "";
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
-   EOS_VERBOSE  printf       ("PROG_begin   : ");
+   yURG_msg ('>', "prepare the program for run-time...");
+   /*---(check if must be root)----------*/
+   --rce;  if (my.m_uid != 0 && my.run_as != IAM_HERACLES) {
+      yJOBS_iam  (my.run_as  , s);
+      yURG_err ('f', "%s can only run as root", s);
+      DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(daemonize)-----------------------------*/
-   if (my.run_mode == EOS_RUN_DAEMON) {
+   IF_DAEMON {
       rc = yEXEC_daemon (yLOGS_lognum (), &my.pid);
-      EOS_VERBOSE  printf       ("daemonizing (%d)", rc);
       DEBUG_TOPS   yLOG_value   ("daemonize" , rc);
       --rce;  if (rc < 0) {
+         yURG_err ('f', "could not enter semi-daemon mode (pid 0)");
          DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
+      yURG_msg ('-', "successfully operating in semi-daemon mode (pid 0)");
       DEBUG_TOPS   yLOG_note    ("operating as a semi-daemon (process one)");
       /*---(update console)---------------------*/
       rc = ySEC_open (my.dev, NULL, YEXEC_STDOUT, YEXEC_NO, YEXEC_NO);
       EOS_VERBOSE  printf       (", tty_open (%d)", rc);
       DEBUG_TOPS   yLOG_value   ("console"   , rc);
       --rce;  if (rc < 0) {
+         yURG_err ('f', "could not open %s (%d)", my.dev, rc);
          DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
       }
-      EOS_VERBOSE  printf       (", semi-daemon");
+      yURG_msg ('-', "openned %s as primary console successfully", my.dev);
    } else {
-      EOS_VERBOSE  printf       ("not daemonizing");
+      yURG_msg ('-', "not requested to operate as semi-daemon");
       DEBUG_TOPS   yLOG_note    ("will not use semi-daemon mode");
    }
    /*---(setup signals)-------------------------*/
-   if (my.run_mode == EOS_RUN_DAEMON) {
-      EOS_VERBOSE  printf       (", bullet-proof");
+   IF_DAEMON {
       DEBUG_TOPS   yLOG_note    ("signals set to bullet-proof (dangerous)");
       /*> rc = yEXEC_signal (YEXEC_HARD, YEXEC_NO, YEXEC_WAIT, NULL, NULL);           <*/
+      yURG_msg ('-', "requesting signals to bullet-proof mode");
       rc = yEXEC_signal (YEXEC_SOFT, YEXEC_NO, YEXEC_YES, NULL, NULL);
    } else {
-      EOS_VERBOSE  printf       (", normal signals");
       DEBUG_TOPS   yLOG_note    ("signals set to soft for normal working");
+      yURG_msg ('-', "requesting signals to normal mode");
       rc = yEXEC_signal (YEXEC_SOFT, YEXEC_NO, YEXEC_WAIT, NULL, NULL);
    }
    DEBUG_TOPS   yLOG_value   ("signals"   , rc);
    --rce;  if (rc < 0) {
-      EOS_VERBOSE  printf       (" failed, FATAL\n");
+      yURG_err ('f', "could set signals properly (%d)", rc);
       DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(startup dlst library)------------------*/
+   yURG_msg ('-', "setting up and initializing yDLST");
    DEBUG_ARGS   yLOG_info    ("yDLST"    ,"initializing");
    rc = yDLST_init ();
+   yURG_msg ('-', "setting up and initializing yPARSE");
    DEBUG_ARGS   yLOG_info    ("yPARSE"   ,"initializing");
    rc = yPARSE_init  ('-', NULL, '-');
    rc = yPARSE_delimiters  ("§");
    /*---(set file names)-----------------*/
    DEBUG_ARGS   yLOG_note    ("setting file names");
    /*---(complete)------------------------------*/
-   EOS_VERBOSE  printf       (", done\n");
+   yURG_msg ('-', "");
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
 char
-PROG_final              (void)
+PROG__final             (void)
 {
+   /*---(locals)-----------+-----+-----+-*/
+   int         rce         =  -10;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT  yLOG_char    ("run_mode"  , my.run_mode);
+   /*---(set output routing)-------------*/
+   yJOBS_final (my.m_uid);
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+PROG_startup            (int a_argc, char *a_argv[], char a_unit)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(startup)------------------------*/
+   if (rc >= 0)  rc = PROG__init   (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG__args   (a_argc, a_argv);
+   if (rc >= 0)  rc = PROG__begin  ();
+   if (rc >= 0)  rc = PROG__final  ();
+   DEBUG_TOPS  yLOG_value   ("startup"   , rc);
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return rc;
+}
+
+
+
+/*====================------------------------------------====================*/
+/*===----                      shutdown functions                      ----===*/
+/*====================------------------------------------====================*/
+static void      o___DRIVER__________________o (void) {;}
+
+char
+PROG_driver             (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         rce         =  -10;
+   int         rc          =    0;
+   /*---(header)-------------------------*/
+   DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
+   /*---(route action)-------------------*/
+   IF_VERSION {
+   }
+   else IF_HELP   {
+   }
+   /*---(local/incomming)----------------*/
+   else IF_VERIFY {
+   }
+   else IF_INSTALL {
+   }
+   /*---(central)------------------------*/
+   else IF_LIST    {
+   }
+   else IF_CHECK   {
+   }
+   else IF_AUDIT   {
+   }
+   else IF_FIX     {
+   }
+   /*---(outgoing)-----------------------*/
+   else IF_REMOVE  {
+   }
+   /*---(run)----------------------------*/
+   else IF_DAEMON  {
+   }
+   else IF_NORMAL  {
+   }
+   else {
+   }
+   /*---(complete)-----------------------*/
+   DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
+   return rc;
 }
 
 
@@ -634,13 +1183,9 @@ prog__unit_quiet   (void)
 {
    int         x_argc      = 1;
    char       *x_argv [1]  = { "eos" };
-   PROG_runas     (x_argc, x_argv);
-   yURG_logger    (x_argc, x_argv);
-   yURG_urgs      (x_argc, x_argv);
-   PROG_init      (x_argc, x_argv);
-   /*> prog__unit_files ();                                                           <*/
-   PROG_args      (x_argc, x_argv);
-   PROG_begin     ();
+   PROG_prestart   (x_argc, x_argv, 'y');
+   PROG_debugging  (x_argc, x_argv, 'y');
+   PROG_startup    (x_argc, x_argv, 'y');
    return 0;
 }
 
@@ -649,13 +1194,9 @@ prog__unit_loud    (void)
 {
    int         x_argc      = 5;
    char       *x_argv [5]  = { "eos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@yexec"  };
-   PROG_runas     (x_argc, x_argv);
-   yURG_logger    (x_argc, x_argv);
-   yURG_urgs      (x_argc, x_argv);
-   PROG_init      (x_argc, x_argv);
-   /*> prog__unit_files ();                                                           <*/
-   PROG_args      (x_argc, x_argv);
-   PROG_begin     ();
+   PROG_prestart   (x_argc, x_argv, 'y');
+   PROG_debugging  (x_argc, x_argv, 'y');
+   PROG_startup    (x_argc, x_argv, 'y');
    return 0;
 }
 
@@ -672,13 +1213,27 @@ prog__unit_end     (void)
 }
 
 char*
-prog__unit              (char *a_question, int a_num)
+prog__unit              (char *a_question)
 {
+   char        s           [LEN_HUND]  = "";
+   char        t           [LEN_HUND]  = "";
+   char        u           [LEN_LABEL];
    /*---(prepare)------------------------*/
    strlcpy  (unit_answer, "RPTG             : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "mode"    )        == 0) {
-      snprintf (unit_answer, LEN_RECD, "PROG mode        : iam (%c) %-40.40s, run (%c) %s", my.run_as, PROG_iam (my.run_as), my.run_mode, PROG_runmode (my.run_mode));
+      yJOBS_iam  (my.run_as  , s);
+      yJOBS_mode (my.run_mode, t);
+      snprintf (unit_answer, LEN_RECD, "PROG mode        : iam (%c) %-18.18s, run (%c) %-18.18s, å%sæ", my.run_as, s, my.run_mode, t, my.run_file);
+   }
+   else if (strcmp (a_question, "action"        )  == 0) {
+      snprintf (unit_answer, LEN_HUND, "PROG action      : %c  %2då%sæ", my.run_mode, strlen (my.run_file), my.run_file);
+   }
+   else if (strcmp (a_question, "args"          )  == 0) {
+      sprintf (s, "%2då%.15sæ", strlen (g_silent) , g_silent);
+      sprintf (t, "%2då%.15sæ", strlen (g_confirm), g_confirm);
+      sprintf (u, "%2då%.15sæ", strlen (g_verbose), g_verbose);
+      snprintf (unit_answer, LEN_HUND, "PROG args        : %-20.20s  %-20.20s  %s", s, t, u);
    }
    /*---(complete)-----------------------*/
    return unit_answer;

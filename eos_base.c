@@ -11,7 +11,7 @@ static void  o___CLI_____________o () { return; }
 static llong  s_time  =  0;
 
 llong             /* PURPOSE : timestamp in milliseconds      */
-base_msec               (void)
+BASE_msec               (void)
 {
    /* second
     * millisecond  ms  0.001 sec
@@ -30,7 +30,7 @@ base_msec               (void)
 }
 
 char
-base_file_verify        (uchar *a_name)
+BASE_file_verify        (uchar *a_name)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -60,7 +60,7 @@ base_file_verify        (uchar *a_name)
 }
 
 char
-base_file_cli           (char *a_terse, char *a_name)
+BASE_file_cli           (char *a_terse, char *a_name)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -74,14 +74,14 @@ base_file_cli           (char *a_terse, char *a_name)
    /*---(defense)------------------------*/
    DEBUG_ARGS  yLOG_point   ("a_terse"   , a_terse);
    --rce;  if (a_terse == NULL) {
-      yURG_error ("FATAL, option can not be null");
+      yURG_err ('f', "option can not be null");
       DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
       return rce;
    }
    DEBUG_ARGS  yLOG_info    ("a_terse"   , a_terse);
    DEBUG_ARGS  yLOG_point   ("a_name"    , a_name);
    --rce;  if (a_name == NULL) {
-      yURG_error ("FATAL, --%s <name>, name can not be null", a_terse);
+      yURG_err ('f', "%s <name>, name can not be null", a_terse);
       DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
       return rce;
    }
@@ -91,14 +91,14 @@ base_file_cli           (char *a_terse, char *a_name)
    l = strlen (x_recd);
    DEBUG_ARGS  yLOG_value   ("l"         , l);
    --rce;  if (l <= 0) {
-      yURG_error ("FATAL, --%s <name>, name can not be blank/empty", a_terse);
+      yURG_err ('f', "%s <name>, name can not be blank/empty", a_terse);
       DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
       return rce;
    }
    /*---(check characters)---------------*/
    --rce;  for (i = 0; i < l; ++i) {
       if (strchr (x_valid, x_recd [i]) != NULL)  continue;
-      yURG_error ("FATAL, --%s <name>, name can not have a <%c> at character %d", a_terse, x_recd [i], i);
+      yURG_err ('f', "%s <name>, name can not have a <%c> at character %d", a_terse, x_recd [i], i);
       DEBUG_TOPS  yLOG_char  ("bad char"  , x_recd [i]);
       DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
       return rce;
@@ -106,9 +106,9 @@ base_file_cli           (char *a_terse, char *a_name)
    /*---(copy)---------------------------*/
    --rce;  switch (a_terse [0]) {
    case 'c' :
-      rc = base_file_verify (x_recd);
+      rc = BASE_file_verify (x_recd);
       if (rc < 0) {
-         yURG_error ("FATAL, --%s <name>, name can not be found", a_terse);
+         yURG_err ('f', "%s <name>, name can not be found", a_terse);
          DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
          return rce;
       }
@@ -136,7 +136,7 @@ base_file_cli           (char *a_terse, char *a_name)
 static void      o___DAEMON__________________o (void) {;}
 
 char
-base_console            (void)
+BASE_console            (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -234,7 +234,7 @@ base_console            (void)
 }
 
 char
-base_execute            (void)
+BASE_execute            (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -254,7 +254,7 @@ base_execute            (void)
       /*---(looping)---------------------*/
       DEBUG_LOOP   yLOG_break   ();
       DEBUG_LOOP   yLOG_value   ("loop#"      , my.tic);
-      my.msec = base_msec ();
+      my.msec = BASE_msec ();
       DEBUG_LOOP   yLOG_value   ("my.msec"    , my.msec);
       /*---(checking)--------------------*/
       rc = exec_check    (my.msec);
@@ -289,7 +289,7 @@ base_execute            (void)
 }
 
 char
-base_kharon             (void)
+BASE_kharon             (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -300,9 +300,9 @@ base_kharon             (void)
    /*---(header)-------------------------*/
    DEBUG_TOPS   yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
-   EOS_VERBOSE  printf       ("base_kharon  : %c, %c, %d", my.run_as, my.run_mode, my.pid);
+   EOS_VERBOSE  printf       ("BASE_kharon  : %c, %c, %d", my.run_as, my.run_mode, my.pid);
    DEBUG_LOOP   yLOG_char    ("run_mode"   , my.run_mode);
-   /*> --rce;  if (my.run_mode != EOS_RUN_DAEMON) {                                   <* 
+   /*> --rce;  IF_DAEMON {                                   <* 
     *>    DEBUG_TOPS   yLOG_exitr   (__FUNCTION__, rce);                              <* 
     *>    EOS_VERBOSE  printf       (", failed\n");                                   <* 
     *>    return rce;                                                                 <* 
@@ -310,7 +310,8 @@ base_kharon             (void)
    /*---(pass the torch)-----------------*/
    /*> strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
    /*> strlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
-   strlcpy    (x_args, "/sbin/kharon_debug @@kitchen --acheron --leisurely --listen", LEN_FULL);
+   /*> strlcpy    (x_args, "/sbin/kharon_debug @@kitchen --acheron --leisurely --listen", LEN_FULL);   <*/
+   strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);
    strlparse  (x_args, NULL, x_final, 20, &my.argc, my.argv, LEN_FULL);
    DEBUG_LOOP   yLOG_value   ("argc"       , my.argc);
    DEBUG_VIEW   printf ("arg count %d\n", my.argc);
@@ -328,13 +329,11 @@ base_kharon             (void)
 }
 
 char
-base_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
+BASE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
 {
    /*---(locals)-----------+-----------+-*/
    char        rce         =  -10;
    int         rc          =    0;
-   char        x_type      =  '-';
-   int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(dispatch)-----------------------*/
@@ -349,30 +348,121 @@ base_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
       rc = proc_handler (n, a_verb);
       break;
    }
+   ++my.f_lines;
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
 char
-base_config             (void)
+BASE_assimilate         (void)
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
    char        rc          =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   yURG_msg ('>', "read the configuration...");
+   yURG_msg ('-', "purge yDLST to make sure of a fresh start");
    yDLST_purge ();
+   yURG_msg ('-', "conf å%sæ", my.n_conf);
    DEBUG_INPT  yLOG_info    ("n_conf"     , my.n_conf);
-   rc = yPARSE_autoread (my.n_conf, NULL, base_handler);
-   EOS_VERBOSE  printf       ("\nconfiguration read\n");
+   yURG_msg ('-', "start yPARSE auto-reader");
+   rc = yPARSE_autoread (my.n_conf, NULL, BASE_handler);
+   yURG_msg (' ', "");
    DEBUG_PROG  yLOG_value   ("config"    , rc);
    --rce;  if (rc <  0) {
+      yURG_err ('f', "configration could not be properly read");
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       /*> wait_sec ("its over",   rc,  20);                                           <*/
       /*> PROG_end ();                                                                <*/
       return rce;
    }
+   yURG_msg ('>', "configuration reading complete");
+   yURG_msg (' ', "");
+   /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
+FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         x_lists     =    0;
+   int         x_lines     =    0;
+   int         x_seqs      =    0;
+   /*---(header)-------------------------*/
+   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(default)------------------------*/
+   strcpy  (my.f_name, "");
+   strcpy  (my.f_full, "");
+   my.f_lines = 0;
+   strcpy  (my.f_note, "");
+   /*---(parse file)---------------------*/
+   if      (a_loc == YJOBS_CENTRAL)   rc = yJOBS_central    (a_runas, a_name, my.f_user, my.f_uid, my.f_desc, my.f_dir);
+   else if (a_loc == YJOBS_LOCAL  )   rc = yJOBS_acceptable (a_runas, a_name, my.f_user, my.f_uid, my.f_desc, my.f_dir);
+   DEBUG_INPT   yLOG_value   ("parse"     , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(save some data)-----------------*/
+   strlcpy (my.f_name, a_name, LEN_HUND);
+   sprintf (my.f_full, "%s%s", my.f_dir, my.f_name);
+   yURG_msg ('-', "calling auto-reader");
+   yURG_msg (' ', "");
+   /*---(pull all lines)-----------------*/
+   DEBUG_INPT  yLOG_info    ("f_full"     , my.f_full);
+   rc = yPARSE_autoread (my.f_full, NULL, BASE_handler);
+   DEBUG_PROG  yLOG_value   ("read"      , rc);
+   --rce;  if (rc <  0) {
+      DEBUG_PROG  yLOG_note    ("no file found");
+      strlcpy (my.f_note, "NO FILE" , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   x_lists  = yDLST_list_count ();
+   DEBUG_PROG  yLOG_value   ("x_lists"   , x_lists);
+   x_lines  = yDLST_line_count (YDLST_GLOBAL);
+   DEBUG_PROG  yLOG_value   ("x_lines"   , x_lines);
+   x_seqs   = yDLST_seq_count  (YDLST_GLOBAL);
+   DEBUG_PROG  yLOG_value   ("x_seqs"    , x_seqs);
+   DEBUG_PROG  yLOG_value   ("f_lines"   , my.f_lines);
+   yURG_msg ('>', "%d lines read, %d groups, %d procs, %%d seqs", my.f_lines, x_lists, x_lines, x_seqs);
+   --rce;  if (my.f_lines <= 0) {
+      yURG_msg (' ', "");
+      yURG_err ('>', "NO LINES read");
+      DEBUG_PROG  yLOG_note    ("no input lines found");
+      strlcpy (my.f_note, "NO_INPUT" , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   --rce;  if (x_lists <= 0) {
+      yURG_msg (' ', "");
+      yURG_err ('>', "NO GROUPS found");
+      DEBUG_PROG  yLOG_note    ("no groups found");
+      strlcpy (my.f_note, "NO_GROUPS"  , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   --rce;  if (x_lines <= 0) {
+      yURG_msg (' ', "");
+      yURG_err ('>', "NO PROCS found");
+      DEBUG_PROG  yLOG_note    ("no procs found");
+      yURG_msg (' ', "");
+      strlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   yURG_msg ('>', "all lines read, SUCCESS, reviewed %d, accepted %d", my.f_lines, x_lines);
+   yURG_msg (' ', "");
+   strlcpy (my.f_note, "success"  , LEN_TERSE);
+   /*---(save back)----------------------*/
+   if (r_user != NULL)  strlcpy (r_user, my.f_user, LEN_LABEL);
+   if (r_desc != NULL)  strlcpy (r_desc, my.f_desc, LEN_DESC);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -398,7 +488,7 @@ base__unit              (char *a_question)
    snprintf (unit_answer, LEN_RECD, "BASE unit        : question unknown");
    /*---(simple)-------------------------*/
    if      (strcmp (a_question, "conf"      )     == 0) {
-      rc = base_file_verify (my.n_conf);
+      rc = BASE_file_verify (my.n_conf);
       if      (rc >  0)  x_exist = 'y';
       else if (rc <= 0)  x_exist = '-';
       snprintf (unit_answer, LEN_RECD, "BASE conf        : %c  %2d[%s]",

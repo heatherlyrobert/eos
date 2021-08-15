@@ -120,7 +120,6 @@ these fields can be incrementally cut down to only two by accepting defaults.
    7) command     specific path, command, and options (200 char)
 
 .B examples of the only legal field variations
-   1        /bin/sleep
    17       exec § /bin/sleep
    147      exec § member § /bin/sleep
    1457     exec § member § 2s § /bin/sleep
@@ -133,6 +132,12 @@ batch files are much easier to read of all seven fields are included on every
 line and columns are perfectly aligned -- the eyes flow over content easier
 and troubles are easier to spot.  no lines need to be indented, it simply
 makes it easier to follow.
+
+i have avoided a one-field version that defaults as an "exec" since it
+would be too easy to confuse with a normal script.  all the partial, not
+seven, field versions are just hacks to help with other programs.  it is
+not a good idea as it lacks the process control flags which ensure safe,
+efficient batch functioning.
 
 .SH NORMAL EXECUTION VERBS
 eighty-five plus percent of batch processing will consist of these verbs.
@@ -155,6 +160,7 @@ simple, fast configuration update
 only during actual boot/shutdown
    -- exact same as exec, but used for clarity to humans
    -- will not be executed if pid is not 1
+   -- intent is executing just once to avoid troubles
 
 .SH LAUNCH AND REMAIN VERBS
 these verbs are most common during startup/boot and cleanup activities.
@@ -164,7 +170,7 @@ to remain after completion.
 .B daemon,
 launch and confirm a daemon
    -- change permissions to specific user (default current)
-   -- execute a daemon or server
+   -- execute a daemon or server (notice if already done)
    -- wait for a standard amount of time (2s, altered by flags)
    -- check that daemon/server is still running
    -- react to trouble as specified in flags
@@ -173,7 +179,7 @@ launch and confirm a daemon
 .B mount,
 mount and confirm a filesystem
    -- change permissions to specific user (default current)
-   -- mount a specific filesystem
+   -- mount a specific filesystem (notice if already done)
    -- wait for a standard amount of time (1s, altered by flags)
    -- check that filesystem is truly mounted
    -- react to trouble as specified in flags
