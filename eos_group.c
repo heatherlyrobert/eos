@@ -213,7 +213,7 @@ group_handler           (int n, uchar *a_verb)
    rc = yDLST_list_create (x_new->name, x_new);
    DEBUG_INPT   yLOG_value   ("yDLST"     , rc);
    --rce;  if (rc < 0) {
-      yURG_msg ('F', "GROUP å%sæ on line %d with %d fields, yDLST create failed (%d)", x_label, n, c, rc);
+      yURG_err ('F', "GROUP å%sæ on line %d with %d fields, yDLST create failed (%d)", x_label, n, c, rc);
       group__free (&x_new);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -231,6 +231,7 @@ after_handler           (int n, uchar *a_verb)
    char        rce         =  -10;
    int         rc          =    0;
    char        x_label     [LEN_LABEL] = "";
+   tGROUP     *x_group     = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
@@ -247,11 +248,24 @@ after_handler           (int n, uchar *a_verb)
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
+   /*---(check group)--------------------*/
+   --rce;  if (my.f_group != 'y') {
+      yURG_err ('f', "AFTER on line %d inside failed group, so failed", n);
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
+   yDLST_list_by_cursor (YDLST_DCURR, NULL, &x_group);
+   --rce;  if (x_group == NULL) {
+      yURG_err ('f', "AFTER on line %d, no current group", n);
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
    /*---(parse fields)-------------------*/
    rc = yPARSE_scanf (a_verb, "L", x_label);
    DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
       yURG_err ('f', "AFTER å%sæ on line %d, yPARSE_scanf failed (%d)", x_label, n, rc);
+      x_group->note = 'A';
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
@@ -260,6 +274,7 @@ after_handler           (int n, uchar *a_verb)
    DEBUG_INPT   yLOG_value   ("after"     , rc);
    --rce;  if (rc < 0) {
       yURG_err ('f', "AFTER å%sæ on line %d, yDLST create failed (%d)", x_label, n, rc);
+      x_group->note = 'A';
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -331,6 +346,7 @@ group_mark_done         (llong a_msec)
    x_group->dur       = x_group->end - x_group->beg;
    EOS_VERBOSE  printf       ("%6lld group %s end\n", a_msec, x_group->name);
    /*---(complete)-----------------------*/
+   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
 

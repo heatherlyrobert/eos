@@ -271,11 +271,24 @@ proc_handler            (int n, uchar *a_verb)
    tGROUP     *x_group     = NULL;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(check group)--------------------*/
+   --rce;  if (my.f_group != 'y') {
+      yURG_err ('f', "PROC on line %d inside failed group, so failed", n);
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
+   rc = yDLST_list_by_cursor (YDLST_DCURR, NULL, &x_group);
+   --rce;  if (x_group == NULL) {
+      yURG_err ('f', "PROC on line %d, no current group", n);
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return rce;
+   }
    /*---(defense)------------------------*/
    DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
    --rce;  if (a_verb == NULL || strlen (a_verb) <= 0) {
       yURG_err ('f', "proc_handler called with null/empty verb");
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      x_group->note = 'P';
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    DEBUG_INPT  yLOG_info    ("a_verb"    , a_verb);
@@ -288,7 +301,8 @@ proc_handler            (int n, uchar *a_verb)
    --rce;  if (x_type == '-') {
       yURG_err ('f', "proc_handler called with å%sæ verb", a_verb);
       DEBUG_INPT  yLOG_note    ("incorrect verb handler called");
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      x_group->note = 'P';
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(parse fields)-------------------*/
@@ -297,7 +311,8 @@ proc_handler            (int n, uchar *a_verb)
    --rce;  if (c < 2) {
       yURG_err ('f', "step å%sæ on line %d with %d fields, too few", x_label, n, c);
       DEBUG_INPT  yLOG_note    ("failed, only a verb");
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      x_group->note = 'P';
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    if (c > 7)  c = 7;
@@ -312,7 +327,8 @@ proc_handler            (int n, uchar *a_verb)
    DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
       yURG_err ('f', "step å%sæ on line %d with %d fields, yPARSE_scanf failed", x_label, n, c);
-      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      x_group->note = 'P';
+      DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    /*---(label)------------------------------*/
@@ -323,6 +339,7 @@ proc_handler            (int n, uchar *a_verb)
    rc = yEXEC_userdata (x_user, &x_uid, NULL, NULL, NULL);
    --rce;  if (rc < 0) {
       yURG_err ('f', "user requested failed å%sæ (%d)", my.m_who, rc);
+      x_group->note = 'P';
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -332,6 +349,7 @@ proc_handler            (int n, uchar *a_verb)
    DEBUG_INPT   yLOG_value   ("runnable"  , rc);
    --rce;  if (rc < 0) {
       yURG_err ('+', "command is NOT runable %2d å%sæ", strlen (x_run), x_run);
+      x_group->note = 'P';
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -341,6 +359,7 @@ proc_handler            (int n, uchar *a_verb)
    DEBUG_INPT   yLOG_point   ("x_new"     , x_new);
    --rce;  if (x_new == NULL) {
       yURG_err ('f', "proc line could not be allocated (%d)", rc);
+      x_group->note = 'P';
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -359,6 +378,7 @@ proc_handler            (int n, uchar *a_verb)
    DEBUG_INPT   yLOG_value   ("create"    , rc);
    --rce;  if (rc < 0) {
       yURG_err ('f', "yDLST line could not be created (%d)", rc);
+      x_group->note = 'P';
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }

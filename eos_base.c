@@ -29,105 +29,105 @@ BASE_msec               (void)
    return a;
 }
 
-char
-BASE_file_verify        (uchar *a_name)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   int         rci         =    0;
-   tSTAT       st;
-   /*---(defense)------------------------*/
-   if (a_name == NULL)                   return 0;
-   if (strcmp (a_name, "") == 0)         return 0;
-   /*---(check for existance)------------*/
-   rci = lstat (a_name, &st);
-   DEBUG_FILE   yLOG_value   ("lstat"     , rci);
-   --rce; if (rci < 0) {
-      DEBUG_FILE   yLOG_note    ("file does not exist, can not read");
-      DEBUG_FILE   yLOG_exit    (__FUNCTION__);
-      return rce;
-   }
-   /*---(check for regular file)---------*/
-   --rce;  if (!S_ISREG (st.st_mode)) {
-      DEBUG_FILE   yLOG_note    ("not a regular file, rejected");
-      DEBUG_FILE   yLOG_exit    (__FUNCTION__);
-      return rce;
-   }
-   /*---(output)-------------------------*/
-   DEBUG_FILE   yLOG_note    ("confirmed as existing and is a regular file");
-   /*---(complete)-----------------------*/
-   return 1;
-}
+/*> char                                                                              <* 
+ *> BASE_file_verify        (uchar *a_name)                                           <* 
+ *> {                                                                                 <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                       <* 
+ *>    char        rce         =  -10;                                                <* 
+ *>    int         rci         =    0;                                                <* 
+ *>    tSTAT       st;                                                                <* 
+ *>    /+---(defense)------------------------+/                                       <* 
+ *>    if (a_name == NULL)                   return 0;                                <* 
+ *>    if (strcmp (a_name, "") == 0)         return 0;                                <* 
+ *>    /+---(check for existance)------------+/                                       <* 
+ *>    rci = lstat (a_name, &st);                                                     <* 
+ *>    DEBUG_FILE   yLOG_value   ("lstat"     , rci);                                 <* 
+ *>    --rce; if (rci < 0) {                                                          <* 
+ *>       DEBUG_FILE   yLOG_note    ("file does not exist, can not read");            <* 
+ *>       DEBUG_FILE   yLOG_exit    (__FUNCTION__);                                   <* 
+ *>       return rce;                                                                 <* 
+ *>    }                                                                              <* 
+ *>    /+---(check for regular file)---------+/                                       <* 
+ *>    --rce;  if (!S_ISREG (st.st_mode)) {                                           <* 
+ *>       DEBUG_FILE   yLOG_note    ("not a regular file, rejected");                 <* 
+ *>       DEBUG_FILE   yLOG_exit    (__FUNCTION__);                                   <* 
+ *>       return rce;                                                                 <* 
+ *>    }                                                                              <* 
+ *>    /+---(output)-------------------------+/                                       <* 
+ *>    DEBUG_FILE   yLOG_note    ("confirmed as existing and is a regular file");     <* 
+ *>    /+---(complete)-----------------------+/                                       <* 
+ *>    return 1;                                                                      <* 
+ *> }                                                                                 <*/
 
-char
-BASE_file_cli           (char *a_terse, char *a_name)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        rc          =    0;
-   char        x_recd      [LEN_RECD]  = "";
-   int         l           =    0;
-   char       *x_valid     = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_/.";
-   int         i           =    0;
-   /*---(header)-------------------------*/
-   DEBUG_FILE   yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_ARGS  yLOG_point   ("a_terse"   , a_terse);
-   --rce;  if (a_terse == NULL) {
-      yURG_err ('f', "option can not be null");
-      DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_ARGS  yLOG_info    ("a_terse"   , a_terse);
-   DEBUG_ARGS  yLOG_point   ("a_name"    , a_name);
-   --rce;  if (a_name == NULL) {
-      yURG_err ('f', "%s <name>, name can not be null", a_terse);
-      DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
-      return rce;
-   }
-   DEBUG_ARGS  yLOG_info    ("a_name"    , a_name);
-   strlcpy (x_recd, a_name, LEN_RECD);
-   /*---(check length)-------------------*/
-   l = strlen (x_recd);
-   DEBUG_ARGS  yLOG_value   ("l"         , l);
-   --rce;  if (l <= 0) {
-      yURG_err ('f', "%s <name>, name can not be blank/empty", a_terse);
-      DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(check characters)---------------*/
-   --rce;  for (i = 0; i < l; ++i) {
-      if (strchr (x_valid, x_recd [i]) != NULL)  continue;
-      yURG_err ('f', "%s <name>, name can not have a <%c> at character %d", a_terse, x_recd [i], i);
-      DEBUG_TOPS  yLOG_char  ("bad char"  , x_recd [i]);
-      DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(copy)---------------------------*/
-   --rce;  switch (a_terse [0]) {
-   case 'c' :
-      rc = BASE_file_verify (x_recd);
-      if (rc < 0) {
-         yURG_err ('f', "%s <name>, name can not be found", a_terse);
-         DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);
-         return rce;
-      }
-      strlcpy (my.n_conf, x_recd, LEN_FULL);
-      DEBUG_ARGS  yLOG_info    ("conf"      , my.n_conf);
-      break;
-   case 'e' :
-      strlcpy (my.n_exec, x_recd, LEN_FULL);
-      DEBUG_ARGS  yLOG_info    ("exec"      , my.n_exec);
-      break;
-   case 'p' :
-      strlcpy (my.n_perf, x_recd, LEN_FULL);
-      DEBUG_ARGS  yLOG_info    ("perf"      , my.n_perf);
-      break;
-   }
-   /*---(complete)-----------------------*/
-   DEBUG_FILE   yLOG_exit    (__FUNCTION__);
-   return 0;
-}
+/*> char                                                                                                   <* 
+ *> BASE_file_cli           (char *a_terse, char *a_name)                                                  <* 
+ *> {                                                                                                      <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                                            <* 
+ *>    char        rce         =  -10;                                                                     <* 
+ *>    char        rc          =    0;                                                                     <* 
+ *>    char        x_recd      [LEN_RECD]  = "";                                                           <* 
+ *>    int         l           =    0;                                                                     <* 
+ *>    char       *x_valid     = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_/.";      <* 
+ *>    int         i           =    0;                                                                     <* 
+ *>    /+---(header)-------------------------+/                                                            <* 
+ *>    DEBUG_FILE   yLOG_enter   (__FUNCTION__);                                                           <* 
+ *>    /+---(defense)------------------------+/                                                            <* 
+ *>    DEBUG_ARGS  yLOG_point   ("a_terse"   , a_terse);                                                   <* 
+ *>    --rce;  if (a_terse == NULL) {                                                                      <* 
+ *>       yURG_err ('f', "option can not be null");                                                        <* 
+ *>       DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);                                                      <* 
+ *>       return rce;                                                                                      <* 
+ *>    }                                                                                                   <* 
+ *>    DEBUG_ARGS  yLOG_info    ("a_terse"   , a_terse);                                                   <* 
+ *>    DEBUG_ARGS  yLOG_point   ("a_name"    , a_name);                                                    <* 
+ *>    --rce;  if (a_name == NULL) {                                                                       <* 
+ *>       yURG_err ('f', "%s <name>, name can not be null", a_terse);                                      <* 
+ *>       DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);                                                      <* 
+ *>       return rce;                                                                                      <* 
+ *>    }                                                                                                   <* 
+ *>    DEBUG_ARGS  yLOG_info    ("a_name"    , a_name);                                                    <* 
+ *>    strlcpy (x_recd, a_name, LEN_RECD);                                                                 <* 
+ *>    /+---(check length)-------------------+/                                                            <* 
+ *>    l = strlen (x_recd);                                                                                <* 
+ *>    DEBUG_ARGS  yLOG_value   ("l"         , l);                                                         <* 
+ *>    --rce;  if (l <= 0) {                                                                               <* 
+ *>       yURG_err ('f', "%s <name>, name can not be blank/empty", a_terse);                               <* 
+ *>       DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);                                                      <* 
+ *>       return rce;                                                                                      <* 
+ *>    }                                                                                                   <* 
+ *>    /+---(check characters)---------------+/                                                            <* 
+ *>    --rce;  for (i = 0; i < l; ++i) {                                                                   <* 
+ *>       if (strchr (x_valid, x_recd [i]) != NULL)  continue;                                             <* 
+ *>       yURG_err ('f', "%s <name>, name can not have a <%c> at character %d", a_terse, x_recd [i], i);   <* 
+ *>       DEBUG_TOPS  yLOG_char  ("bad char"  , x_recd [i]);                                               <* 
+ *>       DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);                                                      <* 
+ *>       return rce;                                                                                      <* 
+ *>    }                                                                                                   <* 
+ *>    /+---(copy)---------------------------+/                                                            <* 
+ *>    --rce;  switch (a_terse [0]) {                                                                      <* 
+ *>    case 'c' :                                                                                          <* 
+ *>       rc = BASE_file_verify (x_recd);                                                                  <* 
+ *>       if (rc < 0) {                                                                                    <* 
+ *>          yURG_err ('f', "%s <name>, name can not be found", a_terse);                                  <* 
+ *>          DEBUG_TOPS  yLOG_exitr (__FUNCTION__, rce);                                                   <* 
+ *>          return rce;                                                                                   <* 
+ *>       }                                                                                                <* 
+ *>       strlcpy (my.n_conf, x_recd, LEN_FULL);                                                           <* 
+ *>       DEBUG_ARGS  yLOG_info    ("conf"      , my.n_conf);                                              <* 
+ *>       break;                                                                                           <* 
+ *>    case 'e' :                                                                                          <* 
+ *>       strlcpy (my.n_exec, x_recd, LEN_FULL);                                                           <* 
+ *>       DEBUG_ARGS  yLOG_info    ("exec"      , my.n_exec);                                              <* 
+ *>       break;                                                                                           <* 
+ *>    case 'p' :                                                                                          <* 
+ *>       strlcpy (my.n_perf, x_recd, LEN_FULL);                                                           <* 
+ *>       DEBUG_ARGS  yLOG_info    ("perf"      , my.n_perf);                                              <* 
+ *>       break;                                                                                           <* 
+ *>    }                                                                                                   <* 
+ *>    /+---(complete)-----------------------+/                                                            <* 
+ *>    DEBUG_FILE   yLOG_exit    (__FUNCTION__);                                                           <* 
+ *>    return 0;                                                                                           <* 
+ *> }                                                                                                      <*/
 
 
 /*====================------------------------------------====================*/
@@ -322,7 +322,9 @@ BASE_kharon             (void)
    /*---(pass the torch)-----------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    PROG_end   ();
-   if (my.pid == 1)   rc = execvp (*my.argv, my.argv);
+   if (my.run_as == IAM_EOS && my.pid == 1)  {
+      rc = execvp (*my.argv, my.argv);
+   }
    /*---(complete)-----------------------*/
    DEBUG_TOPS   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -337,53 +339,63 @@ BASE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
    /*---(dispatch)-----------------------*/
+   ++my.f_lines;
    switch (a_verb [0]) {
    case 'G' :
+      ++my.f_gall;
       rc = group_handler (n, a_verb);
+      if (rc < 0) { my.f_group = '-'; ++my.f_gfail; }
+      else        { my.f_group = 'y'; ++my.f_gpass; }
       break;
    case 'A' :
+      ++my.f_aall;
       rc = after_handler (n, a_verb);
+      if (rc < 0) ++my.f_afail;
+      else        ++my.f_apass;
       break;
    default  :
+      ++my.f_pall;
       rc = proc_handler (n, a_verb);
+      if (rc < 0) ++my.f_pfail;
+      else        ++my.f_ppass;
       break;
    }
-   ++my.f_lines;
+   DEBUG_INPT  yLOG_value   ("handler"   , rc);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
+   return rc;
 }
 
-char
-BASE_assimilate         (void)
-{
-   /*---(locals)-----------+-----+-----+-*/
-   char        rce         =  -10;
-   char        rc          =    0;
-   /*---(header)-------------------------*/
-   DEBUG_INPT  yLOG_enter   (__FUNCTION__);
-   yURG_msg ('>', "read the configuration...");
-   yURG_msg ('-', "purge yDLST to make sure of a fresh start");
-   yDLST_purge ();
-   yURG_msg ('-', "conf å%sæ", my.n_conf);
-   DEBUG_INPT  yLOG_info    ("n_conf"     , my.n_conf);
-   yURG_msg ('-', "start yPARSE auto-reader");
-   rc = yPARSE_autoread (my.n_conf, NULL, BASE_handler);
-   yURG_msg (' ', "");
-   DEBUG_PROG  yLOG_value   ("config"    , rc);
-   --rce;  if (rc <  0) {
-      yURG_err ('f', "configration could not be properly read");
-      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
-      /*> wait_sec ("its over",   rc,  20);                                           <*/
-      /*> PROG_end ();                                                                <*/
-      return rce;
-   }
-   yURG_msg ('>', "configuration reading complete");
-   yURG_msg (' ', "");
-   /*---(complete)-----------------------*/
-   DEBUG_INPT  yLOG_exit    (__FUNCTION__);
-   return 0;
-}
+/*> char                                                                                        <* 
+ *> BASE_assimilate         (void)                                                              <* 
+ *> {                                                                                           <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                                 <* 
+ *>    char        rce         =  -10;                                                          <* 
+ *>    char        rc          =    0;                                                          <* 
+ *>    /+---(header)-------------------------+/                                                 <* 
+ *>    DEBUG_INPT  yLOG_enter   (__FUNCTION__);                                                 <* 
+ *>    yURG_msg ('>', "read the configuration...");                                             <* 
+ *>    yURG_msg ('-', "purge yDLST to make sure of a fresh start");                             <* 
+ *>    yDLST_purge ();                                                                          <* 
+ *>    yURG_msg ('-', "conf å%sæ", my.n_conf);                                                  <* 
+ *>    DEBUG_INPT  yLOG_info    ("n_conf"     , my.n_conf);                                     <* 
+ *>    yURG_msg ('-', "start yPARSE auto-reader");                                              <* 
+ *>    rc = yPARSE_autoread (my.n_conf, NULL, BASE_handler);                                    <* 
+ *>    yURG_msg (' ', "");                                                                      <* 
+ *>    DEBUG_PROG  yLOG_value   ("config"    , rc);                                             <* 
+ *>    --rce;  if (rc <  0) {                                                                   <* 
+ *>       yURG_err ('f', "configration could not be properly read");                            <* 
+ *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                         <* 
+ *>       /+> wait_sec ("its over",   rc,  20);                                           <+/   <* 
+ *>       /+> PROG_end ();                                                                <+/   <* 
+ *>       return rce;                                                                           <* 
+ *>    }                                                                                        <* 
+ *>    yURG_msg ('>', "configuration reading complete");                                        <* 
+ *>    yURG_msg (' ', "");                                                                      <* 
+ *>    /+---(complete)-----------------------+/                                                 <* 
+ *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                                 <* 
+ *>    return 0;                                                                                <* 
+ *> }                                                                                           <*/
 
 char
 FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc)
@@ -396,10 +408,16 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
    int         x_seqs      =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   DEBUG_INPT  yLOG_info    ("a_name"     , a_name);
    /*---(default)------------------------*/
+   yDLST_purge ();
    strcpy  (my.f_name, "");
    strcpy  (my.f_full, "");
    my.f_lines = 0;
+   my.f_group = '-';
+   my.f_gall  = my.f_gpass = my.f_gfail = 0;
+   my.f_aall  = my.f_apass = my.f_afail = 0;
+   my.f_pall  = my.f_ppass = my.f_pfail = 0;
    strcpy  (my.f_note, "");
    /*---(parse file)---------------------*/
    if      (a_loc == YJOBS_CENTRAL)   rc = yJOBS_central    (a_runas, a_name, my.f_user, my.f_uid, my.f_desc, my.f_dir);
@@ -410,16 +428,18 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
       return rce;
    }
    /*---(save some data)-----------------*/
+   DEBUG_INPT  yLOG_info    ("f_dir"      , my.f_dir);
+   DEBUG_INPT  yLOG_info    ("f_name"     , my.f_name);
    strlcpy (my.f_name, a_name, LEN_HUND);
    sprintf (my.f_full, "%s%s", my.f_dir, my.f_name);
-   yURG_msg ('-', "calling auto-reader");
-   yURG_msg (' ', "");
+   yURG_msg ('>', "calling AUTO-READER");
    /*---(pull all lines)-----------------*/
    DEBUG_INPT  yLOG_info    ("f_full"     , my.f_full);
    rc = yPARSE_autoread (my.f_full, NULL, BASE_handler);
    DEBUG_PROG  yLOG_value   ("read"      , rc);
    --rce;  if (rc <  0) {
       DEBUG_PROG  yLOG_note    ("no file found");
+      yURG_msg (' ', "");
       strlcpy (my.f_note, "NO FILE" , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -431,42 +451,89 @@ FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user
    x_seqs   = yDLST_seq_count  (YDLST_GLOBAL);
    DEBUG_PROG  yLOG_value   ("x_seqs"    , x_seqs);
    DEBUG_PROG  yLOG_value   ("f_lines"   , my.f_lines);
-   yURG_msg ('>', "%d lines read, %d groups, %d procs, %%d seqs", my.f_lines, x_lists, x_lines, x_seqs);
+   yURG_msg (' ', "");
+   yURG_msg ('>', "%d lines read, %d groups, %d procs, %d seqs", my.f_lines, x_lists, x_lines, x_seqs);
+   /*---(check empties)------------------*/
    --rce;  if (my.f_lines <= 0) {
-      yURG_msg (' ', "");
-      yURG_err ('>', "NO LINES read");
+      yURG_err ('>', "NO LINES found");
       DEBUG_PROG  yLOG_note    ("no input lines found");
       strlcpy (my.f_note, "NO_INPUT" , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    --rce;  if (x_lists <= 0) {
-      yURG_msg (' ', "");
-      yURG_err ('>', "NO GROUPS found");
-      DEBUG_PROG  yLOG_note    ("no groups found");
+      yURG_err ('>', "NO GROUPS created");
+      DEBUG_PROG  yLOG_note    ("no groups created");
       strlcpy (my.f_note, "NO_GROUPS"  , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    --rce;  if (x_lines <= 0) {
-      yURG_msg (' ', "");
-      yURG_err ('>', "NO PROCS found");
-      DEBUG_PROG  yLOG_note    ("no procs found");
+      yURG_err ('>', "NO PROCS created");
+      DEBUG_PROG  yLOG_note    ("no procs created");
       yURG_msg (' ', "");
       strlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   yURG_msg ('>', "all lines read, SUCCESS, reviewed %d, accepted %d", my.f_lines, x_lines);
-   yURG_msg (' ', "");
-   strlcpy (my.f_note, "success"  , LEN_TERSE);
    /*---(save back)----------------------*/
    if (r_user != NULL)  strlcpy (r_user, my.f_user, LEN_LABEL);
    if (r_desc != NULL)  strlcpy (r_desc, my.f_desc, LEN_DESC);
+   /*---(check trouble)------------------*/
+   DEBUG_PROG  yLOG_complex ("fails"     , "%dg, %da, %dp", my.f_gfail, my.f_afail, my.f_pfail);
+   --rce;  if (my.f_gfail >  0) {
+      yURG_err ('F', "%d GROUPS failed", my.f_gfail);
+      DEBUG_PROG  yLOG_note    ("some groups failed to read properly");
+      if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_GROUP" , LEN_TERSE);
+   }
+   --rce;  if (my.f_afail >  0) {
+      yURG_err ('F', "%d AFTERS failed", my.f_afail);
+      DEBUG_PROG  yLOG_note    ("some afters failed to read properly");
+      if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_AFTER" , LEN_TERSE);
+   }
+   --rce;  if (my.f_pfail >  0) {
+      yURG_err ('F', "%d PROCS failed", my.f_pfail);
+      DEBUG_PROG  yLOG_note    ("some procs failed to read properly");
+      if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_PROC"  , LEN_TERSE);
+   }
+   if (my.f_gfail + my.f_afail + my.f_pfail >  0) {
+      yURG_msg (' ', "");
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   yURG_msg ('>', "all read correctly, SUCCESS, reviewed %d, accepted %d", my.f_lines, x_lines);
+   yURG_msg (' ', "");
+   strlcpy (my.f_note, "success"  , LEN_TERSE);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
 }
+
+/*> char                                                                              <* 
+ *> BASE_purgeall           (void)                                                    <* 
+ *> {                                                                                 <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                       <* 
+ *>    char        rce         =  -10;                                                <* 
+ *>    tGROUP     *x_group     = NULL;                                                <* 
+ *>    tPROC      *x_proc      = NULL;                                                <* 
+ *>    /+---(header)-------------------------+/                                       <* 
+ *>    DEBUG_INPT  yLOG_enter   (__FUNCTION__);                                       <* 
+ *>    /+---(destroy procs)------------------+/                                       <* 
+ *>    yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DHEAD, NULL, &x_proc);               <* 
+ *>    while (x_proc != NULL) {                                                       <* 
+ *>       yDLST_line_destroy   (x_proc->tracker);                                     <* 
+ *>       yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DNEXT, NULL, &x_proc);            <* 
+ *>    }                                                                              <* 
+ *>    /+---(destroy groups)-----------------+/                                       <* 
+ *>    yDLST_list_by_cursor (YDLST_DHEAD, NULL, &x_group);                            <* 
+ *>    while (x_group != NULL) {                                                      <* 
+ *>       yDLST_list_destroy   (x_group->name);                                       <* 
+ *>       yDLST_list_by_cursor (YDLST_DNEXT, NULL, &x_group);                         <* 
+ *>    }                                                                              <* 
+ *>    /+---(complete)-----------------------+/                                       <* 
+ *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                       <* 
+ *>    return 0;                                                                      <* 
+ *> }                                                                                 <*/
 
 
 
@@ -488,11 +555,11 @@ base__unit              (char *a_question)
    snprintf (unit_answer, LEN_RECD, "BASE unit        : question unknown");
    /*---(simple)-------------------------*/
    if      (strcmp (a_question, "conf"      )     == 0) {
-      rc = BASE_file_verify (my.n_conf);
-      if      (rc >  0)  x_exist = 'y';
-      else if (rc <= 0)  x_exist = '-';
+      /*> rc = BASE_file_verify (my.n_conf);                                          <*/
+      /*> if      (rc >  0)  x_exist = 'y';                                           <* 
+       *> else if (rc <= 0)  x_exist = '-';                                           <*/
       snprintf (unit_answer, LEN_RECD, "BASE conf        : %c  %2d[%s]",
-            x_exist, strlen (my.n_conf), my.n_conf);
+            x_exist, strlen (my.run_file), my.run_file);
    }
    else if (strcmp (a_question, "exec"      )     == 0) {
       snprintf (unit_answer, LEN_RECD, "BASE exec        : %c  %2d[%s]",

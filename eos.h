@@ -1,7 +1,7 @@
 /*============================[[    beg-code    ]]============================*/
 
 /*===[[ HEADER ]]=============================================================*/
-/*                     0         1         2         3         4         5         6         7*/
+/*                      ·········1·········2·········3·········4·········5·········6·········7*/
 /*345678901-12345678901-123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
 
 #define     P_FOCUS     "SA (system administration)"
@@ -30,9 +30,9 @@
 #define     P_CREATED   "2010-10"
 
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
-#define     P_VERMINOR  "2.1-, starting rebuild back up"
-#define     P_VERNUM    "2.1h"
-#define     P_VERTXT    "exec unit testing working and clean"
+#define     P_VERMINOR  "2.2-, building in astraios"
+#define     P_VERNUM    "2.2a"
+#define     P_VERTXT    "added simple shutdown from old nyx"
 
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -44,6 +44,11 @@
 
 /*===[[ SUMMARY ]]============================================================*/
 /* 
+ *   eos is a clean, reliable, and light system initialization handler; which
+ *   then grew into a job control system that also handles shutdown and ad-hoc
+ *   job processing.
+ *
+ *
  *   eos is intended to be a clean, reliable, and light system initialization
  *   process to receive the hand off from the kernel and deliver a stable,
  *   secure, and well prepared system for use to kharon who will watch over
@@ -380,6 +385,17 @@ struct cACCESSOR
    char        f_dir       [LEN_PATH];      /* current file path              */
    char        f_full      [LEN_PATH];      /* current file full name/path    */
    int         f_lines;
+   char        f_group;
+   /*---(counts)----------------*/
+   int         f_gall;
+   int         f_gpass;
+   int         f_gfail;
+   int         f_aall;
+   int         f_apass;
+   int         f_afail;
+   int         f_pall;
+   int         f_ppass;
+   int         f_pfail;
    char        f_note      [LEN_LABEL];
    /*---(current group)---------*/
    char        g_ready;                /* group record checks out             */
@@ -401,84 +417,21 @@ struct cACCESSOR
 } my;
 
 
-extern char g_silent   [LEN_LABEL];
-extern char g_confirm  [LEN_LABEL];
-extern char g_verbose  [LEN_LABEL];
+/*> extern char g_silent   [LEN_LABEL];                                               <* 
+ *> extern char g_confirm  [LEN_LABEL];                                               <* 
+ *> extern char g_verbose  [LEN_LABEL];                                               <*/
 
-extern char g_verify   [LEN_SHORT];
-extern char g_install  [LEN_SHORT];
-extern char g_list     [LEN_SHORT];
-extern char g_check    [LEN_SHORT];
-extern char g_audit    [LEN_SHORT];
-extern char g_fix      [LEN_SHORT];
-extern char g_remove   [LEN_SHORT];
-extern char g_daemon   [LEN_SHORT];
-extern char g_normal   [LEN_SHORT];
+/*> extern char g_verify   [LEN_SHORT];                                               <* 
+ *> extern char g_install  [LEN_SHORT];                                               <* 
+ *> extern char g_list     [LEN_SHORT];                                               <* 
+ *> extern char g_check    [LEN_SHORT];                                               <* 
+ *> extern char g_audit    [LEN_SHORT];                                               <* 
+ *> extern char g_fix      [LEN_SHORT];                                               <* 
+ *> extern char g_remove   [LEN_SHORT];                                               <* 
+ *> extern char g_daemon   [LEN_SHORT];                                               <* 
+ *> extern char g_normal   [LEN_SHORT];                                               <*/
 
 
-/*===[[ ACTIONS ]]=============================*/
-/*---(simple)---------------*/
-#define     ACT_VERSION     '1'
-#define     ACT_HELP        '2'
-#define     IF_VERSION      if (my.run_mode == '1')
-#define     IF_HELP         if (my.run_mode == '2')
-/*---(checking)-------------*/
-#define     ACT_VERIFY      'v'
-#define     ACT_VVERIFY     'V'
-#define     ACT_CVERIFY     'ÿ'
-#define     IF_VERIFY       if (strchr (g_verify , my.run_mode) != NULL)
-#define     CASE_VERIFY     'v' : case 'V' : case 'ÿ' 
-/*---(incomming)------------*/
-#define     ACT_INSTALL     'i'
-#define     ACT_VINSTALL    'I'
-#define     ACT_CINSTALL    'ð'
-#define     IF_INSTALL      if (strchr (g_install, my.run_mode) != NULL)
-#define     CASE_INSTALL    'i' : case 'I' : case 'ð' 
-/*---(central/inventory)----*/
-#define     ACT_COUNT       'l'
-#define     ACT_LIST        'L'
-#define     IF_LIST         if (strchr (g_list   , my.run_mode) != NULL)
-#define     CASE_LIST       'l' : case 'L' 
-/*---(central/installed)----*/
-#define     ACT_CHECK       'c'
-#define     ACT_VCHECK      'C'
-#define     ACT_CCHECK      'ý'
-#define     IF_CHECK        if (strchr (g_check  , my.run_mode) != NULL)
-#define     CASE_CHECK      'c' : case 'C' : case 'ý' 
-/*---(central/security)-----*/
-#define     ACT_AUDIT       'a'
-#define     ACT_VAUDIT      'A'
-#define     ACT_CAUDIT      'è'
-#define     IF_AUDIT        if (strchr (g_audit  , my.run_mode) != NULL)
-#define     CASE_AUDIT      'a' : case 'A' : case 'è' 
-/*---(central/fix)----------*/
-#define     ACT_FIX         'f'
-#define     ACT_VFIX        'F'
-#define     ACT_CFIX        'ü'
-#define     IF_FIX          if (strchr (g_fix    , my.run_mode) != NULL)
-#define     CASE_FIX        'f' : case 'F' : case 'ü' 
-/*---(outgoing)-------------*/
-#define     ACT_REMOVE      'r'
-#define     ACT_VREMOVE     'R'
-#define     ACT_CREMOVE     'ø'
-#define     IF_REMOVE       if (strchr (g_remove , my.run_mode) != NULL)
-#define     CASE_REMOVE     'r' : case 'R' : case 'ø' 
-/*---(daemon)---------------*/
-#define     ACT_DAEMON      'd'
-#define     ACT_VDAEMON     'D'
-#define     ACT_CDAEMON     'ë'
-#define     IF_DAEMON       if (strchr (g_daemon , my.run_mode) != NULL)
-#define     CASE_DAEMON     'd' : case 'D' : case 'ë' 
-/*---(normal)---------------*/
-#define     ACT_NORMAL      'n'
-#define     ACT_VNORMAL     'N'
-#define     ACT_CNORMAL     'ô'
-#define     IF_NORMAL       if (strchr (g_normal , my.run_mode) != NULL)
-#define     CASE_NORMAL     'n' : case 'N' : case 'ô' 
-/*---(combination)----------*/
-#define     IF_SILENT       if (strchr (g_silent , my.run_mode) != NULL)
-#define     IF_VERBOSE      if (strchr (g_verbose, my.run_mode) != NULL)
-#define     IF_CONFIRM      if (strchr (g_confirm, my.run_mode) != NULL)
 
 
 
@@ -646,14 +599,14 @@ int         main               (int a_argc, char *a_argv[]);
 char*       PROG_version            (void);
 char*       PROG_usage              (void);
 /*---(prestart)-------------*/
-char        PROG__verbose           (int a_argc, char *a_argv[], char a_unit);
-char        PROG__runas             (int a_argc, char *a_argv[]);
-char        PROG__boot              (int a_argc, char *a_argv[]);
+char        PROG__verbose           (int a_argc, char *a_argv[], char a_unit, int a_rpid);
+char        PROG__runas             (char *a_name);
+char        PROG__boot              (int a_argc, char *a_argv[], int a_rpid);
 char        PROG_prestart           (int a_argc, char *a_argv[], char a_unit);
 /*---(debugging)------------*/
 char        PROG_debugging          (int a_argc, char *a_argv[], char a_unit);
 /*---(startup)--------------*/
-char        PROG__init              (int a_argc, char *a_argv[]);
+char        PROG__init              (void);
 char        PROG__args              (int a_argc, char *a_argv[]);
 char        PROG__begin             (void);
 char        PROG__final             (void);
@@ -684,8 +637,8 @@ char        EXEC_children           (int);
 char        BASE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler);
 char        FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc);
 llong       BASE_msec               (void);
-char        BASE_file_verify        (uchar *a_name);
-char        BASE_file_cli           (char *a_terse, char *a_name);
+/*> char        BASE_file_verify        (uchar *a_name);                              <*/
+/*> char        BASE_file_cli           (char *a_terse, char *a_name);                <*/
 char        BASE_console            (void);
 char        BASE_execute            (void);
 char        BASE_kharon             (void);
