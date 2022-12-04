@@ -158,6 +158,8 @@ group_handler           (int n, uchar *a_verb)
    int         c           =    0;
    /*---(header)-------------------------*/
    DEBUG_INPT  yLOG_enter   (__FUNCTION__);
+   /*---(default)------------------------*/
+   my.f_group = '-';
    /*---(defense)------------------------*/
    yURG_msg (' ', "");
    DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
@@ -219,6 +221,8 @@ group_handler           (int n, uchar *a_verb)
       return rce;
    }
    yURG_msg ('>', "GROUP å%sæ on line %d with %d fields, %s", x_label, n, c, x_desc);
+   /*---(set group flag)-----------------*/
+   my.f_group = 'y';
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
@@ -249,14 +253,18 @@ after_handler           (int n, uchar *a_verb)
       return rce;
    }
    /*---(check group)--------------------*/
+   DEBUG_INPT  yLOG_char    ("f_group"   , my.f_group);
    --rce;  if (my.f_group != 'y') {
       yURG_err ('f', "AFTER on line %d inside failed group, so failed", n);
+      DEBUG_INPT  yLOG_note    ("not set to 'y'");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
    yDLST_list_by_cursor (YDLST_DCURR, NULL, &x_group);
+   DEBUG_INPT  yLOG_point   ("x_group"   , x_group);
    --rce;  if (x_group == NULL) {
       yURG_err ('f', "AFTER on line %d, no current group", n);
+      DEBUG_INPT  yLOG_note    ("could not find parent group");
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);
       return rce;
    }
@@ -398,17 +406,17 @@ group__unit             (char *a_question, int a_num)
    if      (strcmp (a_question, "entry"   )        == 0) {
       yDLST_list_by_index (a_num, NULL, &x_group);
       if (x_group != NULL) {
-         sprintf (t, "%2d[%-.15s]", strlen (x_group->name), x_group->name);
-         sprintf (s, "%2d[%-.40s]", strlen (x_group->desc), x_group->desc);
+         sprintf (t, "%2då%-.15sæ", strlen (x_group->name), x_group->name);
+         sprintf (s, "%2då%-.40sæ", strlen (x_group->desc), x_group->desc);
          snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) : %-19.19s  %2d  %s", a_num, t, x_group->line, s);
       } else {
-         snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) :  -[]                  -   -[]", a_num);
+         snprintf (unit_answer, LEN_RECD, "GROUP entry (%2d) :  ·åæ                  ·   ·åæ", a_num);
       }
    }
    else if (strcmp (a_question, "exec"    )        == 0) {
       yDLST_list_by_index (a_num, NULL, &x_group);
       if (x_group != NULL) {
-         sprintf (t, "%2d[%-.15s]", strlen (x_group->name), x_group->name);
+         sprintf (t, "%2då%-.15sæ", strlen (x_group->name), x_group->name);
          strlcpy (s, "", LEN_RECD);
          rc = yDLST_seq_by_cursor ('<', '[', &x_void, NULL, &x_after);
          while (rc >= 0 && x_void != NULL) {
@@ -418,10 +426,10 @@ group__unit             (char *a_question, int a_num)
             rc = yDLST_seq_by_cursor ('<', '>', &x_void, NULL, &x_after);
             ++c;
          }
-         sprintf  (u, "%1d[%.30s]", c, s);
+         sprintf  (u, "%1då%.30sæ", c, s);
          snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) : %-19.19s %2d %2d %c  %-33.33s  %4d %4d %4d %c", a_num, t, x_group->askd, x_group->done, x_group->status, u, x_group->beg, x_group->end, x_group->dur, x_group->note);
       } else {
-         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) :  -[]                 -  - -  -[]                                   -    -    - -", a_num);
+         snprintf (unit_answer, LEN_RECD, "GROUP exec  (%2d) :  ·åæ                 ·  · ·  ·åæ                                   ·    ·    · ·", a_num);
       }
    }
    else if (strcmp (a_question, "count"   )        == 0) {

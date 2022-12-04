@@ -191,7 +191,7 @@ exec__check_launch      (tPROC *a_proc, llong a_msec)
    /*---(update)-------------------------*/
    DEBUG_LOOP   yLOG_info    ("run"       , a_proc->run);
    DEBUG_LOOP   yLOG_value   ("rpid"      , a_proc->rpid);
-   rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return);
+   rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return, NULL);
    DEBUG_LOOP   yLOG_char    ("check"      , rc);
    if (rc != YEXEC_RUNNING) {
       DEBUG_LOOP   yLOG_note    ("not running anymore");
@@ -313,14 +313,14 @@ exec__check_daemon      (tPROC *a_proc, llong a_msec)
    c = exec__verify_daemon (a_proc->run, &x_rpid);
    DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
    while (c > 1) {
-      rc = yEXEC_verify (a_proc->name, x_rpid, NULL);
+      rc = yEXEC_verify (a_proc->name, x_rpid, NULL, NULL);
       DEBUG_LOOP   yLOG_char    ("exit"       , rc);
       c  = exec__verify_daemon (a_proc->run, &x_rpid);
       DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
    }
    /*---(final daemon)----------------*/
    a_proc->rpid = x_rpid;
-   rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return);
+   rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return, NULL);
    /*> switch (rc) {                                                                  <* 
     *> case  YEXEC_NOSUCH :  rc = YEXEC_RUNNING;  break;                              <* 
     *> case  YEXEC_NORMAL :  rc = YEXEC_DIED;     break;                              <* 
@@ -377,7 +377,7 @@ exec__check_signal      (tPROC *a_proc, llong a_msec)
          DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
          return 1;
       } else {
-         rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return);
+         rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return, NULL);
          proc_mark_done  (a_msec, YEXEC_ERROR, x_return);
          DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
          return 1;

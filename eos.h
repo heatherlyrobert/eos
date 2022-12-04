@@ -1,42 +1,57 @@
 /*============================[[    beg-code    ]]============================*/
 
 /*===[[ HEADER ]]=============================================================*/
-/*                      ·········1·········2·········3·········4·········5·········6·········7*/
-/*345678901-12345678901-123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
-
+/*                      ´·········1·········2·········3·········4·········5·········6·········7*/
+/*--------- 12345678901 ´123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
+/*········· ··········· ´·····························´········································*/
 #define     P_FOCUS     "SA (system administration)"
 #define     P_NICHE     "in (initializtation)"
 #define     P_SUBJECT   "job execution framework"
 #define     P_PURPOSE   "simple, reliable, and very transparent system initialization"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_NAMESAKE  "eos-rhododactylos (rosy-fingered dawn)"
+#define     P_PRONOUNCE "ee·ohs roh·doh·dahk·tee·ohs"
 #define     P_HERITAGE  "titaness of daybreak who opens the gates of heaven for the sun"
+#define     P_BRIEFLY   "she who opens the gates"
 #define     P_IMAGERY   "radiant worman with white wings, golden arms, and rosy fingers"
 #define     P_REASON    "fantastically poetic reference to system start-up"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
-
+/*········· ··········· ´·····························´········································*/
+#define     P_HOMEDIR   "/home/system/eos.goddess_of_dawn_and_startup"
 #define     P_BASENAME  "eos"
 #define     P_FULLPATH  "/sbin/eos"
 #define     P_SUFFIX    "conf"
 #define     P_CONTENT   "sequenced initialization"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_SYSTEM    "gnu/linux   (powerful, ubiquitous, technical, and hackable)"
 #define     P_LANGUAGE  "ansi-c      (wicked, limitless, universal, and everlasting)"
+#define     P_COMPILER  "gcc 5.3.0"
 #define     P_CODESIZE  "small       (appoximately 1,000 slocl)"
 #define     P_DEPENDS   "yDLST, yEXEC, ySEC, ySTR, yPARSE"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_AUTHOR    "heatherlyrobert"
 #define     P_CREATED   "2010-10"
-
+/*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.2-, building in astraios"
-#define     P_VERNUM    "2.2a"
-#define     P_VERTXT    "added simple shutdown from old nyx"
-
+#define     P_VERNUM    "2.2b"
+#define     P_VERTXT    "all unit tests pass again, pert working again also"
+/*········· ··········· ´·····························´········································*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
 #define     P_REMINDER  "there are many better options, but i *own* every byte of this one"
+/*········· ··········· ´·····························´········································*/
+/*--------- 12345678901 ´123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
+
+#define     P_HEADERS   \
+   P_FOCUS, P_NICHE, P_SUBJECT, P_PURPOSE, \
+   P_NAMESAKE, P_PRONOUNCE, P_HERITAGE, P_BRIEFLY, P_IMAGERY, P_REASON, \
+   P_ONELINE, P_HOMEDIR, P_BASENAME, P_FULLPATH, \
+   P_SUFFIX, P_CONTENT, \
+   P_SYSTEM, P_LANGUAGE, P_COMPILER, P_CODESIZE, P_DEPENDS, \
+   P_AUTHOR, P_CREATED, \
+   P_VERMAJOR, P_VERMINOR, P_VERNUM, P_VERTXT
 
 /*345678901-12345678901-123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
 
@@ -310,7 +325,6 @@
 
 /*---(process)------------------*/
 #include    <sys/wait.h>          /* sigaction, waitpid, wait4                */
-#include    <sys/time.h>          /* getrusage                                */
 #include    <sys/resource.h>      /* getrusage                                */
 #include    <errno.h>             /* errno                                    */
 
@@ -334,7 +348,7 @@
 /*---(other)--------------------*/
 #include    <sys/utsname.h>
 #include    <error.h>
-#include      <sys/reboot.h>
+#include    <sys/reboot.h>
 
 
 #include    <termios.h>
@@ -547,7 +561,7 @@ struct cPROC {
    /*---(flags)--------------------------*/
    char        value;                       /* on a H-M-L scale               */
    char        track;                       /* detailed tracking              */
-   char        handoff;                     /* handoff to kharon/haides       */
+   char        rolling;                     /* history rolling                */
    char        strict;                      /* adherence to limits            */
    char        lower;                       /* lower limit on duration        */
    char        upper;                       /* upper limit on duration        */
@@ -634,14 +648,17 @@ char        EXEC_children           (int);
 
 
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
+/*---(content)--------------*/
 char        BASE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler);
-char        FILE_assimilate         (cchar a_runas, cchar a_loc, cchar *a_name, char *r_user, char *r_desc);
+char        BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fuser, int a_fuid);
+char        BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fuser, int a_fuid);
+char        BASE_pull               (cchar *a_fname);
+/*---(execution)------------*/
 llong       BASE_msec               (void);
-/*> char        BASE_file_verify        (uchar *a_name);                              <*/
-/*> char        BASE_file_cli           (char *a_terse, char *a_name);                <*/
 char        BASE_console            (void);
 char        BASE_execute            (void);
 char        BASE_kharon             (void);
+/*---(done)-----------------*/
 
 
 
@@ -716,6 +733,7 @@ char        exec__dispatch_signal   (tPROC *a_proc, llong a_msec);
 char        exec_dispatch           (llong a_msec);
 
 
+char        eos_yjobs               (cchar a_req, cchar *a_data);
 
 #endif
 /*============================[[ end-of-code ]]===============================*/

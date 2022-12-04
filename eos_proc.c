@@ -75,11 +75,11 @@ proc__wipe          (tPROC *a_proc)
    DEBUG_INPT   yLOG_snote   ("flags");
    a_proc->value       =  '-';
    a_proc->track       =  '-';
+   a_proc->rolling     =  '-';
    a_proc->strict      =  '-';
    a_proc->lower       =  '-';
    a_proc->upper       =  '-';
    a_proc->remedy      =  '-';
-   a_proc->handoff     =  '-';
    DEBUG_INPT   yLOG_snote   ("results");
    a_proc->beg         =    0;
    a_proc->rpid        =   -1;
@@ -115,11 +115,11 @@ proc__memory            (tPROC *a_proc)
    /*---(flags)--------------------------*/
    ++i;  if (a_proc->value    != '-' )  s_print [i] = 'X';
    ++i;  if (a_proc->track    != '-' )  s_print [i] = 'X';
+   ++i;  if (a_proc->rolling  != '-' )  s_print [i] = 'X';
    ++i;  if (a_proc->strict   != '-' )  s_print [i] = 'X';
    ++i;  if (a_proc->lower    != '-' )  s_print [i] = 'X';
    ++i;  if (a_proc->upper    != '-' )  s_print [i] = 'X';
    ++i;  if (a_proc->remedy   != '-' )  s_print [i] = 'X';
-   ++i;  if (a_proc->handoff  != '-' )  s_print [i] = 'X';
    ++i;
    /*---(results)------------------------*/
    ++i;  if (a_proc->beg      != 0   )  s_print [i] = 'X';
@@ -229,7 +229,7 @@ proc__flags             (tPROC *a_new, uchar *a_flags, char *a_dur)
    if (strchr (EOS_WAIT_LONG , a_new->type) != NULL) x_floor = 2000;
    DEBUG_INPT  yLOG_complex ("x_floor"   , "%c, %d", a_new->type, x_floor);
    rc = yEXEC_flags (a_new->est, x_floor, a_flags,
-         &(a_new->value) , &(a_new->track) , &(a_new->handoff), &(a_new->strict),
+         &(a_new->value) , &(a_new->track) , &(a_new->rolling), &(a_new->strict),
          &(a_new->lower) , &(a_new->minest), 
          &(a_new->upper) , &(a_new->maxest), 
          &(a_new->remedy));
@@ -571,39 +571,38 @@ proc__unit              (char *a_question, int a_num)
       /*> x_proc  = (tPROC  *) yDLST_line_entry (a_num, NULL);                        <*/
       yDLST_line_by_index (YDLST_GLOBAL, a_num, NULL, &x_proc);
       if (x_proc != NULL) {
-         sprintf (t, "[%s]", x_proc->name);
+         sprintf (t, "å%sæ", x_proc->name);
          snprintf (unit_answer, LEN_RECD, "PROC name   (%2d) : %2d%-20.20s  %2d  %c", a_num, strlen (x_proc->name), t, x_proc->line, x_proc->type);
       } else {
-         snprintf (unit_answer, LEN_RECD, "PROC name   (%2d) :  0[]                    -1  -", a_num);
+         snprintf (unit_answer, LEN_RECD, "PROC name   (%2d) :  ·åæ                    -1  ·", a_num);
       }
    }
    else if (strcmp (a_question, "entry"   )        == 0) {
       yDLST_line_by_index (YDLST_GLOBAL, a_num, NULL, &x_proc);
       yDLST_line_list     (NULL, &x_group);
       if (x_proc != NULL) {
-         sprintf (s, "%2d[%.15s]", strlen (x_group->name), x_group->name);
-         sprintf (t, "%2d[%.15s]", strlen (x_proc->name) , x_proc->name);
-         sprintf (u, "%2d[%.32s]", strlen (x_proc->run)  , x_proc->run);
+         sprintf (s, "%2då%.15sæ", strlen (x_group->name), x_group->name);
+         sprintf (t, "%2då%.15sæ", strlen (x_proc->name) , x_proc->name);
+         sprintf (u, "%2då%.32sæ", strlen (x_proc->run)  , x_proc->run);
          snprintf (unit_answer, LEN_RECD, "PROC entry  (%2d) : %-19.19s  %-19.19s  %c  %s", a_num, s, t, x_proc->type, u);
       } else {
-         snprintf (unit_answer, LEN_RECD, "PROC entry  (%2d) :  -[]                  -[]                 -   -[]", a_num);
+         snprintf (unit_answer, LEN_RECD, "PROC entry  (%2d) :  ·åæ                  ·åæ                 ·   ·åæ", a_num);
       }
    }
    else if (strcmp (a_question, "detail"  )        == 0) {
       yDLST_line_by_index (YDLST_GLOBAL, a_num, NULL, &x_proc);
       if (x_proc != NULL) {
-         sprintf (s, "[%.10s]", x_proc->user);
+         sprintf (s, "å%.10sæ", x_proc->user);
          x_beg   = (x_proc->beg > 0) ? 'y' : '-';
          x_end   = (x_proc->end > 0) ? 'y' : '-';
-         snprintf (unit_answer, LEN_RECD, "PROC detail (%2d) : %c %c  %-12.12s  %4d  %4d  %4d %c%6d  %c  %4d  %4d %c  %4d   %c %c %c %c   %c",
-               a_num, x_proc->value, x_proc->track, s, x_proc->uid,
+         snprintf (unit_answer, LEN_RECD, "PROC detail (%2d) : %c %c %c  %-12.12s  %4d  %4d  %4d %c%6d  %c  %4d  %4d %c  %4d   %c %c %c %c",
+               a_num, x_proc->value, x_proc->track, x_proc->rolling, s, x_proc->uid,
                x_proc->est, x_proc->beg, x_beg,
                x_proc->rpid, x_proc->yexec, x_proc->rc,
                x_proc->end, x_end, x_proc->dur,
-               x_proc->strict,  x_proc->lower, x_proc->upper, x_proc->remedy,
-               x_proc->handoff);
+               x_proc->strict,  x_proc->lower, x_proc->upper, x_proc->remedy);
       } else {
-         snprintf (unit_answer, LEN_RECD, "PROC detail (%2d) : - -  []               -     -     - -     -  -     -     - -     -   - - - -   -", a_num);
+         snprintf (unit_answer, LEN_RECD, "PROC detail (%2d) : · · ·  åæ               ·     ·     · ·     ·  ·     ·     · ·     ·   · · · ·", a_num);
       }
    }
    else if (strcmp (a_question, "limits"  )        == 0) {

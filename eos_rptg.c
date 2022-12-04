@@ -12,10 +12,20 @@ static void      o___PERT____________________o (void) {;}
 #define  MAX_Y      70
 #define  MAX_X     300
 
+#define  OFF_X      30
+#define  OFF_Y       7
+
+#define  END_X       2
+#define  END_Y       2
+
 static char     s_pert [MAX_Y][MAX_X];
 static int      s_xcol   = 0;
 static int      s_xrow   = 0;
 
+static int      s_nalpha = 0;
+static int      s_calpha = 0;
+static int      s_nomega = 0;
+static int      s_comega = 0;
 
 char
 rptg__pert_clear        (void)
@@ -188,117 +198,197 @@ rptg__pert_verter       (int a_top, int a_bot, int x, uchar a_ch)
 {
    int         i           =    0;
    for (i = a_top; i <= a_bot; ++i) {
-      if      (i == a_top)   s_pert [i][x] = '³';
-      else if (i == a_bot)   s_pert [i][x] = '³';
-      else                   s_pert [i][x] = a_ch;
+      /*> if      (i == a_top)   s_pert [i][x] = '³';                                 <* 
+       *> else if (i == a_bot)   s_pert [i][x] = '³';                                 <* 
+       *> else                   s_pert [i][x] = a_ch;                                <*/
+      s_pert [i][x] = a_ch;
    }
    return 0;
 }
 
-char rptg__pert_vert   (int a_top, int a_bot, int x) { return rptg__pert_verter (a_top, a_bot, x, '|'); }
+char
+rptg__pert_horzer       (int y, int a_lef, int a_rig, uchar a_ch)
+{
+   int         i           =    0;
+   for (i = a_lef; i <= a_rig; ++i) s_pert [y][i] = a_ch;
+   return 0;
+}
+
+char rptg__pert_horz   (int y, int a_lef, int a_rig) { return rptg__pert_horzer (y, a_lef, a_rig, '€'); }
+char rptg__pert_vert   (int a_top, int a_bot, int x) { return rptg__pert_verter (a_top, a_bot, x, ''); }
 char rptg__pert_bound  (int a_top, int a_bot, int x) { return rptg__pert_verter (a_top, a_bot, x, '·'); }
 
 char
 rptg__pert_end          (int y, int x, uchar a_name)
 {
-   char       *x_edge      = "´===´";
-   char       *x_mid       = "¨   ¨";
+   char       *x_top       = "ƒ€€€‚";
+   char       *x_mid       = "   ";
+   char       *x_bot       = "„€€€…";
    char        t           [LEN_TERSE] = "";
    char        o           = 14;
    if (a_name == (uchar) 'ÿ') o = 0;
-   rptg__pert_merge (y - 2, x + o, x_edge);
-   rptg__pert_merge (y - 1, x + o, x_mid);
-   rptg__pert_merge (y - 0, x + o, x_edge);
+   rptg__pert_merge (y + 0, x + o, x_top);
+   rptg__pert_merge (y + 1, x + o, x_mid);
+   rptg__pert_merge (y + 2, x + o, x_mid);
+   rptg__pert_merge (y + 3, x + o, x_mid);
+   rptg__pert_merge (y + 4, x + o, x_bot);
    sprintf (t, "%c"     , a_name);
-   rptg__pert_merge (y - 1, x + o + 2                  , t);
+   rptg__pert_merge (y    , x + o + 2, t);
+   if (a_name == (uchar) 'ÿ') {
+      switch (s_nomega) {
+      case 0  :  strcpy (t, "À");  break;
+      case 1  :  strcpy (t, "Á");  break;
+      case 2  :  strcpy (t, "Â");  break;
+      case 3  :  strcpy (t, "Ã");  break;
+      case 4  :  strcpy (t, "Ä");  break;
+      default :  strcpy (t, "Å");  break;
+      }
+      rptg__pert_merge (y + 2, x + o + 1, t);
+      rptg__pert_merge (y + 1, x + o + 4, "");
+      rptg__pert_merge (y + 2, x + o + 4, "");
+      rptg__pert_merge (y + 3, x + o + 4, "");
+   } else {
+      switch (s_nalpha) {
+      case 0  :  strcpy (t, "À");  break;
+      case 1  :  strcpy (t, "Á");  break;
+      case 2  :  strcpy (t, "Â");  break;
+      case 3  :  strcpy (t, "Ã");  break;
+      case 4  :  strcpy (t, "Ä");  break;
+      default :  strcpy (t, "Å");  break;
+      }
+      rptg__pert_merge (y + 2, x + o + 3, t);
+      rptg__pert_merge (y + 1, x + o    , "");
+      rptg__pert_merge (y + 2, x + o    , "");
+      rptg__pert_merge (y + 3, x + o    , "");
+   }
    return 0;
 }
 
 char
 rptg__pert_box          (int y, int x, char *a_name, char a_procs, int a_beg, int a_end, int a_dur, char a_note, char a_pred, char a_succ)
 {
-   char       *x_edge      = "´=================´";
-   char       *x_mid       = "¨                 ¨";
+   char       *x_top       = "ƒ€€€€€€€€€€€€€€€€€‚";
+   char       *x_mid       = "                 ";
+   char       *x_bot       = "„€€€€€€€€€€€€€€€€€…";
    char        t           [LEN_TERSE] = "";
-   rptg__pert_merge (y + 0, x, x_edge);
-   rptg__pert_merge (y + 1, x, x_mid);
-   rptg__pert_merge (y + 2, x, x_mid);
-   rptg__pert_merge (y + 3, x, x_edge);
+   rptg__pert_merge (y + 0, x    , x_top);
+   rptg__pert_merge (y + 1, x    , x_mid);
+   rptg__pert_merge (y + 2, x    , x_mid);
+   rptg__pert_merge (y + 3, x    , x_mid);
+   rptg__pert_merge (y + 4, x    , x_bot);
    rptg__pert_merge (y + 0, x + 9 - strlen (a_name) / 2, a_name);
-   sprintf (t, "[%02d]", a_procs);
-   rptg__pert_merge (y + 3, x + 7                      , t);
-   sprintf (t, "b%-5d" , a_beg);
-   rptg__pert_merge (y + 1, x + 2                      , t);
-   sprintf (t, "%5de"   , a_end);
-   rptg__pert_merge (y + 1, x + 16 - 5                 , t);
-   sprintf (t, "%dd"    , a_dur);
-   rptg__pert_merge (y + 2, x + 9 - strlen (t) / 2     , t);
-   sprintf (t, "%1d", a_pred);
-   rptg__pert_merge (y + 2, x + 2                      , t);
-   sprintf (t, "%1d", a_succ);
-   rptg__pert_merge (y + 2, x + 16                     , t);
-   sprintf (t, "%c"     , a_note);
-   rptg__pert_merge (y + 1, x + 9                      , t);
+   switch (a_procs) {
+   case  0 : sprintf (t, "···· ····");  break;
+   case  1 : sprintf (t, "····Ï····");  break;
+   case  2 : sprintf (t, "···Ï·Ï···");  break;
+   case  3 : sprintf (t, "··Ï·Ï·Ï··");  break;
+   case  4 : sprintf (t, "·Ï·Ï·Ï·Ï·");  break;
+   case  5 : sprintf (t, "Ï·Ï·Ï·Ï·Ï");  break;
+   case  6 : sprintf (t, "·ÏÏÏ·ÏÏÏ·");  break;
+   case  7 : sprintf (t, "ÏÏ·ÏÏÏ·ÏÏ");  break;
+   case  8 : sprintf (t, "ÏÏÏÏ·ÏÏÏÏ");  break;
+   case  9 : sprintf (t, "ÏÏÏÏÏÏÏÏÏ");  break;
+   default : sprintf (t, "<ÏÏÏÏÏÏÏ>");  break;
+   }
+   rptg__pert_merge (y + 2, x + 5, t);
+   /*> sprintf (t, "[%02d]", a_procs);                                                <* 
+    *> rptg__pert_merge (y + 3, x + 7                      , t);                      <*/
+   /*> sprintf (t, "b%-5d" , a_beg);                                                  <* 
+    *> rptg__pert_merge (y + 1, x + 2                      , t);                      <*/
+   /*> sprintf (t, "%5de"   , a_end);                                                 <* 
+    *> rptg__pert_merge (y + 1, x + 16 - 5                 , t);                      <*/
+   /*> sprintf (t, "%dd"    , a_dur);                                                 <* 
+    *> rptg__pert_merge (y + 2, x + 9 - strlen (t) / 2     , t);                      <*/
+   switch (a_pred) {
+   case 0  :  strcpy (t, "À");  break;
+   case 1  :  strcpy (t, "Á");  break;
+   case 2  :  strcpy (t, "Â");  break;
+   case 3  :  strcpy (t, "Ã");  break;
+   case 4  :  strcpy (t, "Ä");  break;
+   default :  strcpy (t, "Å");  break;
+   }
+   rptg__pert_merge (y + 2, x + 1                      , t);
+   switch (a_succ) {
+   case 0  :  strcpy (t, "À");  break;
+   case 1  :  strcpy (t, "Á");  break;
+   case 2  :  strcpy (t, "Â");  break;
+   case 3  :  strcpy (t, "Ã");  break;
+   case 4  :  strcpy (t, "Ä");  break;
+   default :  strcpy (t, "Å");  break;
+   }
+   rptg__pert_merge (y + 2, x + 17                     , t);
+   /*> sprintf (t, "%c"     , a_note);                                                <* 
+    *> rptg__pert_merge (y + 1, x + 9                      , t);                      <*/
    return 0;
 }
 
 char
-rptg__pert_line         (int y1, int x1, char n, int y2, int x2, char m)
+rptg__pert_line         (int y1, int x1, char a_asucc, char a_nsucc, int y2, int x2, char a_apred, char a_npred)
 {
    int         i           =    0;
+   char        s           =    2;
+   char        f           =    2;
+   char        l           =    0;
+   /*---(exit)---------------------------*/
+   switch (a_asucc) {
+   case  1 :  s = 2;                 break;
+   case  2 :  s = 1 + a_nsucc * 2;   break;
+   case  3 :  s = 1 + a_nsucc;       break;
+   case  4 :  s = a_nsucc;           break;
+   case  5 :  s = a_nsucc;           break;
+   }
+   switch (a_apred) {
+   case  1 :  f = 2;                 break;
+   case  2 :  f = 1 + a_npred * 2;   break;
+   case  3 :  f = 1 + a_npred;       break;
+   case  4 :  f = a_npred;           break;
+   case  5 :  f = a_npred;           break;
+   }
+   /*---(start marker)-------------------*/
+   switch (s) {
+   case 4 :
+      rptg__pert_merge (y1 + s, x1 - 1, "ˆ");
+      break;
+   case 3 : case 2 : case 1 :
+      rptg__pert_merge (y1 + s, x1 - 1, "‡");
+      break;
+   case 0 :
+      rptg__pert_merge (y1 + s, x1 - 1, "‰");
+      break;
+   }
    /*---(horizontal)---------------------*/
-   if (y1 == y2) {
-      for (i = x1; i <= x2; ++i)  s_pert [y1 + n][i] = '-';
+   if (y1 + s == y2 + f) {
+      for (i = x1; i < x2; ++i)  s_pert [y1 + s][i] = '€';
    }
    /*---(downward)-----------------------*/
-   else if (y1 < y2) {
-      switch (n) {
-      case 3 : 
-         rptg__pert_merge (y1 + n, x1, "-³");
-         rptg__pert_vert  (y1 + n, y2 + m, x1 + 1);
-         rptg__pert_line  (y2 + m, x1 + 2, m, y2 + m, x2, m);
-         break;
-      case 2 :
-         rptg__pert_merge (y1 + n, x1, "---³");
-         rptg__pert_vert  (y1 + n, y2 + m, x1 + 3);
-         rptg__pert_line  (y2 + m, x1 + 4, m, y2 + m, x2, m);
-         break;
-      case 1 :
-         rptg__pert_merge (y1 + n, x1, "-----³");
-         rptg__pert_vert  (y1 + n, y2 + m, x1 + 5);
-         rptg__pert_line  (y2 + m, x1 + 6, m, y2 + m, x2, m);
-         break;
-      case 0 :
-         rptg__pert_merge (y1 + n, x1, "-------³");
-         rptg__pert_vert  (y1 + n, y2 + m, x1 + 7);
-         rptg__pert_line  (y2 + m, x1 + 8, m, y2 + m, x2, m);
-         break;
-      }
+   else if (y1 + s < y2 + f) {
+      l = 8 - (s * 2);
+      rptg__pert_horz  (y1 + s, x1    , x1 + l);
+      rptg__pert_merge (y1 + s, x1 + l + 1, "‚");
+      rptg__pert_vert  (y1 + s + 1, y2 + f - 1, x1 + l + 1);
+      s_pert [y2 + f][x1 + l + 1] = '„';
+      rptg__pert_horz  (y2 + f, x1 + l + 2, x2 - 1);
    }
    /*---(upward)-------------------------*/
    else {
-      switch (m) {
-      case 0 :
-         rptg__pert_line  (y1 + n, x1, n, y1 + n, x2 - 9, n);
-         rptg__pert_vert  (y2 + m, y1 + n, x2 - 8);
-         rptg__pert_merge (y2 + m, x2 - 8, "³-------");
-         break;
-      case 1 :
-         rptg__pert_line  (y1 + n, x1, n, y1 + n, x2 - 7, n);
-         rptg__pert_vert  (y2 + m, y1 + n, x2 - 6);
-         rptg__pert_merge (y2 + m, x2 - 6, "³-----");
-         break;
-      case 2 :
-         rptg__pert_line  (y1 + n, x1, n, y1 + n, x2 - 5, n);
-         rptg__pert_vert  (y2 + m, y1 + n, x2 - 4);
-         rptg__pert_merge (y2 + m, x2 - 4, "³---");
-         break;
-      case 3 : 
-         rptg__pert_line  (y1 + n, x1, n, y1 + n, x2 - 3, n);
-         rptg__pert_vert  (y2 + m, y1 + n, x2 - 2);
-         rptg__pert_merge (y2 + m, x2 - 2, "³-");
-         break;
-      }
+      l = 8 - (f * 2);
+      rptg__pert_horz  (y2 + f, x2 - l - 1, x2 - 1);
+      rptg__pert_merge (y2 + f, x2 - l - 2, "ƒ");
+      rptg__pert_vert  (y2 + f + 1, y1 + s - 1, x2 - l - 2);
+      s_pert [y1 + s][x2 - l - 2] = '…';
+      rptg__pert_horz  (y1 + s, x1, x2 - l - 3);
+   }
+   /*---(finish marker)------------------*/
+   switch (f) {
+   case 4 :
+      rptg__pert_merge (y2 + f, x2 + 0, "‰");
+      break;
+   case 3 : case 2 : case 1 :
+      rptg__pert_merge (y2 + f, x2 + 0, "†");
+      break;
+   case 0 :
+      rptg__pert_merge (y2 + f, x2 + 0, "ˆ");
+      break;
    }
    /*---(complete)-----------------------*/
    return 0;
@@ -333,32 +423,36 @@ rptg__pert_connect      (tGROUP *a_group)
    char        rc          =    0;
    void       *x_beg       = NULL;
    void       *x_end       = NULL;
+   int         x_asucc     =    0;
    int         x_nsucc     =    0;
    tGROUP     *x_succ      = NULL;
+   int         x_apred     =    0;
    int         x_npred     =    0;
    tGROUP     *x_pred      = NULL;
    int         y1, x1, y2, x2;
    /*---(check start)--------------------*/
    if (a_group == NULL)  return 0;
-   x_beg = yDLST_list_current ();
+   x_beg   = yDLST_list_current ();
+   x_asucc = yDLST_seq_count ('>');
    /*---(set start position)-------------*/
-   y1 = a_group->row *  7;
-   x1 = a_group->col * 28 + 19;
+   y1 = a_group->row * OFF_Y;
+   x1 = a_group->col * OFF_X + 19;
    /*---(get first successor)------------*/
    rc = yDLST_seq_by_index  ('>', x_nsucc = 0, NULL, &x_end, &x_succ);
    while (rc >= 0) {
       /*---(handle successor)------------*/
       if (x_succ != NULL) {
          /*---(set end position)---------*/
-         y2 = x_succ->row *  7;
-         x2 = x_succ->col * 28;
+         y2 = x_succ->row * OFF_Y;
+         x2 = x_succ->col * OFF_X;
          /*---(go to successor)----------*/
          yDLST_list_restore (x_end);
+         x_apred = yDLST_seq_count ('<');
          /*---(go to first predecessor)--*/
          rc = yDLST_seq_by_index ('<', x_npred = 0, NULL, NULL, &x_pred);
          while (rc >= 0) {
             /*---(draw connector)-------*/
-            if (x_pred == a_group)  rptg__pert_line (y1, x1, x_nsucc, y2, x2, x_npred);
+            if (x_pred == a_group)  rptg__pert_line (y1, x1, x_asucc, x_nsucc, y2, x2, x_apred, x_npred);
             /*---(next predecessor)-----*/
             rc = yDLST_seq_by_index  ('<', ++x_npred, NULL, NULL, &x_pred);
             /*---(done)-----------------*/
@@ -367,9 +461,9 @@ rptg__pert_connect      (tGROUP *a_group)
       }
       /*---(handle omega end)------------*/
       else {
-         y2 = 7;
-         x2 = s_xcol * 28;
-         rptg__pert_line (y1, x1, 0, y2, x2, 0);
+         y2 = (s_xrow - 1) * OFF_Y;
+         x2 = s_xcol * OFF_X;
+         rptg__pert_line (y1, x1, 0, 0, y2, x2, s_nomega, s_comega++);
       }
       /*---(next)------------------------*/
       yDLST_list_restore (x_beg);
@@ -379,10 +473,10 @@ rptg__pert_connect      (tGROUP *a_group)
    /*---(handle alpha end)---------------*/
    if (a_group->col == 1) {
       y2 = y1;
-      x2 = x1 - 20;
+      x2 = x1 - 19;
       y1 = 7;
       x1 = 19;
-      rptg__pert_line (y1, x1, 0, y2, x2, 0);
+      rptg__pert_line (y1, x1, s_nalpha, s_calpha++, y2, x2, 0, 0);
    }
    /*---(complete)-----------------------*/
    return 0;
@@ -398,22 +492,42 @@ rptg__pert_groups       (void)
    int         i           =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   rptg__pert_end     (7               , 0                , 'è');
+   /*---(prepare)------------------------*/
+   s_nalpha = yDLST_alpha_count ();
+   s_nomega = yDLST_omega_count ();
+   s_calpha = s_comega = 0;
+   /*---(walk)---------------------------*/
    rc = yDLST_list_by_index  (x_ngroup, NULL, &x_group);
    while (rc >= 0) {
-      /*---(normal)----------------------*/
-      if (x_group != NULL) {
-         rptg__pert_box     (x_group->row * 7, x_group->col * 28, x_group->name, x_group->askd, x_group->beg, x_group->end, x_group->dur, x_group->note, yDLST_seq_count ('<'), yDLST_seq_count ('>'));
-         rptg__pert_connect (x_group);
-      }
-      /*---(next)------------------------*/
+      if (x_group != NULL) rptg__pert_box     (x_group->row * OFF_Y, x_group->col * OFF_X, x_group->name, x_group->askd, x_group->beg, x_group->end, x_group->dur, x_group->note, yDLST_seq_count ('<'), yDLST_seq_count ('>'));
       rc = yDLST_list_by_index (++x_ngroup, NULL, &x_group);
-      /*---(done)------------------------*/
    }
-   rptg__pert_end     (7               , s_xcol * 28   , 'ÿ');
+   /*---(ends)---------------------------*/
+   rptg__pert_end     (7               , 0                 , 'è');
+   rptg__pert_end     ((s_xrow - 1) * OFF_Y, s_xcol * OFF_X, 'ÿ');
    /*---(bounds)-------------------------*/
    rptg__pert_bound   (3, s_xrow * 7 - 2, 10);
-   rptg__pert_bound   (3, s_xrow * 7 - 2, s_xcol * 28 + 8);
+   rptg__pert_bound   (3, s_xrow * 7 - 2, s_xcol * OFF_X + 8);
+   /*---(complete)-----------------------*/
+   DEBUG_OUTP  yLOG_exit    (__FUNCTION__);
+   return  rc;
+}
+
+char
+rptg__pert_network      (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rc          =    0;
+   tGROUP     *x_group     = NULL;
+   int         x_ngroup    =    0;
+   int         i           =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   rc = yDLST_list_by_index  (x_ngroup, NULL, &x_group);
+   while (rc >= 0) {
+      if (x_group != NULL) rptg__pert_connect (x_group);
+      rc = yDLST_list_by_index (++x_ngroup, NULL, &x_group);
+   }
    /*---(complete)-----------------------*/
    DEBUG_OUTP  yLOG_exit    (__FUNCTION__);
    return  rc;
@@ -422,11 +536,12 @@ rptg__pert_groups       (void)
 char
 rptg_pert               (void)
 {
-   rptg__pert_clear  ();
-   rptg__pert_col    ();
-   rptg__pert_row    ();
-   rptg__pert_groups ();
-   rptg__pert_write  ();
+   rptg__pert_clear   ();
+   rptg__pert_col     ();
+   rptg__pert_row     ();
+   rptg__pert_groups  ();
+   rptg__pert_network ();
+   rptg__pert_write   ();
    return 0;
 }
 

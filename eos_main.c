@@ -36,7 +36,8 @@ main               (int a_argc, char *a_argv[])
       return rce;
    }
    /*---(process action)-----------------*/
-   rc = yJOBS_driver (my.run_as, my.run_mode, P_ONELINE, my.run_file, my.m_who, my.m_uid, FILE_assimilate, BASE_execute);
+   /*> rc = yJOBS_driver (my.run_as, my.run_mode, P_ONELINE, my.run_file, my.m_who, my.m_uid, FILE_assimilate, BASE_execute);   <*/
+   rc = yJOBS_driver (P_ONELINE, eos_yjobs);
    /*> switch (my.run_mode) {                                                                   <* 
     *> case CASE_VERIFY :                                                                       <* 
     *>    rptg_pert ();                                                                         <* 
@@ -46,13 +47,6 @@ main               (int a_argc, char *a_argv[])
     *>    break;                                                                                <* 
     *> case EOS_RPTG_CONTROL :                                                                  <* 
     *>    yEXEC_controls ();                                                                    <* 
-    *>    break;                                                                                <* 
-    *> case CASE_NORMAL  :                                                                      <* 
-    *> case CASE_DAEMON :                                                                       <* 
-    *>    rc = BASE_execute ();                                                                 <* 
-    *>    /+> rptg_pert  ();                                                              <+/   <* 
-    *>    /+> rptg_gantt ();                                                              <+/   <* 
-    *>    /+> rptg_dump  ();                                                              <+/   <* 
     *>    break;                                                                                <* 
     *> }                                                                                        <*/
    /*---(wrapup)-------------------------*/
