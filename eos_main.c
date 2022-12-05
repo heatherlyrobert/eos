@@ -35,20 +35,16 @@ main               (int a_argc, char *a_argv[])
       PROG_end ();
       return rce;
    }
-   /*---(process action)-----------------*/
-   /*> rc = yJOBS_driver (my.run_as, my.run_mode, P_ONELINE, my.run_file, my.m_who, my.m_uid, FILE_assimilate, BASE_execute);   <*/
+   /*---(main)---------------------------*/
    rc = yJOBS_driver (P_ONELINE, eos_yjobs);
-   /*> switch (my.run_mode) {                                                                   <* 
-    *> case CASE_VERIFY :                                                                       <* 
-    *>    rptg_pert ();                                                                         <* 
-    *>    break;                                                                                <* 
-    *> case EOS_RPTG_VERBS  :                                                                   <* 
-    *>    proc_verblist ();                                                                     <* 
-    *>    break;                                                                                <* 
-    *> case EOS_RPTG_CONTROL :                                                                  <* 
-    *>    yEXEC_controls ();                                                                    <* 
-    *>    break;                                                                                <* 
-    *> }                                                                                        <*/
+   DEBUG_PROG   yLOG_value    ("driver"    , rc);
+   /*---(run)----------------------------*/
+   IF_RUNNING {
+      IF_NORMAL  yURG_msg ('>', "requested an actual run in NORMAL mode...");
+      IF_STRICT  yURG_msg ('>', "requested an actual run in STRICT mode...");
+      rc = BASE_execute ();
+      DEBUG_PROG   yLOG_value    ("execute"   , rc);
+   }
    /*---(wrapup)-------------------------*/
    if (my.run_as == IAM_EOS && my.pid == 1)  BASE_kharon ();
    IF_NOEND  ;

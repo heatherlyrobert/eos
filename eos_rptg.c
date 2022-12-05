@@ -27,6 +27,9 @@ static int      s_calpha = 0;
 static int      s_nomega = 0;
 static int      s_comega = 0;
 
+static int      s_maxy   = 0;
+static int      s_maxx   = 0;
+
 char
 rptg__pert_clear        (void)
 {
@@ -198,10 +201,9 @@ rptg__pert_verter       (int a_top, int a_bot, int x, uchar a_ch)
 {
    int         i           =    0;
    for (i = a_top; i <= a_bot; ++i) {
-      /*> if      (i == a_top)   s_pert [i][x] = '³';                                 <* 
-       *> else if (i == a_bot)   s_pert [i][x] = '³';                                 <* 
-       *> else                   s_pert [i][x] = a_ch;                                <*/
-      s_pert [i][x] = a_ch;
+      if      (a_ch == (uchar) '·' && i == a_top)   s_pert [i][x] = '³';
+      else if (a_ch == (uchar) '·' && i == a_bot)   s_pert [i][x] = '³';
+      else                                          s_pert [i][x] = a_ch;
    }
    return 0;
 }
@@ -412,7 +414,7 @@ rptg__pert_write        (void)
     *>    s_pert [i + 10][0] = '*';                                                   <* 
     *>    rc = yDLST_list_by_index (++i, NULL, &x_group);                             <* 
     *> }                                                                              <*/
-   for (i = 0; i < MAX_Y; ++i)   fprintf (f, "%s\n", s_pert [i]);
+   for (i = 0; i < s_maxy; ++i)   fprintf (f, "%*.*s\n", s_maxx, s_maxx, s_pert [i]);
    fclose (f);
    return 0;
 }
@@ -503,11 +505,13 @@ rptg__pert_groups       (void)
       rc = yDLST_list_by_index (++x_ngroup, NULL, &x_group);
    }
    /*---(ends)---------------------------*/
-   rptg__pert_end     (7               , 0                 , 'è');
+   rptg__pert_end     (OFF_Y           , 0                 , 'è');
    rptg__pert_end     ((s_xrow - 1) * OFF_Y, s_xcol * OFF_X, 'ÿ');
    /*---(bounds)-------------------------*/
-   rptg__pert_bound   (3, s_xrow * 7 - 2, 10);
-   rptg__pert_bound   (3, s_xrow * 7 - 2, s_xcol * OFF_X + 8);
+   rptg__pert_bound   (3, s_xrow * OFF_Y - 2, 10);
+   rptg__pert_bound   (3, s_xrow * OFF_Y - 2, s_xcol * OFF_X + 8);
+   s_maxy = s_xrow * OFF_Y - 2 + 5;
+   s_maxx = s_xcol * OFF_X + 8 + 5;
    /*---(complete)-----------------------*/
    DEBUG_OUTP  yLOG_exit    (__FUNCTION__);
    return  rc;

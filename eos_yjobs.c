@@ -24,7 +24,7 @@ eos_yjobs               (cchar a_req, cchar *a_data)
       break;
    case YJOBS_PULL     :
       DEBUG_PROG    yLOG_note    ("called for pull");
-      /*> rc = BASE_pull (a_data);                                                    <*/
+      rc = BASE_pull (a_data);
       break;
    case YJOBS_LOCALRPT : 
       DEBUG_PROG    yLOG_note    ("called for localrpt");

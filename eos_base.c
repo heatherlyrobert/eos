@@ -518,8 +518,6 @@ BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    /*---(reset content)------------------*/
    yDLST_purge ();
    /*---(reset globals)------------------*/
-   strcpy  (my.f_name, "");
-   strcpy  (my.f_full, "");
    my.f_lines = 0;
    my.f_group = '-';
    my.f_gall  = my.f_gpass = my.f_gfail = 0;
@@ -529,9 +527,11 @@ BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    /*---(defense)------------------------*/
    DEBUG_INPT   yLOG_point   ("a_full"    , a_full);
    --rce;  if (a_full == NULL) {
+      yURG_err ('f', "file full name not provided", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_msg ('-', "full name  %2då%sæ", strlen (a_full), a_full);
    DEBUG_INPT   yLOG_info    ("a_full"    , a_full);
    strlcpy (my.f_full , a_full , LEN_PATH);
    DEBUG_INPT   yLOG_point   ("a_fname"   , a_fname);
@@ -539,6 +539,7 @@ BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_msg ('-', "short name %2då%sæ", strlen (a_fname), a_fname);
    DEBUG_INPT   yLOG_info    ("a_fname"   , a_fname);
    strlcpy (my.f_name , a_fname, LEN_HUND);
    DEBUG_INPT   yLOG_point   ("a_fuser"   , a_fuser);
@@ -546,13 +547,16 @@ BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_msg ('-', "user name  %2då%sæ", strlen (a_fuser), a_fuser);
    DEBUG_INPT   yLOG_info    ("a_fuser"   , a_fuser);
    strlcpy (my.f_user , a_fuser, LEN_USER);
    DEBUG_INPT   yLOG_value   ("a_fuid"    , a_fuid);
    --rce;  if (a_fuid < 0 || a_fuid > 10000) {
+      yURG_err ('f', "user id      %d, is unaccepable", a_fuid);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_msg ('-', "user id      %d", a_fuid);
    my.f_uid  = a_fuid;
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
@@ -579,7 +583,6 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    }
    /*---(read all lines)-----------------*/
    yURG_msg ('-', "calling auto-reader in yPARSE");
-   yURG_msg (' ', "");
    DEBUG_INPT  yLOG_info    ("f_full"     , a_full);
    rc = yPARSE_autoread (a_full, NULL, BASE_handler);
    DEBUG_PROG  yLOG_value   ("read"      , rc);
@@ -664,20 +667,29 @@ BASE_pull               (cchar *a_fname)
    char        x_loc       =  '-';
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
+   /*---(begin feedback)-----------------*/
+   yURG_msg ('>', "verify the contents of a configuation file (pull)...");
    DEBUG_INPT   yLOG_point   ("a_fname"   , a_fname);
    --rce;  if (a_fname == NULL) {
+      yURG_err ('f', "file name not provided to function");
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_msg ('-', "requested file %då%sæ", strlen (a_fname), a_fname);
    DEBUG_INPT   yLOG_info    ("a_fname"   , a_fname);
    /*---(collect data)-------------------*/
    rc = yJOBS_filedata (&(my.run_as), &(my.run_mode), &x_loc, my.f_name, my.f_user, &(my.f_uid), my.f_desc, my.f_dir, my.f_full);
    DEBUG_INPT   yLOG_value   ("filedata"  , rc);
    --rce;  if (rc < 0) {
-      yURG_err ('f', "could not request file data (%d)", rc);
+      yURG_err ('f', "could not get file data from yJOBS (%d)", rc);
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   yURG_msg ('-', "file data request successful");
+   /*> yURG_msg ('-', "short name %2då%sæ", strlen (my.f_name), my.f_name);           <* 
+    *> yURG_msg ('-', "full name  %2då%sæ", strlen (my.f_full), my.f_full);           <* 
+    *> yURG_msg ('-', "user name  %2då%sæ", strlen (my.f_user), my.f_user);           <* 
+    *> yURG_msg ('-', "user id       %d"  , my.f_uid);                                <*/
    DEBUG_INPT   yLOG_char    ("run_as"    , my.run_as);
    DEBUG_INPT   yLOG_char    ("run_mode"  , my.run_mode);
    DEBUG_INPT   yLOG_char    ("x_loc"     , x_loc);

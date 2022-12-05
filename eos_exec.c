@@ -429,17 +429,21 @@ exec_check              (llong a_msec)
       switch (x_proc->type) {
       case EOS_TYPE_DAEMON : case EOS_TYPE_SERIAL :
          rc = exec__check_daemon (x_proc, a_msec);
+         yURG_msg ('-', "check daemon    %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
          break;
       case EOS_TYPE_MOUNT  : case EOS_TYPE_UMOUNT :
          rc = exec__check_mount  (x_proc, a_msec);
+         yURG_msg ('-', "check mount     %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
          break;
       case EOS_TYPE_EXEC   : case EOS_TYPE_CONFIG :
       case EOS_TYPE_BOOT   :
          rc = exec__check_launch (x_proc, a_msec);
+         yURG_msg ('-', "check process   %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
          break;
       case EOS_TYPE_KILL   : case EOS_TYPE_WRAPUP :
       case EOS_TYPE_RESET  : case EOS_TYPE_PING   :
          rc  = exec__check_signal (x_proc, a_msec);
+         yURG_msg ('-', "check signal    %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
          break;
       default          :
          rc = exec__check_launch (x_proc, a_msec);
@@ -497,6 +501,7 @@ exec_finish             (llong a_msec)
       /*---(check for done)--------------*/
       else  if (x_group->askd == x_group->done) {
          group_mark_done (a_msec);
+         yURG_msg ('-', "finishing       %-15.15s, %6dm, %6db, %6de", x_group->name, a_msec, x_group->beg, x_group->end);
          ++x_done;
          ++c;
       }
@@ -571,6 +576,7 @@ exec_start              (llong a_msec)
          DEBUG_LOOP   yLOG_char    ("x_ready"   , x_ready);
          if (x_ready == 'y') {
             group_mark_begin (a_msec);
+            yURG_msg ('-', "starting        %-15.15s, %6dm, %6db, %6de", x_group->name, a_msec, x_group->beg, x_group->end);
             ++c;
             rc = yDLST_focus_list ();
             if (rc < 0) {
@@ -819,20 +825,25 @@ exec_dispatch           (llong a_msec)
          switch (x_proc->type) {
          case EOS_TYPE_DAEMON : case EOS_TYPE_SERIAL :
             rc  = exec__dispatch_daemon (x_proc, a_msec);
+            yURG_msg ('-', "launch daemon   %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
             break;
          case EOS_TYPE_MOUNT  : case EOS_TYPE_UMOUNT :
             rc  = exec__dispatch_mount  (x_proc, a_msec);
+            yURG_msg ('-', "launch mount    %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
             break;
          case EOS_TYPE_BOOT   :
             IF_NORMAL  rc  = exec__dispatch_launch (x_proc, a_msec);
             else       proc_mark_all_in_one (a_msec, 0, YEXEC_ALREADY);
+            yURG_msg ('-', "launch once     %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
             break;
          case EOS_TYPE_EXEC   : case EOS_TYPE_CONFIG : default :
             rc  = exec__dispatch_launch (x_proc, a_msec);
+            yURG_msg ('-', "launch process  %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
             break;
          case EOS_TYPE_KILL   : case EOS_TYPE_WRAPUP :
          case EOS_TYPE_RESET  : case EOS_TYPE_PING   :
             rc  = exec__dispatch_signal (x_proc, a_msec);
+            yURG_msg ('-', "launch signal   %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
          }
       }
       /*---(next)------------------------*/
