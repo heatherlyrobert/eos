@@ -9,7 +9,7 @@
 static void      o___VERIFY__________________o (void) {;}
 
 char
-exec__verify_mount      (uchar *a_run)
+exec__verify_mount      (char a_run [LEN_FULL])
 {
    /*---(locals)-----------+-----+-----+-*/
    char        rce         =  -10;
@@ -117,7 +117,7 @@ exec__verify_daemon     (char *a_run, int *a_rpid)
    DEBUG_LOOP  yLOG_info    ("a_run"     , a_run);
    /*---(cut at first space)-------------*/
    DEBUG_LOOP  yLOG_info    ("a_run"     , a_run);
-   strlcpy (t, a_run, LEN_RECD);
+   ystrlcpy (t, a_run, LEN_RECD);
    p = strchr (t, ' ');
    DEBUG_LOOP  yLOG_point   ("p"         , p);
    --rce;  if (p != NULL) {

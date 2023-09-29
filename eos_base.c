@@ -86,7 +86,7 @@ BASE_msec               (void)
  *>       return rce;                                                                                      <* 
  *>    }                                                                                                   <* 
  *>    DEBUG_ARGS  yLOG_info    ("a_name"    , a_name);                                                    <* 
- *>    strlcpy (x_recd, a_name, LEN_RECD);                                                                 <* 
+ *>    ystrlcpy (x_recd, a_name, LEN_RECD);                                                                 <* 
  *>    /+---(check length)-------------------+/                                                            <* 
  *>    l = strlen (x_recd);                                                                                <* 
  *>    DEBUG_ARGS  yLOG_value   ("l"         , l);                                                         <* 
@@ -112,15 +112,15 @@ BASE_msec               (void)
  *>          DEBUG_PROG  yLOG_exitr (__FUNCTION__, rce);                                                   <* 
  *>          return rce;                                                                                   <* 
  *>       }                                                                                                <* 
- *>       strlcpy (my.n_conf, x_recd, LEN_FULL);                                                           <* 
+ *>       ystrlcpy (my.n_conf, x_recd, LEN_FULL);                                                           <* 
  *>       DEBUG_ARGS  yLOG_info    ("conf"      , my.n_conf);                                              <* 
  *>       break;                                                                                           <* 
  *>    case 'e' :                                                                                          <* 
- *>       strlcpy (my.n_exec, x_recd, LEN_FULL);                                                           <* 
+ *>       ystrlcpy (my.n_exec, x_recd, LEN_FULL);                                                           <* 
  *>       DEBUG_ARGS  yLOG_info    ("exec"      , my.n_exec);                                              <* 
  *>       break;                                                                                           <* 
  *>    case 'p' :                                                                                          <* 
- *>       strlcpy (my.n_perf, x_recd, LEN_FULL);                                                           <* 
+ *>       ystrlcpy (my.n_perf, x_recd, LEN_FULL);                                                           <* 
  *>       DEBUG_ARGS  yLOG_info    ("perf"      , my.n_perf);                                              <* 
  *>       break;                                                                                           <* 
  *>    }                                                                                                   <* 
@@ -308,11 +308,13 @@ BASE_kharon             (void)
     *>    return rce;                                                                 <* 
     *> }                                                                              <*/
    /*---(pass the torch)-----------------*/
-   /*> strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
-   /*> strlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
-   /*> strlcpy    (x_args, "/sbin/kharon_debug @@kitchen --acheron --leisurely --listen", LEN_FULL);   <*/
-   strlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);
-   strlparse  (x_args, NULL, x_final, 20, &my.argc, my.argv, LEN_FULL);
+   /*> ystrlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
+   /*> ystrlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
+   /*> ystrlcpy    (x_args, "/sbin/kharon_debug @@kitchen --acheron --leisurely --listen", LEN_FULL);   <*/
+                          /*123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+   /*> ystrlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstu", LEN_FULL);   <*/
+   ystrlcpy    (x_args, "kharon-charopos (ferryman of dead souls) watching the acheron river", LEN_FULL);
+   ystrlparse  (x_args, NULL, x_final, 20, &my.argc, my.argv, LEN_FULL);
    DEBUG_LOOP   yLOG_value   ("argc"       , my.argc);
    DEBUG_VIEW   printf ("arg count %d\n", my.argc);
    for (i = 0; i < my.argc; ++i) {
@@ -394,7 +396,7 @@ BASE_kharon             (void)
  *>    /+---(save some data)-----------------+/                                                                                             <* 
  *>    DEBUG_INPT  yLOG_info    ("f_dir"      , my.f_dir);                                                                                  <* 
  *>    DEBUG_INPT  yLOG_info    ("f_name"     , my.f_name);                                                                                 <* 
- *>    strlcpy (my.f_name, a_name, LEN_HUND);                                                                                               <* 
+ *>    ystrlcpy (my.f_name, a_name, LEN_HUND);                                                                                               <* 
  *>    sprintf (my.f_full, "%s%s", my.f_dir, my.f_name);                                                                                    <* 
  *>    yURG_msg ('>', "calling AUTO-READER");                                                                                               <* 
  *>    /+---(pull all lines)-----------------+/                                                                                             <* 
@@ -404,7 +406,7 @@ BASE_kharon             (void)
  *>    --rce;  if (rc <  0) {                                                                                                               <* 
  *>       DEBUG_PROG  yLOG_note    ("no file found");                                                                                       <* 
  *>       yURG_msg (' ', "");                                                                                                               <* 
- *>       strlcpy (my.f_note, "NO FILE" , LEN_TERSE);                                                                                       <* 
+ *>       ystrlcpy (my.f_note, "NO FILE" , LEN_TERSE);                                                                                       <* 
  *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
  *>       return rce;                                                                                                                       <* 
  *>    }                                                                                                                                    <* 
@@ -421,14 +423,14 @@ BASE_kharon             (void)
  *>    --rce;  if (my.f_lines <= 0) {                                                                                                       <* 
  *>       yURG_err ('>', "NO LINES found");                                                                                                 <* 
  *>       DEBUG_PROG  yLOG_note    ("no input lines found");                                                                                <* 
- *>       strlcpy (my.f_note, "NO_INPUT" , LEN_TERSE);                                                                                      <* 
+ *>       ystrlcpy (my.f_note, "NO_INPUT" , LEN_TERSE);                                                                                      <* 
  *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
  *>       return rce;                                                                                                                       <* 
  *>    }                                                                                                                                    <* 
  *>    --rce;  if (x_lists <= 0) {                                                                                                          <* 
  *>       yURG_err ('>', "NO GROUPS created");                                                                                              <* 
  *>       DEBUG_PROG  yLOG_note    ("no groups created");                                                                                   <* 
- *>       strlcpy (my.f_note, "NO_GROUPS"  , LEN_TERSE);                                                                                    <* 
+ *>       ystrlcpy (my.f_note, "NO_GROUPS"  , LEN_TERSE);                                                                                    <* 
  *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
  *>       return rce;                                                                                                                       <* 
  *>    }                                                                                                                                    <* 
@@ -436,29 +438,29 @@ BASE_kharon             (void)
  *>       yURG_err ('>', "NO PROCS created");                                                                                               <* 
  *>       DEBUG_PROG  yLOG_note    ("no procs created");                                                                                    <* 
  *>       yURG_msg (' ', "");                                                                                                               <* 
- *>       strlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);                                                                                     <* 
+ *>       ystrlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);                                                                                     <* 
  *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
  *>       return rce;                                                                                                                       <* 
  *>    }                                                                                                                                    <* 
  *>    /+---(save back)----------------------+/                                                                                             <* 
- *>    if (r_user != NULL)  strlcpy (r_user, my.f_user, LEN_LABEL);                                                                         <* 
- *>    if (r_desc != NULL)  strlcpy (r_desc, my.f_desc, LEN_DESC);                                                                          <* 
+ *>    if (r_user != NULL)  ystrlcpy (r_user, my.f_user, LEN_LABEL);                                                                         <* 
+ *>    if (r_desc != NULL)  ystrlcpy (r_desc, my.f_desc, LEN_DESC);                                                                          <* 
  *>    /+---(check trouble)------------------+/                                                                                             <* 
  *>    DEBUG_PROG  yLOG_complex ("fails"     , "%dg, %da, %dp", my.f_gfail, my.f_afail, my.f_pfail);                                        <* 
  *>    --rce;  if (my.f_gfail >  0) {                                                                                                       <* 
  *>       yURG_err ('F', "%d GROUPS failed", my.f_gfail);                                                                                   <* 
  *>       DEBUG_PROG  yLOG_note    ("some groups failed to read properly");                                                                 <* 
- *>       if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_GROUP" , LEN_TERSE);                                                   <* 
+ *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_GROUP" , LEN_TERSE);                                                   <* 
  *>    }                                                                                                                                    <* 
  *>    --rce;  if (my.f_afail >  0) {                                                                                                       <* 
  *>       yURG_err ('F', "%d AFTERS failed", my.f_afail);                                                                                   <* 
  *>       DEBUG_PROG  yLOG_note    ("some afters failed to read properly");                                                                 <* 
- *>       if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_AFTER" , LEN_TERSE);                                                   <* 
+ *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_AFTER" , LEN_TERSE);                                                   <* 
  *>    }                                                                                                                                    <* 
  *>    --rce;  if (my.f_pfail >  0) {                                                                                                       <* 
  *>       yURG_err ('F', "%d PROCS failed", my.f_pfail);                                                                                    <* 
  *>       DEBUG_PROG  yLOG_note    ("some procs failed to read properly");                                                                  <* 
- *>       if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_PROC"  , LEN_TERSE);                                                   <* 
+ *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_PROC"  , LEN_TERSE);                                                   <* 
  *>    }                                                                                                                                    <* 
  *>    if (my.f_gfail + my.f_afail + my.f_pfail >  0) {                                                                                     <* 
  *>       yURG_msg (' ', "");                                                                                                               <* 
@@ -467,7 +469,7 @@ BASE_kharon             (void)
  *>    }                                                                                                                                    <* 
  *>    yURG_msg ('>', "all read correctly, SUCCESS, reviewed %d, accepted %d", my.f_lines, x_lines);                                        <* 
  *>    yURG_msg (' ', "");                                                                                                                  <* 
- *>    strlcpy (my.f_note, "success"  , LEN_TERSE);                                                                                         <* 
+ *>    ystrlcpy (my.f_note, "success"  , LEN_TERSE);                                                                                         <* 
  *>    /+---(complete)-----------------------+/                                                                                             <* 
  *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                                                                             <* 
  *>    return 0;                                                                                                                            <* 
@@ -533,7 +535,7 @@ BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    }
    yURG_msg ('-', "full name  %2då%sæ", strlen (a_full), a_full);
    DEBUG_INPT   yLOG_info    ("a_full"    , a_full);
-   strlcpy (my.f_full , a_full , LEN_PATH);
+   ystrlcpy (my.f_full , a_full , LEN_PATH);
    DEBUG_INPT   yLOG_point   ("a_fname"   , a_fname);
    --rce;  if (a_fname == NULL) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
@@ -541,7 +543,7 @@ BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    }
    yURG_msg ('-', "short name %2då%sæ", strlen (a_fname), a_fname);
    DEBUG_INPT   yLOG_info    ("a_fname"   , a_fname);
-   strlcpy (my.f_name , a_fname, LEN_HUND);
+   ystrlcpy (my.f_name , a_fname, LEN_HUND);
    DEBUG_INPT   yLOG_point   ("a_fuser"   , a_fuser);
    --rce;  if (a_fuser == NULL) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
@@ -549,7 +551,7 @@ BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    }
    yURG_msg ('-', "user name  %2då%sæ", strlen (a_fuser), a_fuser);
    DEBUG_INPT   yLOG_info    ("a_fuser"   , a_fuser);
-   strlcpy (my.f_user , a_fuser, LEN_USER);
+   ystrlcpy (my.f_user , a_fuser, LEN_USER);
    DEBUG_INPT   yLOG_value   ("a_fuid"    , a_fuid);
    --rce;  if (a_fuid < 0 || a_fuid > 10000) {
       yURG_err ('f', "user id      %d, is unaccepable", a_fuid);
@@ -590,7 +592,7 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    --rce;  if (rc <  0) {
       DEBUG_PROG  yLOG_note    ("no file found");
       yURG_msg (' ', "");
-      strlcpy (my.f_note, "NO FILE" , LEN_TERSE);
+      ystrlcpy (my.f_note, "NO FILE" , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -608,14 +610,14 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    --rce;  if (my.f_lines <= 0) {
       yURG_err ('>', "NO LINES found");
       DEBUG_PROG  yLOG_note    ("no input lines found");
-      strlcpy (my.f_note, "NO_INPUT" , LEN_TERSE);
+      ystrlcpy (my.f_note, "NO_INPUT" , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    --rce;  if (x_lists <= 0) {
       yURG_err ('>', "NO GROUPS created");
       DEBUG_PROG  yLOG_note    ("no groups created");
-      strlcpy (my.f_note, "NO_GROUPS"  , LEN_TERSE);
+      ystrlcpy (my.f_note, "NO_GROUPS"  , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -623,7 +625,7 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
       yURG_err ('>', "NO PROCS created");
       DEBUG_PROG  yLOG_note    ("no procs created");
       yURG_msg (' ', "");
-      strlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);
+      ystrlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
@@ -632,17 +634,17 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    --rce;  if (my.f_gfail >  0) {
       yURG_err ('F', "%d GROUPS failed", my.f_gfail);
       DEBUG_PROG  yLOG_note    ("some groups failed to read properly");
-      if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_GROUP" , LEN_TERSE);
+      if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_GROUP" , LEN_TERSE);
    }
    --rce;  if (my.f_afail >  0) {
       yURG_err ('F', "%d AFTERS failed", my.f_afail);
       DEBUG_PROG  yLOG_note    ("some afters failed to read properly");
-      if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_AFTER" , LEN_TERSE);
+      if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_AFTER" , LEN_TERSE);
    }
    --rce;  if (my.f_pfail >  0) {
       yURG_err ('F', "%d PROCS failed", my.f_pfail);
       DEBUG_PROG  yLOG_note    ("some procs failed to read properly");
-      if (strcmp (my.f_note, "") == 0)  strlcpy (my.f_note, "BAD_PROC"  , LEN_TERSE);
+      if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_PROC"  , LEN_TERSE);
    }
    if (my.f_gfail + my.f_afail + my.f_pfail >  0) {
       yURG_msg (' ', "");
@@ -652,7 +654,7 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    /*---(show success)-------------------*/
    yURG_msg ('>', "all read correctly, SUCCESS, reviewed %d, accepted %d", my.f_lines, x_lines);
    yURG_msg (' ', "");
-   strlcpy (my.f_note, "success"  , LEN_TERSE);
+   ystrlcpy (my.f_note, "success"  , LEN_TERSE);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;

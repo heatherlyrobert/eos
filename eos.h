@@ -35,8 +35,8 @@
 /*········· ··········· ´·····························´········································*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.2-, building in astraios"
-#define     P_VERNUM    "2.2d"
-#define     P_VERTXT    "ready to attempt boot again ;)"
+#define     P_VERNUM    "2.2e"
+#define     P_VERTXT    "fixed several small yJOBS mismatches, try booting again"
 /*········· ··········· ´·····························´········································*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -360,6 +360,7 @@
 
 /*---(structures)-----------------------------------------------*/
 
+typedef struct cACCESSOR tACCESSOR;
 struct cACCESSOR
 {
    /*---(files)----------------*/
@@ -428,7 +429,8 @@ struct cACCESSOR
    long        loop_msec;              /* wait time in milliseconds           */
    int         loop_max;               /* maximum loops allowed before quit   */
    /*---(done)------------------*/
-} my;
+};
+extern tACCESSOR my;
 
 
 /*> extern char g_silent   [LEN_LABEL];                                               <* 
@@ -539,6 +541,7 @@ struct cGROUP {
    /*---(reporting)----------------------*/
    uchar       col;                         /* reporting col/horz             */
    uchar       row;                         /* reporting row/vert             */
+   short       x, y;                        /* report position (unit test)    */
    /*---(done)---------------------------*/
 };
 
@@ -710,15 +713,17 @@ char*       proc__unit              (char *a_question, int a_num);
 char        rptg__pert_clear        (void);
 char        rptg__pert_col          (void);
 char        rptg__pert_row          (void);
+char        rptg__pert_groups       (void);
 char        rptg_pert               (void);
 char        rptg_gantt              (void);
 char        rptg_dump               (void);
+char*       rptg__unit              (char *a_question, int a_num);
 
 
 /*---(verify)---------------*/
-char        exec__verify_mount      (uchar *a_run);
+char        exec__verify_mount      (char a_run [LEN_FULL]);
 char        exec__verify_daemon     (char *a_run, int *a_rpid);
-char*       exec__unit              (char *a_question);
+/*---(check)----------------*/
 char        exec__check_launch      (tPROC *a_proc, llong a_msec);
 char        exec__check_mount       (tPROC *a_proc, llong a_msec);
 char        exec__check_daemon      (tPROC *a_proc, llong a_msec);
@@ -726,11 +731,15 @@ char        exec__check_signal      (tPROC *a_proc, llong a_msec);
 int         exec_check              (llong a_msec);
 char        exec_finish             (llong a_msec);
 char        exec_start              (llong a_msec);
+/*---(dispatch)-------------*/
 char        exec__dispatch_launch   (tPROC *a_proc, llong a_msec);
 char        exec__dispatch_mount    (tPROC *a_proc, llong a_msec);
 char        exec__dispatch_daemon   (tPROC *a_proc, llong a_msec);
 char        exec__dispatch_signal   (tPROC *a_proc, llong a_msec);
 char        exec_dispatch           (llong a_msec);
+/*---(unit test)------------*/
+char*       exec__unit              (char *a_question);
+/*---(done)-----------------*/
 
 
 char        eos_yjobs               (cchar a_req, cchar *a_data);

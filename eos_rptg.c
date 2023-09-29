@@ -496,13 +496,20 @@ rptg__pert_groups       (void)
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    /*---(prepare)------------------------*/
    s_nalpha = yDLST_alpha_count ();
+   DEBUG_LOOP  yLOG_value   ("s_nalpha"  , s_nalpha);
    s_nomega = yDLST_omega_count ();
+   DEBUG_LOOP  yLOG_value   ("s_nomega"  , s_nomega);
    s_calpha = s_comega = 0;
    /*---(walk)---------------------------*/
    rc = yDLST_list_by_index  (x_ngroup, NULL, &x_group);
-   while (rc >= 0) {
-      if (x_group != NULL) rptg__pert_box     (x_group->row * OFF_Y, x_group->col * OFF_X, x_group->name, x_group->askd, x_group->beg, x_group->end, x_group->dur, x_group->note, yDLST_seq_count ('<'), yDLST_seq_count ('>'));
+   DEBUG_LOOP  yLOG_complex ("head"      , "%4d, %4d, %p", x_ngroup, rc, x_group);
+   while (rc >= 0 && x_group != NULL) {
+      DEBUG_LOOP  yLOG_complex ("group"     , "%-12.12s %2d< %2d>", x_group->name, yDLST_seq_count ('<'), yDLST_seq_count ('>'));
+      x_group->y = x_group->row * OFF_Y;
+      x_group->x = x_group->col * OFF_X;
+      rptg__pert_box     (x_group->row * OFF_Y, x_group->col * OFF_X, x_group->name, x_group->askd, x_group->beg, x_group->end, x_group->dur, x_group->note, yDLST_seq_count ('<'), yDLST_seq_count ('>'));
       rc = yDLST_list_by_index (++x_ngroup, NULL, &x_group);
+      DEBUG_LOOP  yLOG_complex ("next"      , "%4d, %4d, %p", x_ngroup, rc, x_group);
    }
    /*---(ends)---------------------------*/
    rptg__pert_end     (OFF_Y           , 0                 , 'è');
@@ -514,7 +521,7 @@ rptg__pert_groups       (void)
    s_maxx = s_xcol * OFF_X + 8 + 5;
    /*---(complete)-----------------------*/
    DEBUG_OUTP  yLOG_exit    (__FUNCTION__);
-   return  rc;
+   return  0;
 }
 
 char
@@ -544,7 +551,7 @@ rptg_pert               (void)
    rptg__pert_col     ();
    rptg__pert_row     ();
    rptg__pert_groups  ();
-   rptg__pert_network ();
+   /*> rptg__pert_network ();                                                         <*/
    rptg__pert_write   ();
    return 0;
 }
@@ -718,17 +725,21 @@ rptg__unit              (char *a_question, int a_num)
    char        t           [LEN_RECD]  = "[ALPHA]";
    tGROUP     *x_group     = NULL;
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "RPTG             : question not understood", LEN_RECD);
+   ystrlcpy  (unit_answer, "RPTG             : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
    yDLST_backup ();
    if      (strcmp (a_question, "pos"     )        == 0) {
       yDLST_list_by_index (a_num, NULL, &x_group);
       if (x_group != NULL) {
          sprintf (t, "%2d[%-.15s]", strlen (x_group->name), x_group->name);
-         snprintf (unit_answer, LEN_RECD, "RPTG pos    (%2d) : %-19.19s    %3dc  %3dr    %3dx  %3dy", a_num, t, x_group->col, x_group->row, 0, 0);
+         snprintf (unit_answer, LEN_RECD, "RPTG pos    (%2d) : %-19.19s    %3dc  %3dr    %3dx  %3dy", a_num, t, x_group->col, x_group->row, x_group->x, x_group->y);
       } else {
          snprintf (unit_answer, LEN_RECD, "RPTG pos    (%2d) :  -[]                     ·c    ·r      ·x    ·y", a_num);
       }
+   }
+   else if (strcmp (a_question, "pert"    )        == 0) {
+      if (a_num < MAX_Y)  snprintf (unit_answer, LEN_RECD, "RPTG pert   (%2d) : å%sæ", a_num, s_pert [a_num]);
+      else                snprintf (unit_answer, LEN_RECD, "RPTG pert   (%2d) : n/a" , a_num);
    }
    yDLST_restore ();
    /*---(complete)-----------------------*/

@@ -95,7 +95,7 @@ proc__memory            (tPROC *a_proc)
 {
    int         i           =    0;
    /*---(prep)---------------------------*/
-   strlcpy (s_print, "[____.___.___._______.______]", LEN_RECD);
+   ystrlcpy (s_print, "[____.___.___._______.______]", LEN_RECD);
    /*---(master)-------------------------*/
    ++i;  if (a_proc->line     != 0   )  s_print [i] = 'X';
    ++i;  if (a_proc->name [0] != 0   )  s_print [i] = 'X';
@@ -335,7 +335,7 @@ proc_handler            (int n, uchar *a_verb)
    if (strcmp (x_label, "") == 0)   sprintf (x_label, "#%03d", n);
    yURG_msg ('>', "  step å%sæ on line %d with %d fields, %s", x_label, n, c, x_desc);
    /*---(check user)-------------------------*/
-   if (strcmp (x_user, "") == 0)   strlcpy (x_user, my.m_who, LEN_LABEL);
+   if (strcmp (x_user, "") == 0)   ystrlcpy (x_user, my.m_who, LEN_LABEL);
    rc = yEXEC_userdata (x_user, &x_uid, NULL, NULL, NULL);
    --rce;  if (rc < 0) {
       yURG_err ('f', "user requested failed å%sæ (%d)", my.m_who, rc);
@@ -365,14 +365,14 @@ proc_handler            (int n, uchar *a_verb)
    }
    /*---(populate)-----------------------*/
    x_new->line = n;
-   strlcpy (x_new->name, x_label, LEN_LABEL);
+   ystrlcpy (x_new->name, x_label, LEN_LABEL);
    x_new->type    = x_type;
-   strlcpy (x_new->desc, x_desc , LEN_DESC);
-   strlcpy (x_new->user, x_user , LEN_LABEL);
+   ystrlcpy (x_new->desc, x_desc , LEN_DESC);
+   ystrlcpy (x_new->user, x_user , LEN_LABEL);
    x_new->uid     = x_uid;
    rc = yEXEC_dur_in_sec (x_dur, &(x_new->est));
    proc__flags (x_new, x_flags, x_dur);
-   strlcpy (x_new->run , x_run  , LEN_FULL);
+   ystrlcpy (x_new->run , x_run  , LEN_FULL);
    /*---(create line)--------------------*/
    rc = yDLST_line_create (x_label, x_new);
    DEBUG_INPT   yLOG_value   ("create"    , rc);
@@ -562,7 +562,7 @@ proc__unit              (char *a_question, int a_num)
    char        x_beg       =  '-';
    char        x_end       =  '-';
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "PROC             : question not understood", LEN_RECD);
+   ystrlcpy  (unit_answer, "PROC             : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "count"   )        == 0) {
       snprintf (unit_answer, LEN_RECD, "PROC count       : %d", yDLST_line_count (YDLST_GLOBAL));

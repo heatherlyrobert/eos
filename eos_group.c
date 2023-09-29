@@ -33,6 +33,8 @@ group__wipe             (tGROUP *a_group)
    /*---(reporting)----------------------*/
    a_group->col         =    0;
    a_group->row         =    0;
+   a_group->x           =    0;
+   a_group->y           =    0;
    /*---(done)---------------------------*/
    return 1;
 }
@@ -41,7 +43,7 @@ char*
 group__memory           (tGROUP *a_group)
 {
    int         i           =    0;
-   strlcpy (s_print, "[___.___.____.__]", LEN_RECD);
+   ystrlcpy (s_print, "[___.___.____.__]", LEN_RECD);
    ++i;   if (a_group->line    != 0)             s_print [i] = 'X';
    ++i;   if (strlen (a_group->name) != 0)       s_print [i] = 'X';
    ++i;   if (strlen (a_group->desc) != 0)       s_print [i] = 'X';
@@ -209,8 +211,8 @@ group_handler           (int n, uchar *a_verb)
    }
    /*---(populate)-----------------------*/
    x_new->line = n;
-   strlcpy (x_new->name, x_label, LEN_LABEL);
-   strlcpy (x_new->desc, x_desc , LEN_DESC);
+   ystrlcpy (x_new->name, x_label, LEN_LABEL);
+   ystrlcpy (x_new->desc, x_desc , LEN_DESC);
    /*---(create list)--------------------*/
    rc = yDLST_list_create (x_new->name, x_new);
    DEBUG_INPT   yLOG_value   ("yDLST"     , rc);
@@ -400,7 +402,7 @@ group__unit             (char *a_question, int a_num)
    char        x_ready     =  '-';
    int         x_fields    =    0;
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "GROUP            : question not understood", LEN_RECD);
+   ystrlcpy  (unit_answer, "GROUP            : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
    yDLST_backup ();
    if      (strcmp (a_question, "entry"   )        == 0) {
@@ -417,7 +419,7 @@ group__unit             (char *a_question, int a_num)
       yDLST_list_by_index (a_num, NULL, &x_group);
       if (x_group != NULL) {
          sprintf (t, "%2då%-.15sæ", strlen (x_group->name), x_group->name);
-         strlcpy (s, "", LEN_RECD);
+         ystrlcpy (s, "", LEN_RECD);
          rc = yDLST_seq_by_cursor ('<', '[', &x_void, NULL, &x_after);
          while (rc >= 0 && x_void != NULL) {
             if (c > 0)  strlcat (s, ", ", LEN_RECD);

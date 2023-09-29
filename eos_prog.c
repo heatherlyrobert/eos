@@ -2,6 +2,7 @@
 #include    "eos.h"
 
 
+tACCESSOR my;
 
 /*====================------------------------------------====================*/
 /*===----                      supporting functions                    ----===*/
@@ -15,15 +16,15 @@ PROG_version       (void)
 {
    char    t [20] = "";
 #if    __TINYC__ > 0
-   strlcpy (t, "[tcc built  ]", 15);
+   ystrlcpy (t, "[tcc built  ]", 15);
 #elif  __GNUC__  > 0
-   strlcpy (t, "[gnu gcc    ]", 15);
+   ystrlcpy (t, "[gnu gcc    ]", 15);
 #elif  __CBANG__  > 0
-   strlcpy (t, "[cbang      ]", 15);
+   ystrlcpy (t, "[cbang      ]", 15);
 #elif  __HEPH__  > 0
-   strlcpy (t, "[hephaestus ]", 18);
+   ystrlcpy (t, "[hephaestus ]", 18);
 #else
-   strlcpy (t, "[unknown    ]", 15);
+   ystrlcpy (t, "[unknown    ]", 15);
 #endif
    snprintf (verstring, 100, "%s   %s : %s", t, P_VERNUM, P_VERTXT);
    return verstring;
@@ -313,7 +314,7 @@ PROG__init              (void)
    my.test           = '-';
    my.loop_msec      = 100;
    my.loop_max       = my.loop_msec * 10 * 240; /* four minutes */
-   strlcpy (my.dev, "/dev/tty1", LEN_LABEL);
+   ystrlcpy (my.dev, "/dev/tty1", LEN_LABEL);
    /*> PROG__arg_load ();                                                             <*/
    /*---(call whoami)--------------------*/
    rc = yEXEC_whoami (&my.pid, &my.ppid, &my.m_uid, NULL, &my.m_who, 'n');
@@ -377,11 +378,11 @@ PROG__args              (int a_argc, char *a_argv[])
       DEBUG_ARGS  yLOG_value    ("handle"    , rc);
       if (rc < 0)  break;
    }
-   /*---(check for default strict)-------*/
-   /*> if (a_argc == 1) {                                                                          <* 
-    *>    rc = yJOBS_argument (&i, "--strict", NULL, &(my.run_as), &(my.run_mode), my.run_file);   <* 
-    *>    DEBUG_ARGS  yLOG_value    ("single"    , rc);                                            <* 
-    *> }                                                                                           <*/
+   /*---(check for default normal)-------*/
+   if (x_args == 0) {
+      rc = yJOBS_argument (&i, "--normal", NULL, &(my.run_as), &(my.run_mode), my.run_file);
+      DEBUG_ARGS  yLOG_value    ("single"    , rc);
+   }
    /*---(verify)-------------------------*/
    /*> yJOBS_iam  (my.run_as  , s);                                                   <* 
     *> yURG_msg ('-', "run as (%c) %s", my.run_as, s);                                <*/
@@ -453,10 +454,20 @@ PROG__begin             (void)
    yURG_msg ('-', "setting up and initializing yDLST");
    DEBUG_ARGS   yLOG_info    ("yDLST"    ,"initializing");
    rc = yDLST_init ();
+   --rce;  if (rc < 0) {
+      yURG_err ('f', "yDLST init failed");
+      DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(startup yPARSE)----------------s-------*/
    yURG_msg ('-', "setting up and initializing yPARSE");
    DEBUG_ARGS   yLOG_info    ("yPARSE"   ,"initializing");
-   rc = yPARSE_init  ('-', NULL, '-');
-   rc = yPARSE_delimiters  ("§");
+   rc = yPARSE_config  (YPARSE_MANUAL, NULL, YPARSE_ONETIME, YPARSE_FIELD);
+   --rce;  if (rc < 0) {
+      yURG_err ('f', "yPARSE config failed");
+      DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
    /*---(set file names)-----------------*/
    /*> DEBUG_ARGS   yLOG_note    ("setting file names");                              <*/
    /*---(complete)------------------------------*/
@@ -749,7 +760,7 @@ prog__unit              (char *a_question)
    char        t           [LEN_HUND]  = "";
    char        u           [LEN_LABEL];
    /*---(prepare)------------------------*/
-   strlcpy  (unit_answer, "RPTG             : question not understood", LEN_RECD);
+   ystrlcpy  (unit_answer, "RPTG             : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "mode"    )        == 0) {
       /*> yJOBS_iam  (my.run_as  , s);                                                <*/
