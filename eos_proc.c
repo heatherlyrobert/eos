@@ -265,6 +265,7 @@ proc_handler            (int n, uchar *a_verb)
    char        x_dur       [LEN_TERSE] = "0";
    uchar       x_flags     [LEN_TERSE] = "--·---·";
    char        x_run       [LEN_FULL]   = "";
+   char        x_altname   [LEN_TITLE]  = "";
    tPASSWD    *x_pass      = NULL;
    int         x_uid       =   -1;
    tPROC      *x_new       = NULL;
@@ -315,14 +316,15 @@ proc_handler            (int n, uchar *a_verb)
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   if (c > 7)  c = 7;
+   if (c > 8)  c = 8;
    switch (c) {
-   case 2 : rc = yPARSE_scanf (a_verb, "F"     , x_run);  break;
-   case 3 : rc = yPARSE_scanf (a_verb, "UF"    , x_user , x_run);  break;
-   case 4 : rc = yPARSE_scanf (a_verb, "LUF"   , x_label, x_user, x_run);  break;
-   case 5 : rc = yPARSE_scanf (a_verb, "LUTF"  , x_label, x_user, x_dur, x_run);  break;
-   case 6 : rc = yPARSE_scanf (a_verb, "LDUTF" , x_label, x_desc, x_user, x_dur, x_run);  break;
-   case 7 : rc = yPARSE_scanf (a_verb, "LDUTTF", x_label, x_desc, x_user, x_dur, x_flags, x_run);  break;
+   case 2 : rc = yPARSE_scanf (a_verb, "F"      , x_run);  break;
+   case 3 : rc = yPARSE_scanf (a_verb, "UF"     , x_user , x_run);  break;
+   case 4 : rc = yPARSE_scanf (a_verb, "LUF"    , x_label, x_user, x_run);  break;
+   case 5 : rc = yPARSE_scanf (a_verb, "LUTF"   , x_label, x_user, x_dur, x_run);  break;
+   case 6 : rc = yPARSE_scanf (a_verb, "LDUTF"  , x_label, x_desc, x_user, x_dur, x_run);  break;
+   case 7 : rc = yPARSE_scanf (a_verb, "LDUTTF" , x_label, x_desc, x_user, x_dur, x_flags, x_run);  break;
+   case 8 : rc = yPARSE_scanf (a_verb, "LDUTTF3", x_label, x_desc, x_user, x_dur, x_flags, x_run, x_altname);  break;
    }
    DEBUG_INPT  yLOG_value   ("scanf"     , rc);
    --rce;  if (rc < 0) {
@@ -373,6 +375,7 @@ proc_handler            (int n, uchar *a_verb)
    rc = yEXEC_dur_in_sec (x_dur, &(x_new->est));
    proc__flags (x_new, x_flags, x_dur);
    ystrlcpy (x_new->run , x_run  , LEN_FULL);
+   ystrlcpy (x_new->altname, x_altname , LEN_TITLE);
    /*---(create line)--------------------*/
    rc = yDLST_line_create (x_label, x_new);
    DEBUG_INPT   yLOG_value   ("create"    , rc);

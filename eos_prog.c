@@ -101,59 +101,8 @@ PROG__runas             (char *a_name)
       yURG_msg (' ', "");
       return rce;
    }
-   /*> --rce;  if (my.run_as == IAM_KHRONOS  || my.run_as == IAM_UKHRONOS) {          <* 
-    *>    yURG_err ('f', "attempted to run khronos while in eos");                    <* 
-    *>    yURG_msg (' ', "");                                                         <* 
-    *>    return rce;                                                                 <* 
-    *> }                                                                              <*/
-   /*> rc = yJOBS_iam (my.run_as, s);                                                 <* 
-    *> --rce;  if (rc < 0) {                                                          <* 
-    *>    yURG_err ('f', "could not find iam entry");                                 <* 
-    *>    yURG_msg (' ', "");                                                         <* 
-    *>    return rce;                                                                 <* 
-    *> }                                                                              <*/
    yURG_msg ('-', "run as (%c) %s", my.run_as, s);
-   /*> if (strcmp (my.n_conf, "") == 0) {                                                                  <* 
-    *>    switch (my.run_as) {                                                                             <* 
-    *>    case IAM_EOS       : snprintf (my.n_conf   , 200, "%seos%s"     , DIR_ETC , FILE_CONF); break;   <* 
-    *>    case IAM_UEOS      : snprintf (my.n_conf   , 200, "%seos%s"     , DIR_UNIT, FILE_CONF); break;   <* 
-    *>    case IAM_ASTRAIOS  : snprintf (my.n_conf   , 200, "%sastraios%s", DIR_ETC , FILE_CONF); break;   <* 
-    *>    case IAM_UASTRAIOS : snprintf (my.n_conf   , 200, "%sastraios%s", DIR_UNIT, FILE_CONF); break;   <* 
-    *>    case IAM_HYPNOS    : snprintf (my.n_conf   , 200, "%shypnos%s"  , DIR_ETC , FILE_CONF); break;   <* 
-    *>    case IAM_UHYPNOS   : snprintf (my.n_conf   , 200, "%shypnos%s"  , DIR_UNIT, FILE_CONF); break;   <* 
-    *>    }                                                                                                <* 
-    *> }                                                                                                   <*/
-   /*> yURG_msg ('-', "conf å%sæ", my.n_conf);                                        <*/
-   /*> if (strcmp (my.n_exec, "") == 0) {                                                                  <* 
-    *>    switch (my.run_as) {                                                                             <* 
-    *>    case IAM_EOS       :                                                                             <* 
-    *>    case IAM_UEOS      : snprintf (my.n_exec   , 200, "%seos%s"     , DIR_YLOG, FILE_EXEC); break;   <* 
-    *>    case IAM_ASTRAIOS  :                                                                             <* 
-    *>    case IAM_UASTRAIOS : snprintf (my.n_exec   , 200, "%sastraios%s", DIR_YLOG, FILE_EXEC); break;   <* 
-    *>    case IAM_HYPNOS    :                                                                             <* 
-    *>    case IAM_UHYPNOS   : snprintf (my.n_exec   , 200, "%shypnos%s"  , DIR_YLOG, FILE_EXEC); break;   <* 
-    *>    case IAM_HERACLES  :                                                                             <* 
-    *>    case IAM_UHERACLES : snprintf (my.n_exec   , 200, "%sheracles%s", DIR_YLOG, FILE_EXEC); break;   <* 
-    *>    }                                                                                                <* 
-    *> }                                                                                                   <*/
-   /*> yURG_msg ('-', "exec å%sæ", my.n_exec);                                        <*/
-   /*> if (strcmp (my.n_perf, "") == 0) {                                                                  <* 
-    *>    switch (my.run_as) {                                                                             <* 
-    *>    case IAM_EOS       :                                                                             <* 
-    *>    case IAM_UEOS      : snprintf (my.n_perf   , 200, "%seos%s"     , DIR_YLOG, FILE_PERF); break;   <* 
-    *>    case IAM_ASTRAIOS  :                                                                             <* 
-    *>    case IAM_UASTRAIOS : snprintf (my.n_perf   , 200, "%sastraios%s", DIR_YLOG, FILE_PERF); break;   <* 
-    *>    case IAM_HYPNOS    :                                                                             <* 
-    *>    case IAM_UHYPNOS   : snprintf (my.n_perf   , 200, "%shypnos%s"  , DIR_YLOG, FILE_PERF); break;   <* 
-    *>    case IAM_HERACLES  :                                                                             <* 
-    *>    case IAM_UHERACLES : snprintf (my.n_perf   , 200, "%sheracles%s", DIR_YLOG, FILE_PERF); break;   <* 
-    *>    }                                                                                                <* 
-    *> }                                                                                                   <*/
-   /*> yURG_msg ('-', "perf å%sæ", my.n_perf);                                        <*/
    yURG_msg (' ', "");
-   /*> DEBUG_PROG   yLOG_info    ("conf"      , my.n_conf);                           <*/
-   /*> DEBUG_PROG   yLOG_info    ("exec"      , my.n_exec);                           <*/
-   /*> DEBUG_PROG   yLOG_info    ("perf"      , my.n_perf);                           <*/
    /*---(complete)-----------------------*/
    return 0;
 }

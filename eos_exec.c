@@ -15,7 +15,7 @@ exec__verify_mount      (char a_run [LEN_FULL])
    char        rce         =  -10;
    char        rc          =    0;
    char       *p           = NULL;
-   char        x_path      [LEN_LABEL];
+   char        x_path      [LEN_HUND];
    FILE       *f           = NULL;
    int         c           =    0;
    char        x_recd      [LEN_RECD];
@@ -36,7 +36,7 @@ exec__verify_mount      (char a_run [LEN_FULL])
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   strcpy (x_path, p + 1);
+   sprintf (x_path, " %s ", p + 1);
    DEBUG_LOOP  yLOG_info    ("x_path"    , x_path);
    /*---(open /proc/mounts)----------*/
    DEBUG_LOOP  yLOG_info    ("open"      , "/proc/mounts");
@@ -65,6 +65,8 @@ exec__verify_mount      (char a_run [LEN_FULL])
    DEBUG_LOOP  yLOG_note    ("not found in /proc/mounts");
    fclose (f);
    /*---(open /proc/swaps)---------------*/
+   sprintf (x_path, "%s ", p + 1);
+   DEBUG_LOOP  yLOG_info    ("x_path"    , x_path);
    DEBUG_LOOP  yLOG_info    ("open"      , "/proc/swaps");
    c = 0;
    f = fopen ("/proc/swaps", "r");
@@ -284,6 +286,7 @@ exec__check_daemon      (tPROC *a_proc, llong a_msec)
    int         x_check     =    0;
    int         x_rpid      =    0;
    int         x_return    =    0;
+   char        x_expect    [LEN_FULL]  = "";
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
    /*---(defense)------------------------*/
@@ -309,13 +312,16 @@ exec__check_daemon      (tPROC *a_proc, llong a_msec)
       DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
       return 0;
    }
+   /*---(figure name)-----------------*/
+   if (strcmp (a_proc->altname, "") == 0)  ystrlcpy (x_expect, a_proc->run, LEN_FULL);
+   else                                    sprintf  (x_expect, "/%s", a_proc->altname);
    /*---(clear out extras)------------*/
-   c = exec__verify_daemon (a_proc->run, &x_rpid);
+   c = exec__verify_daemon (x_expect, &x_rpid);
    DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
    while (c > 1) {
       rc = yEXEC_verify (a_proc->name, x_rpid, NULL, NULL);
       DEBUG_LOOP   yLOG_char    ("exit"       , rc);
-      c  = exec__verify_daemon (a_proc->run, &x_rpid);
+      c  = exec__verify_daemon (x_expect, &x_rpid);
       DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
    }
    /*---(final daemon)----------------*/

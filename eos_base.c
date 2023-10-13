@@ -309,11 +309,13 @@ BASE_kharon             (void)
     *> }                                                                              <*/
    /*---(pass the torch)-----------------*/
    /*> ystrlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
+   ystrlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrst", LEN_FULL);
    /*> ystrlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
    /*> ystrlcpy    (x_args, "/sbin/kharon_debug @@kitchen --acheron --leisurely --listen", LEN_FULL);   <*/
                           /*123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
    /*> ystrlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstu", LEN_FULL);   <*/
-   ystrlcpy    (x_args, "kharon-charopos (ferryman of dead souls) watching the acheron river", LEN_FULL);
+   /*> ystrlcpy    (x_args, "kharon-charopos (ferryman of dead souls) watching the acheron river", LEN_FULL);   <*/
+   printf ("xargs  å%sæ\n", x_args);
    ystrlparse  (x_args, NULL, x_final, 20, &my.argc, my.argv, LEN_FULL);
    DEBUG_LOOP   yLOG_value   ("argc"       , my.argc);
    DEBUG_VIEW   printf ("arg count %d\n", my.argc);

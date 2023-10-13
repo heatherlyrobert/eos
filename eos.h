@@ -1,48 +1,48 @@
 /*============================[[    beg-code    ]]============================*/
 
 /*===[[ HEADER ]]=============================================================*/
-/*                      ´·········1·········2·········3·········4·········5·········6·········7*/
-/*--------- 12345678901 ´123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
-/*········· ··········· ´·····························´········································*/
+/*                      ----------1---------2---------3---------4---------5---------6---------7*/
+/*345678901 12345678901 -123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
+/*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_FOCUS     "SA (system administration)"
 #define     P_NICHE     "in (initializtation)"
 #define     P_SUBJECT   "job execution framework"
 #define     P_PURPOSE   "simple, reliable, and very transparent system initialization"
-/*········· ··········· ´·····························´········································*/
+/*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_NAMESAKE  "eos-rhododactylos (rosy-fingered dawn)"
-#define     P_PRONOUNCE "ee·ohs roh·doh·dahk·tee·ohs"
+#define     P_PRONOUNCE "ee.ohs roh.doh.dahk.tee.ohs"
 #define     P_HERITAGE  "titaness of daybreak who opens the gates of heaven for the sun"
 #define     P_BRIEFLY   "she who opens the gates"
 #define     P_IMAGERY   "radiant worman with white wings, golden arms, and rosy fingers"
 #define     P_REASON    "fantastically poetic reference to system start-up"
-/*········· ··········· ´·····························´········································*/
+/*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_ONELINE   P_NAMESAKE " " P_SUBJECT
-/*········· ··········· ´·····························´········································*/
+/*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_HOMEDIR   "/home/system/eos.goddess_of_dawn_and_startup"
 #define     P_BASENAME  "eos"
 #define     P_FULLPATH  "/sbin/eos"
 #define     P_SUFFIX    "conf"
 #define     P_CONTENT   "sequenced initialization"
-/*········· ··········· ´·····························´········································*/
+/*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_SYSTEM    "gnu/linux   (powerful, ubiquitous, technical, and hackable)"
 #define     P_LANGUAGE  "ansi-c      (wicked, limitless, universal, and everlasting)"
 #define     P_COMPILER  "gcc 5.3.0"
 #define     P_CODESIZE  "small       (appoximately 1,000 slocl)"
 #define     P_DEPENDS   "yDLST, yEXEC, ySEC, ySTR, yPARSE"
-/*········· ··········· ´·····························´········································*/
+/*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_AUTHOR    "heatherlyrobert"
 #define     P_CREATED   "2010-10"
-/*········· ··········· ´·····························´········································*/
+/*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.2-, building in astraios"
-#define     P_VERNUM    "2.2e"
-#define     P_VERTXT    "fixed several small yJOBS mismatches, try booting again"
-/*········· ··········· ´·····························´········································*/
+#define     P_VERNUM    "2.2f"
+#define     P_VERTXT    "fixed partial mount matches like /home was matching /home/system"
+/*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
 #define     P_REMINDER  "there are many better options, but i *own* every byte of this one"
-/*········· ··········· ´·····························´········································*/
-/*--------- 12345678901 ´123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
+/*--------- ----------- -----------------------------------------------------------------------*/
+/*--------- 12345678901 -123456789-123456789-123456789-123456789-123456789-123456789-123456789-*/
 
 #define     P_HEADERS   \
    P_FOCUS, P_NICHE, P_SUBJECT, P_PURPOSE, \
@@ -550,13 +550,14 @@ typedef struct  cPROC tPROC;
 struct cPROC {
    /*---(master)-------------------------*/
    int         line;                        /* line in eos.conf               */
-   char        name        [LEN_LABEL];      /* short name for reference       */
+   char        name        [LEN_LABEL];     /* short name for reference       */
    char        type;                        /* process type                   */
    char        desc        [LEN_DESC];      /* longer description             */
    /*---(command)------------------------*/
-   char        user        [LEN_LABEL];      /* user name                      */
+   char        user        [LEN_LABEL];     /* user name                      */
    int         uid;                         /* user id to use to launch job   */
-   char        run         [LEN_FULL];       /* command to execute             */
+   char        run         [LEN_FULL];      /* command to execute             */
+   char        altname     [LEN_TITLE];     /* name if changes (daemons, ...) */
    /*---(estimates)----------------------*/
    int         est;                         /* expected duration in seconds   */
    int         minest;                      /* lower limit estimate in msecs  */
