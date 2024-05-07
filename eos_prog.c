@@ -266,7 +266,7 @@ PROG__init              (void)
    ystrlcpy (my.dev, "/dev/tty1", LEN_LABEL);
    /*> PROG__arg_load ();                                                             <*/
    /*---(call whoami)--------------------*/
-   rc = yEXEC_whoami (&my.pid, &my.ppid, &my.m_uid, NULL, &my.m_who, 'n');
+   rc = yEXEC_whoami (&my.pid, &my.ppid, &my.m_uid, NULL, NULL, &my.m_who, 'n', NULL, NULL, NULL);
    DEBUG_PROG   yLOG_value   ("whoami"    , rc);
    --rce;  if (rc < 0) {
       yURG_err ('f', "yEXEC_whoami failed (%d)", rc);
@@ -411,7 +411,7 @@ PROG__begin             (void)
    /*---(startup yPARSE)----------------s-------*/
    yURG_msg ('-', "setting up and initializing yPARSE");
    DEBUG_ARGS   yLOG_info    ("yPARSE"   ,"initializing");
-   rc = yPARSE_config  (YPARSE_MANUAL, NULL, YPARSE_ONETIME, YPARSE_FIELD);
+   rc = yPARSE_config (YPARSE_MANUAL, NULL, YPARSE_ONETIME, YPARSE_FIELD, YPARSE_FILL);
    --rce;  if (rc < 0) {
       yURG_err ('f', "yPARSE config failed");
       DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
@@ -683,7 +683,7 @@ char       /*----: set up programgents/debugging -----------------------------*/
 prog__unit_loud    (void)
 {
    int         x_argc      = 5;
-   char       *x_argv [5]  = { "eos_debug", "@@kitchen", "@@yparse", "@@ydlst", "@@yexec"  };
+   char       *x_argv [5]  = { "eos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@yexec"  };
    PROG_prestart   (x_argc, x_argv, 'y');
    PROG_debugging  (x_argc, x_argv, 'y');
    PROG_startup    (x_argc, x_argv, 'y');

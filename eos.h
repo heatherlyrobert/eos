@@ -35,8 +35,8 @@
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.2-, building in astraios"
-#define     P_VERNUM    "2.2f"
-#define     P_VERTXT    "fixed partial mount matches like /home was matching /home/system"
+#define     P_VERNUM    "2.2g"
+#define     P_VERTXT    "update to yEXEC_whoami"
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"

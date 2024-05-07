@@ -166,6 +166,56 @@ exec__verify_daemon     (char *a_run, int *a_rpid)
 static void      o___CHECK___________________o (void) {;}
 
 char
+exec__check_prep        (tPROC *a_proc, llong *b_msec, int *r_check)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         x_msec      =    0;
+   int         x_check     =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(defense)------------------------*/
+   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
+   --rce;  if (a_proc == NULL) {
+      DEBUG_LOOP  yLOG_note    ("pointer for a_proc is required");
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   DEBUG_LOOP   yLOG_info    ("name"       , a_proc->name);
+   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
+   --rce;  if (a_proc->end > 0) {
+      DEBUG_LOOP  yLOG_note    ("process shown as already ended");
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(time checking)---------------*/
+   if (b_msec != NULL)  x_msec = *b_msec;
+   DEBUG_LOOP   yLOG_value   ("x_msec"     , x_msec);
+   if (x_msec < 0)            x_msec = 0;
+   if (x_msec < a_proc->beg)  x_msec = a_proc->beg;
+   DEBUG_LOOP   yLOG_value   ("limited"    , x_msec);
+   /*---(wait period)-----------------*/
+   if (r_check != NULL) {
+      x_check = a_proc->minest + a_proc->beg;
+      DEBUG_LOOP   yLOG_value   ("x_check"    , x_check);
+      if (x_msec < x_check) {
+         DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+         return 0;
+      }
+   }
+   /*---(report-out)---------------------*/
+   DEBUG_LOOP   yLOG_info    ("run"       , a_proc->run);
+   DEBUG_LOOP   yLOG_value   ("rpid"      , a_proc->rpid);
+   /*---(save-back)----------------------*/
+   if (b_msec  != NULL)  *b_msec  = x_msec;
+   if (r_check != NULL)  *r_check = x_check;
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 1;
+}
+
+char
 exec__check_launch      (tPROC *a_proc, llong a_msec)
 {
    /*---(locals)-----------+-----+-----+-*/
@@ -175,24 +225,13 @@ exec__check_launch      (tPROC *a_proc, llong a_msec)
    int         x_dur       =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
-   --rce;  if (a_proc == NULL) {
+   /*---(prepare)------------------------*/
+   rc = exec__check_prep (a_proc, &a_msec, NULL);
+   DEBUG_LOOP  yLOG_value   ("prep"      , rc);
+   --rce;  if (rc < 0) {
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
-   --rce;  if (a_proc->end > 0) {
-      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(time checking)---------------*/
-   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
-   if (a_msec < 0)  a_msec = 0;
-   if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
-   /*---(update)-------------------------*/
-   DEBUG_LOOP   yLOG_info    ("run"       , a_proc->run);
-   DEBUG_LOOP   yLOG_value   ("rpid"      , a_proc->rpid);
    rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return, NULL);
    DEBUG_LOOP   yLOG_char    ("check"      , rc);
    if (rc != YEXEC_RUNNING) {
@@ -217,6 +256,46 @@ exec__check_launch      (tPROC *a_proc, llong a_msec)
 }
 
 char
+exec__check_serial      (tPROC *a_proc, llong a_msec)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   int         x_check     =    0;
+   int         x_dur       =    0;
+   int         x_rpid      =    0;
+   int         x_return    =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(prepare)------------------------*/
+   rc = exec__check_prep (a_proc, &a_msec, &x_check);
+   DEBUG_LOOP  yLOG_value   ("prep"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   if (rc == 0) {
+      DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+      return 0;
+   }
+   /*---(look for serial)----------------*/
+   rc = yEXEC_find (a_proc->run, &x_rpid);
+   DEBUG_LOOP  yLOG_value   ("find"      , rc);
+   --rce;  if (rc < 0) {
+      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+   }
+   /*---(final daemon)----------------*/
+   a_proc->rpid = x_rpid;
+   rc = yEXEC_verify (a_proc->name, a_proc->rpid, &x_return, NULL);
+   if (rc != YEXEC_RUNNING)  proc_mark_done  (a_msec, YEXEC_RUNNING, x_return);
+   else                      proc_mark_done  (a_msec, YEXEC_DIED   , x_return);
+   /*---(complete)-----------------------*/
+   DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
+char
 exec__check_mount       (tPROC *a_proc, llong a_msec)
 {
    /*---(locals)-----------+-----+-----+-*/
@@ -225,25 +304,14 @@ exec__check_mount       (tPROC *a_proc, llong a_msec)
    int         x_check     =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
-   --rce;  if (a_proc == NULL) {
+   /*---(prepare)------------------------*/
+   rc = exec__check_prep (a_proc, &a_msec, &x_check);
+   DEBUG_LOOP  yLOG_value   ("prep"      , rc);
+   --rce;  if (rc < 0) {
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
-   --rce;  if (a_proc->end > 0) {
-      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(time checking)---------------*/
-   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
-   if (a_msec < 0)  a_msec = 0;
-   if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
-   /*---(wait period)-----------------*/
-   x_check = a_proc->minest + a_proc->beg;
-   DEBUG_LOOP   yLOG_value   ("x_check"    , x_check);
-   if (a_msec < x_check) {
+   if (rc == 0) {
       DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
       return 0;
    }
@@ -289,32 +357,21 @@ exec__check_daemon      (tPROC *a_proc, llong a_msec)
    char        x_expect    [LEN_FULL]  = "";
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
-   --rce;  if (a_proc == NULL) {
+   /*---(prepare)------------------------*/
+   rc = exec__check_prep (a_proc, &a_msec, &x_check);
+   DEBUG_LOOP  yLOG_value   ("prep"      , rc);
+   --rce;  if (rc < 0) {
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_LOOP   yLOG_info    ("name"       , a_proc->name);
-   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
-   --rce;  if (a_proc->end > 0) {
-      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(time checking)---------------*/
-   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
-   if (a_msec < 0)  a_msec = 0;
-   if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
-   /*---(wait period)-----------------*/
-   x_check = a_proc->minest + a_proc->beg;
-   DEBUG_LOOP   yLOG_value   ("x_check"    , x_check);
-   if (a_msec < x_check) {
+   if (rc == 0) {
       DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
       return 0;
    }
    /*---(figure name)-----------------*/
-   if (strcmp (a_proc->altname, "") == 0)  ystrlcpy (x_expect, a_proc->run, LEN_FULL);
-   else                                    sprintf  (x_expect, "/%s", a_proc->altname);
+   ystrlcpy (x_expect, a_proc->run, LEN_FULL);
+   /*> if (strcmp (a_proc->altname, "") == 0)  ystrlcpy (x_expect, a_proc->run, LEN_FULL);    <* 
+    *> else                                    sprintf  (x_expect, "/%s", a_proc->altname);   <*/
    /*---(clear out extras)------------*/
    c = exec__verify_daemon (x_expect, &x_rpid);
    DEBUG_LOOP   yLOG_complex ("checking"   , "%1d, %5d", c, x_rpid);
@@ -350,26 +407,14 @@ exec__check_signal      (tPROC *a_proc, llong a_msec)
    int         x_return    =    0;
    /*---(header)-------------------------*/
    DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
-   /*---(defense)------------------------*/
-   DEBUG_LOOP   yLOG_point   ("a_proc"     , a_proc);
-   --rce;  if (a_proc == NULL) {
+   /*---(prepare)------------------------*/
+   rc = exec__check_prep (a_proc, &a_msec, &x_check);
+   DEBUG_LOOP  yLOG_value   ("prep"      , rc);
+   --rce;  if (rc < 0) {
       DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
-   DEBUG_LOOP   yLOG_info    ("name"       , a_proc->name);
-   DEBUG_LOOP   yLOG_value   ("end"        , a_proc->end);
-   --rce;  if (a_proc->end > 0) {
-      DEBUG_LOOP  yLOG_exitr   (__FUNCTION__, rce);
-      return rce;
-   }
-   /*---(time checking)---------------*/
-   DEBUG_LOOP   yLOG_value   ("a_msec"     , a_msec);
-   if (a_msec < 0)  a_msec = 0;
-   if (a_msec < a_proc->beg)  a_msec = a_proc->beg;
-   /*---(wait period)-----------------*/
-   x_check = a_proc->minest + a_proc->beg;
-   DEBUG_LOOP   yLOG_value   ("x_check"    , x_check);
-   if (a_msec < x_check) {
+   if (rc == 0) {
       DEBUG_LOOP  yLOG_exit    (__FUNCTION__);
       return 0;
    }
@@ -433,9 +478,13 @@ exec_check              (llong a_msec)
       /*---(checkers)--------------------*/
       DEBUG_LOOP   yLOG_info    ("X_PROC"    , x_proc->name);
       switch (x_proc->type) {
-      case EOS_TYPE_DAEMON : case EOS_TYPE_SERIAL :
+      case EOS_TYPE_DAEMON :
          rc = exec__check_daemon (x_proc, a_msec);
          yURG_msg ('-', "check daemon    %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
+         break;
+      case EOS_TYPE_SERIAL :
+         rc = exec__check_serial (x_proc, a_msec);
+         yURG_msg ('-', "check serial    %-15.15s, %6dm, %4drc, %c, %6db, %6de", x_proc->name, a_msec, rc, x_proc->yexec, x_proc->beg, x_proc->end);
          break;
       case EOS_TYPE_MOUNT  : case EOS_TYPE_UMOUNT :
          rc = exec__check_mount  (x_proc, a_msec);
