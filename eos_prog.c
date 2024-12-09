@@ -682,8 +682,8 @@ prog__unit_quiet   (void)
 char       /*----: set up programgents/debugging -----------------------------*/
 prog__unit_loud    (void)
 {
-   int         x_argc      = 5;
-   char       *x_argv [5]  = { "eos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@yexec"  };
+   int         x_argc      = 7;
+   char       *x_argv [7]  = { "eos_unit", "@@kitchen", "@@yparse", "@@ydlst", "@@yexec", "@@yjobs", "@@yproc"  };
    PROG_prestart   (x_argc, x_argv, 'y');
    PROG_debugging  (x_argc, x_argv, 'y');
    PROG_startup    (x_argc, x_argv, 'y');
