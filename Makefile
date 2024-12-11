@@ -8,7 +8,7 @@ NAME_BASE  = eos
 # additional standard and outside libraries
 LIB_STD    = -lm -lrt
 # all heatherly libraries used, debug versions whenever available
-LIB_MINE   = -lyDLST_debug -lySEC_debug -lyEXEC_debug -lyJOBS_debug -lySTR_debug -lyPARSE_debug
+LIB_MINE   = -lyDLST_debug -lySEC_debug -lyEXEC_debug -lyJOBS_debug -lySTR_debug -lyPARSE_debug -lyENV_debug
 # all heatherly libraries used only in unit tests
 LIB_MYUNIT = -lyENV_debug
 # directory for production code, no trailing slash

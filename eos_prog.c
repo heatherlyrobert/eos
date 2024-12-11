@@ -40,6 +40,8 @@ PROG__usage             (void)
    exit   (0);
 }
 
+char PROG_reset              (void) { return yJOBS_reset (&(my.run_as), &(my.run_mode), my.run_file); }
+
 
 
 /*====================------------------------------------====================*/
@@ -87,23 +89,55 @@ PROG__runas             (char *a_name)
 {
    char        rce         =  -10;
    char        rc          =    0;
-   char        s           [LEN_HUND]  = "";
+   char        s           [LEN_HUND]  = "???";
+   /*---(header)-------------------------*/
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    /*---(defaults)-----------------------*/
    my.run_as         = '-';
    my.run_mode       = '-';
    /*---(specific)-----------------------*/
-   yURG_msg ('>', "%s %s", P_NAMESAKE, P_SUBJECT);
+   yURG_msg (' ', "%s %s", P_NAMESAKE, P_SUBJECT);
    /* must also trap _debug versions */
    /*> yJOBS_args_init         (&(my.run_as), &(my.run_mode), my.run_file);           <*/
    rc = yJOBS_runas (a_name, &(my.run_as), P_HEADERS, NULL);
+   DEBUG_PROG   yLOG_value   ("runas"     , rce);
    --rce;  if (rc < 0) {
       yURG_err ('f', "not a recognized prog name å%sæ", a_name);
-      yURG_msg (' ', "");
+      /*> yURG_msg (' ', "");                                                         <*/
+      DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   DEBUG_PROG   yLOG_char    ("run_as"    , my.run_as);
+   --rce;  switch (my.run_as) {
+   case 'e' : case 'E' :
+      DEBUG_PROG   yLOG_note    ("handling eos");
+      sprintf (s, "eos-rhododactylos (rosy-fingered dawn)");
+      break;
+   case 'a' : case 'A' :
+      DEBUG_PROG   yLOG_note    ("handling astraios");
+      sprintf (s, "astraios-aeolus (sparkling wind-father)");
+      break;
+   case 'h' : case 'H' :
+      DEBUG_PROG   yLOG_note    ("handling heracles");
+      sprintf (s, "heracles-promachus (leader-in-battle)");
+      break;
+   case 'y' : case 'Y' :
+      DEBUG_PROG   yLOG_note    ("handling hypnos");
+      sprintf (s, "hypnos-epidotes (giver-of-sleep)");
+      break;
+   default  :
+      DEBUG_PROG   yLOG_note    ("can not understand run_as");
+      sprintf (s, "run as (%c) attempted to run %s while in eos", my.run_as, a_name);
+      yURG_err ('f', s);
+      /*> yURG_msg (' ', "");                                                         <*/
+      DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
+      return rce;
+      break;
+   }
    yURG_msg ('-', "run as (%c) %s", my.run_as, s);
-   yURG_msg (' ', "");
+   /*> yURG_msg (' ', "");                                                            <*/
    /*---(complete)-----------------------*/
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -175,7 +209,7 @@ PROG__boot              (int a_argc, char *a_argv[], int a_rpid)
       rc = mount ("varlog", "/var/log/yLOG", "tmpfs", MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_NOATIME, "size=500m");
       yURG_msg ('-', "/var/log/yLOG mounted successfully (%d)", rc);
    }
-   yURG_msg (' ', "");
+   /*> yURG_msg (' ', "");                                                            <*/
    /*---(close)--------------------------*/
    return 0;
 }
@@ -278,7 +312,7 @@ PROG__init              (void)
    DEBUG_PROG   yLOG_value   ("ppid"      , my.ppid);
    DEBUG_PROG   yLOG_value   ("uid"       , my.m_uid);
    DEBUG_PROG   yLOG_info    ("who"       , my.m_who);
-   yURG_msg (' ', "");
+   /*> yURG_msg (' ', "");                                                            <*/
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
@@ -333,11 +367,11 @@ PROG__args              (int a_argc, char *a_argv[])
       DEBUG_ARGS  yLOG_value    ("single"    , rc);
    }
    /*---(verify)-------------------------*/
-   /*> yJOBS_iam  (my.run_as  , s);                                                   <* 
-    *> yURG_msg ('-', "run as (%c) %s", my.run_as, s);                                <*/
-   /*> yJOBS_mode (my.run_mode, s);                                                   <* 
-    *> yURG_msg ('-', "mode   (%c) %s", my.run_mode, s);                              <* 
-    *> yURG_msg ('-', "file   å%sæ", my.run_file);                                    <*/
+   /*> yJOBS_iam  (my.run_as  , s);                                                   <*/
+   yURG_msg ('-', "run as (%c) %s", my.run_as, yJOBS_iam ());
+   /*> yJOBS_mode (my.run_mode, s);                                                   <*/
+   yURG_msg ('-', "mode   (%c) %s", my.run_mode, yJOBS_mode ());
+   yURG_msg ('-', "file   å%sæ", my.run_file);
    /*> yURG_msg ('-', "msec   %d", my.loop_msec);                                     <*/
    /*> yURG_msg ('-', "max    %d", my.loop_max);                                      <*/
    /*---(display urgents)----------------*/
@@ -347,7 +381,7 @@ PROG__args              (int a_argc, char *a_argv[])
    DEBUG_ARGS   yLOG_char    ("test"      , my.test);
    DEBUG_ARGS   yLOG_value   ("loop_msec" , my.loop_msec);
    DEBUG_ARGS   yLOG_value   ("loop_max"  , my.loop_max);
-   yURG_msg (' ', "");
+   /*> yURG_msg (' ', "");                                                            <*/
    /*---(complete)-----------------------*/
    if (rc > 0)  rc = 0;
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
@@ -420,7 +454,7 @@ PROG__begin             (void)
    /*---(set file names)-----------------*/
    /*> DEBUG_ARGS   yLOG_note    ("setting file names");                              <*/
    /*---(complete)------------------------------*/
-   yURG_msg (' ', "");
+   /*> yURG_msg (' ', "");                                                            <*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }

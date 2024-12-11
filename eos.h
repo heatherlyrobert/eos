@@ -35,8 +35,8 @@
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.3-, repairing after major system update"
-#define     P_VERNUM    "2.3a"
-#define     P_VERTXT    "all existing unit tests are good now"
+#define     P_VERNUM    "2.3b"
+#define     P_VERTXT    "re-creating eos_prog unit tests, 1-6 are now passing"
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -304,6 +304,7 @@
 /*---(always)---------------*/
 #include    <yLOG.h>              /* heatherly logger                         */
 #include    <yURG.h>              /* heatherly debugging framework            */
+#include    <yENV.h>              /* heatherly environmental support          */
 /*---(common)---------------*/
 #include    <ySTR.h>              /* heatherly safe string library            */
 #include    <yPARSE.h>            /* heatherly file parsing                   */
@@ -353,6 +354,7 @@
 
 #include    <termios.h>
 
+#include    <yCOLOR_solo.h>
 
 
 /*---(rational limits)------------------------------------------*/
@@ -616,6 +618,7 @@ int         main               (int a_argc, char *a_argv[]);
 /*---(program)--------------*/
 char*       PROG_version            (void);
 char*       PROG_usage              (void);
+char        PROG_reset              (void);
 /*---(prestart)-------------*/
 char        PROG__verbose           (int a_argc, char *a_argv[], char a_unit, int a_rpid);
 char        PROG__runas             (char *a_name);
