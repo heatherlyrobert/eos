@@ -35,8 +35,8 @@
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.3-, repairing after major system update"
-#define     P_VERNUM    "2.3b"
-#define     P_VERTXT    "re-creating eos_prog unit tests, 1-6 are now passing"
+#define     P_VERNUM    "2.3c"
+#define     P_VERTXT    "eos_prog unit test 7 is now updated/passing"
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"

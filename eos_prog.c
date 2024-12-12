@@ -340,7 +340,7 @@ PROG__args              (int a_argc, char *a_argv[])
    /*---(defaults)------------------------------*/
    /*> PROG__arg_clearmode ();                                                        <*/
    /*---(walk args)-----------------------------*/
-   for (i = 1; i < a_argc; ++i) {
+   --rce;  for (i = 1; i < a_argc; ++i) {
       /*---(prepare)---------------------*/
       a = a_argv [i];
       if (a == NULL) {
@@ -353,13 +353,20 @@ PROG__args              (int a_argc, char *a_argv[])
       else                 b = NULL;
       /*---(debugging--------------------*/
       if (a [0] == '@')       continue;
-      /*---(two arg check)---------------*/
+      /*---(yJOBS arguments)-------------*/
       ++x_args;
       DEBUG_ARGS  yLOG_info     ("argument"  , a);
-      /*> rc = PROG__arg_handle (&i, a, b);                                           <*/
       rc = yJOBS_argument (&i, a, b, &(my.run_as), &(my.run_mode), my.run_file);
       DEBUG_ARGS  yLOG_value    ("handle"    , rc);
       if (rc < 0)  break;
+      /*---(local arguments)-------------*/
+      if (rc == 0) {
+         yURG_err ('f', "argument (%s) not found, neither yJOBS or local", a);
+         DEBUG_PROG   yLOG_note    ("FATAL, argument not found, neither yJOBS or local");
+         DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
+         return rce;
+      }
+      /*---(done)------------------------*/
    }
    /*---(check for default normal)-------*/
    if (x_args == 0) {
@@ -367,9 +374,7 @@ PROG__args              (int a_argc, char *a_argv[])
       DEBUG_ARGS  yLOG_value    ("single"    , rc);
    }
    /*---(verify)-------------------------*/
-   /*> yJOBS_iam  (my.run_as  , s);                                                   <*/
    yURG_msg ('-', "run as (%c) %s", my.run_as, yJOBS_iam ());
-   /*> yJOBS_mode (my.run_mode, s);                                                   <*/
    yURG_msg ('-', "mode   (%c) %s", my.run_mode, yJOBS_mode ());
    yURG_msg ('-', "file   å%sæ", my.run_file);
    /*> yURG_msg ('-', "msec   %d", my.loop_msec);                                     <*/
