@@ -3,6 +3,10 @@
 
 
 tACCESSOR my;
+static char s_loud = '-';
+static char s_unit = '-';
+
+
 
 /*====================------------------------------------====================*/
 /*===----                      supporting functions                    ----===*/
@@ -54,33 +58,62 @@ PROG__verbose           (int a_argc, char *a_argv[], char a_unit, int a_rpid)
 {
    /*---(locals)-----------+-----+-----+-*/
    int         i           =    0;
-   char        x_loud      =  '-';
+   /*---(header)-------------------------*/
+   DEBUG_PROG   yLOG_enter   (__FUNCTION__);
+   s_loud = '-';
+   s_unit = a_unit;
+   /*> printf ("PROG_verbose...\n");                                                  <*/
+   /*> printf ("1) %s\n", yURG_mute_status ());                                       <*/
    /*---(default)------------------------*/
+   DEBUG_PROG   yLOG_note    ("defaulting to std and mute");
    my.verbose = '-';
    yURG_msg_std ();  yURG_msg_mute ();
    yURG_err_std ();  yURG_err_mute ();
+   /*> printf ("2) %s\n", yURG_mute_status ());                                       <*/
    /*---(handle unit test)---------------*/
-   if (a_unit == 'y' || a_unit == 'k') {
-      yURG_msg_tmp ();
-      yURG_err_tmp ();
-   }
+   /*> printf ("  -- a_unit (%c)\n", a_unit);                                         <*/
+   /*> printf ("  -- a_rpid (%d)\n", a_rpid);                                         <*/
+   DEBUG_PROG   yLOG_char    ("a_unit"    , a_unit);
+   /*> if (a_unit == 'y' || a_unit == 'k') {                                                    <* 
+    *>    /+> printf ("  -- sending to tmp\n");                                           <+/   <* 
+    *>    DEBUG_PROG   yLOG_note    ("switching to tmp");                                       <* 
+    *>    yURG_msg_tmp ();                                                                      <* 
+    *>    yURG_err_tmp ();                                                                      <* 
+    *> }                                                                                        <*/
+   /*> printf ("3) %s\n", yURG_mute_status ());                                       <*/
    /*---(check for pre-loud)-------------*/
    for (i = 1; i < a_argc; ++i) {
+      DEBUG_PROG   yLOG_info    ("a_argv"    , a_argv [i]);
       /*> printf (", %s", a_argv [i]);                                                <*/
       if (a_argv [i][0] != '-')       continue;
       if (a_argv [i][1] != '-')       continue;
-      if      (strcmp (a_argv [i], "--vdaemon" ) == 0)   x_loud = 'y';
-      else if (strcmp (a_argv [i], "--vprickly") == 0)   x_loud = 'y';
-      else if (strcmp (a_argv [i], "--vnormal" ) == 0)   x_loud = 'y';
-      else if (strcmp (a_argv [i], "--vstrict" ) == 0)   x_loud = 'y';
+      if      (strcmp (a_argv [i], "--prestart") == 0)   s_loud = 'y';
+      else if (strcmp (a_argv [i], "--vdaemon" ) == 0)   s_loud = 'y';
+      else if (strcmp (a_argv [i], "--vprickly") == 0)   s_loud = 'y';
+      else if (strcmp (a_argv [i], "--vnormal" ) == 0)   s_loud = 'y';
+      else if (strcmp (a_argv [i], "--vstrict" ) == 0)   s_loud = 'y';
    }
+   DEBUG_PROG   yLOG_char    ("s_loud"    , s_loud);
+   /*> printf ("  -- s_loud (%c)\n", s_loud);                                         <*/
    /*---(set loud)-----------------------*/
-   if (x_loud == 'y' && a_rpid == 1) {
-      yURG_msg_live ();
+   DEBUG_PROG   yLOG_value   ("a_rpid"    , a_rpid);
+   /*> if (s_loud == 'y' && a_rpid == 1) {                                            <*/
+   if (s_loud == 'y') {
+      /*> printf ("  -- running in loud, messages on\n");                             <*/
       my.verbose = 'y';
+      DEBUG_PROG   yLOG_note    ("switching to std live");
+      yURG_msg_live ();
+      yURG_err_live ();
    }
-   yURG_err_live ();
+   if (s_loud == 'y' && (a_unit == 'y' || a_unit == 'k')) {
+      /*> printf ("  -- sending to tmp\n");                                           <*/
+      my.verbose = 'y';
+      DEBUG_PROG   yLOG_note    ("switching to tmp live");
+      yURG_all_tmplive ();
+   }
+   /*> printf ("4) %s\n", yURG_mute_status ());                                       <*/
    /*---(complete)-----------------------*/
+   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
    return 0;
 }
 
@@ -96,7 +129,7 @@ PROG__runas             (char *a_name)
    my.run_as         = '-';
    my.run_mode       = '-';
    /*---(specific)-----------------------*/
-   yURG_msg (' ', "%s %s", P_NAMESAKE, P_SUBJECT);
+   yURG_msg (' ', "%s %s", P_NAMESAKE, "PRESTART activities");
    /* must also trap _debug versions */
    /*> yJOBS_args_init         (&(my.run_as), &(my.run_mode), my.run_file);           <*/
    rc = yJOBS_runas (a_name, &(my.run_as), P_HEADERS, NULL);
@@ -223,7 +256,9 @@ PROG_prestart           (int a_argc, char *a_argv[], char a_unit)
    /*---(header)-------------------------*/
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    /*---(startup)------------------------*/
+   DEBUG_PROG   yLOG_char    ("a_unit"    , a_unit);
    x_rpid = getpid ();
+   DEBUG_PROG   yLOG_value   ("x_rpid"    , x_rpid);
    if (rc >= 0)  rc = PROG__verbose   (a_argc, a_argv, a_unit, x_rpid);
    if (rc >= 0)  rc = PROG__runas     (a_argv [0]);
    if (rc >= 0)  rc = PROG__boot      (a_argc, a_argv, x_rpid);
@@ -247,9 +282,15 @@ PROG_debugging          (int a_argc, char *a_argv[], char a_unit)
    int         rc          =    0;
    /*---(header)-------------------------*/
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
-   /*---(startup)------------------------*/
+   /*---(handling urgents)---------------*/
+   yURG_all_push ();
+   /*> printf ("6) %s\n", yURG_mute_status ());                                       <*/
    if (rc >= 0)  rc = yURG_logger  (a_argc, a_argv);
+   /*> printf ("7) %s\n", yURG_mute_status ());                                       <*/
+   yURG_all_pop  ();
+   /*> printf ("8) %s\n", yURG_mute_status ());                                       <*/
    if (rc >= 0)  rc = yURG_urgs    (a_argc, a_argv);
+   /*> printf ("9) %s\n", yURG_mute_status ());                                       <*/
    DEBUG_PROG  yLOG_value   ("debugging" , rc);
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
@@ -290,6 +331,7 @@ PROG__init              (void)
    DEBUG_PROG   yLOG_info    ("yJOBS"   , yJOBS_version   ());
    /*---(header)-------------------------*/
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
+   /*> printf ("0) %s\n", yURG_mute_status ());                                       <*/
    yURG_msg ('>', "program initialization...");
    /*---(set globals)--------------------*/
    yURG_msg ('-', "set defaults for major globals");
@@ -298,7 +340,6 @@ PROG__init              (void)
    my.loop_msec      = 100;
    my.loop_max       = my.loop_msec * 10 * 240; /* four minutes */
    ystrlcpy (my.dev, "/dev/tty1", LEN_LABEL);
-   /*> PROG__arg_load ();                                                             <*/
    /*---(call whoami)--------------------*/
    rc = yEXEC_whoami (&my.pid, &my.ppid, &my.m_uid, NULL, NULL, &my.m_who, 'n', NULL, NULL, NULL);
    DEBUG_PROG   yLOG_value   ("whoami"    , rc);
@@ -333,12 +374,13 @@ PROG__args              (int a_argc, char *a_argv[])
    int         x_num       =    0;          /* numeric argument holder        */
    char        x_two       =    0;
    char        s           [LEN_HUND]  = "";
+   char        x_status    [LEN_FULL]  = "";
    /*---(process)------------------------*/
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    yURG_msg ('>', "command line arguments handling...");
    yURG_msg ('-', "total of %d arguments, including name", a_argc);
-   /*---(defaults)------------------------------*/
-   /*> PROG__arg_clearmode ();                                                        <*/
+   yURG_all_push ();
+   ystrlcpy (x_status, yURG_mute_status (), LEN_FULL);
    /*---(walk args)-----------------------------*/
    --rce;  for (i = 1; i < a_argc; ++i) {
       /*---(prepare)---------------------*/
@@ -360,11 +402,32 @@ PROG__args              (int a_argc, char *a_argv[])
       DEBUG_ARGS  yLOG_value    ("handle"    , rc);
       if (rc < 0)  break;
       /*---(local arguments)-------------*/
+      if (strcmp (a, "--prestart") == 0) rc = 1;
+      /*---(missing)---------------------*/
       if (rc == 0) {
          yURG_err ('f', "argument (%s) not found, neither yJOBS or local", a);
          DEBUG_PROG   yLOG_note    ("FATAL, argument not found, neither yJOBS or local");
          DEBUG_PROG   yLOG_exitr   (__FUNCTION__, rce);
          return rce;
+      }
+      /*---(verbosity)-------------------*/
+      if (strcmp (x_status, yURG_mute_status ()) != 0) {
+         yURG_all_push ();
+         yURG_all_mute ();
+         if (s_loud == 'y') {
+            my.verbose = 'y';
+            DEBUG_PROG   yLOG_note    ("switching to std live");
+            yURG_msg_live ();
+            yURG_err_live ();
+         }
+         if (s_loud == 'y' && (s_unit == 'y' || s_unit == 'k')) {
+            my.verbose = 'y';
+            DEBUG_PROG   yLOG_note    ("switching to tmp live");
+            yURG_msg_tmp  ();
+            yURG_msg_live ();
+            yURG_err_tmp  ();
+            yURG_err_live ();
+         }
       }
       /*---(done)------------------------*/
    }
@@ -387,6 +450,7 @@ PROG__args              (int a_argc, char *a_argv[])
    DEBUG_ARGS   yLOG_value   ("loop_msec" , my.loop_msec);
    DEBUG_ARGS   yLOG_value   ("loop_max"  , my.loop_max);
    /*> yURG_msg (' ', "");                                                            <*/
+   if (s_loud == 'y')  yURG_all_pop ();
    /*---(complete)-----------------------*/
    if (rc > 0)  rc = 0;
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
@@ -473,6 +537,7 @@ PROG__final             (void)
    DEBUG_PROG   yLOG_enter   (__FUNCTION__);
    DEBUG_INPT  yLOG_char    ("run_mode"  , my.run_mode);
    /*---(set output routing)-------------*/
+   yURG_msg (' ', "");
    yJOBS_final (my.m_uid);
    /*---(complete)-----------------------*/
    DEBUG_PROG   yLOG_exit    (__FUNCTION__);
@@ -503,6 +568,76 @@ PROG_startup            (int a_argc, char *a_argv[], char a_unit)
 
 
 /*====================------------------------------------====================*/
+/*===----                       main driver                            ----===*/
+/*====================------------------------------------====================*/
+static void      o___DRIVER__________________o (void) {;}
+
+char
+PROG__wait              (char *a_func, char a_rc, int a_sec)
+{
+   int         i           =    0;
+   EOS_VERBOSE printf ("%-12.12s  : returned %d\n", a_func, a_rc);
+   for (i = 0; i < a_sec; ++i) {
+      EOS_VERBOSE printf ("sleep %d\n", i);
+      sleep (1);
+   }
+   return 0;
+}
+
+char
+PROG_main               (int a_argc, char *a_argv[], char a_unit)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   char        rce         =  -10;
+   char        rc          =    0;
+   char        rc_warn     =    0;
+   /*---(header)-------------------------*/
+   DEBUG_LOOP  yLOG_enter   (__FUNCTION__);
+   /*---(pre_startup)--------------------*/
+   if (rc >= 0)  rc = PROG_prestart  (a_argc, a_argv, a_unit);
+   DEBUG_PROG  yLOG_value   ("prestart"  , rc);
+   if (rc >= 0)  rc = PROG_debugging (a_argc, a_argv, a_unit);
+   DEBUG_PROG  yLOG_value   ("debugging" , rc);
+   if (rc >= 0)  rc = PROG_startup   (a_argc, a_argv, a_unit);
+   DEBUG_PROG  yLOG_value   ("startup"   , rc);
+   /*---(defense)------------------------*/
+   --rce;  if (rc <  0) {
+      DEBUG_PROG  yLOG_note    ("shutting everything down");
+      DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
+      if (getpid == 1)  PROG__wait ("its over",   rc,  20);
+      PROG_end ();
+      return rce;
+   }
+   /*---(main)---------------------------*/
+   yURG_all_pop ();
+   rc = rc_warn = yJOBS_driver (P_ONELINE, eos_yjobs);
+   DEBUG_PROG   yLOG_value    ("driver"    , rc);
+   -rce;  if (rc < 0) {
+      DEBUG_PROG   yLOG_note     ("yJOBS driver failed, returning error");
+      PROG_end ();
+      return rce;
+   }
+   /*---(run)----------------------------*/
+   IF_RUNNING {
+      IF_NORMAL  yURG_msg ('>', "requested an actual run in NORMAL mode...");
+      IF_STRICT  yURG_msg ('>', "requested an actual run in STRICT mode...");
+      rc = BASE_execute ();
+      DEBUG_PROG   yLOG_value    ("execute"   , rc);
+   }
+   /*---(wrapup)-------------------------*/
+   if (my.run_as == IAM_EOS && my.pid == 1)  BASE_kharon ();
+   /*> IF_NOEND  ;                                                                    <*/
+   /*> else      rc = PROG_end ();                                                    <*/
+   rc = PROG_end ();
+   /*> DEBUG_PROG   yLOG_value    ("end"       , rc);                                 <*/
+   /*---(complete)-----------------------*/
+   /*> DEBUG_LOOP  yLOG_exit    (__FUNCTION__);                                       <*/
+   return rc_warn;
+}
+
+
+
+/*====================------------------------------------====================*/
 /*===----                      shutdown functions                      ----===*/
 /*====================------------------------------------====================*/
 static void      o___SHUTDOWN________________o (void) {;}
@@ -510,13 +645,16 @@ static void      o___SHUTDOWN________________o (void) {;}
 char         /*--: wrapup program execution --------------[ leaf   [ ------ ]-*/
 PROG_end           (void)
 {
+   char        rc          =    0;
    /*---(create utmp boot)----------------------*/
    yLOG_enter (__FUNCTION__);
+   /*> rc = yDLST_purge ();                                                           <*/
+   /*> DEBUG_PROG   yLOG_value    ("purge"     , rc);                                 <*/
    /*> rptg_dump  ();                                                                 <*/
    yLOG_info  ("logger",   "shutting down logger");
    yLOG_exit  (__FUNCTION__);
    yLOGS_end   ();
-   PROG_shutdown ();
+   /*> PROG_shutdown ();                                                              <*/
    return 0;
 }
 
@@ -751,8 +889,8 @@ prog__unit              (char *a_question)
    ystrlcpy  (unit_answer, "RPTG             : question not understood", LEN_RECD);
    /*---(crontab name)-------------------*/
    if      (strcmp (a_question, "mode"    )        == 0) {
-      /*> yJOBS_iam  (my.run_as  , s);                                                <*/
-      /*> yJOBS_mode (my.run_mode, t);                                                <*/
+      strlcpy (s, yJOBS_iam  (), LEN_HUND);
+      strlcpy (t, yJOBS_mode (), LEN_HUND);
       snprintf (unit_answer, LEN_RECD, "PROG mode        : iam (%c) %-18.18s, run (%c) %-18.18s, å%sæ", my.run_as, s, my.run_mode, t, my.run_file);
    }
    else if (strcmp (a_question, "action"        )  == 0) {

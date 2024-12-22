@@ -34,9 +34,9 @@
 #define     P_CREATED   "2010-10"
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
-#define     P_VERMINOR  "2.3-, repairing after major system update"
-#define     P_VERNUM    "2.3c"
-#define     P_VERTXT    "eos_prog unit test 7 is now updated/passing"
+#define     P_VERMINOR  "2.4-, building in new yJOBS string tests"
+#define     P_VERNUM    "2.4a"
+#define     P_VERTXT    "eos_yJOBS_IN string testing is clean"
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -406,12 +406,15 @@ struct cACCESSOR
    /*---(counts)----------------*/
    int         f_gall;
    int         f_gpass;
+   int         f_gwarn;
    int         f_gfail;
    int         f_aall;
    int         f_apass;
+   int         f_awarn;
    int         f_afail;
    int         f_pall;
    int         f_ppass;
+   int         f_pwarn;
    int         f_pfail;
    char        f_note      [LEN_LABEL];
    /*---(current group)---------*/
@@ -608,13 +611,10 @@ extern      char        unit_answer [LEN_RECD];
 /*===[[ EOS_MAIN.C ]]=========================================================*/
 int         main               (int a_argc, char *a_argv[]);
 
+
+
 /*===[[ EOS_PROG.C ]]=========================================================*/
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/
-/*> char        PROG__arg_init          (void);                                       <*/
-/*> char        PROG__arg_single        (char *a_levels, char n);                     <*/
-/*> char        PROG__arg_load          (void);                                       <*/
-/*> char        PROG__arg_clearmode     (void);                                       <*/
-/*> char        PROG__arg_handle        (int *i, char *a_arg, char *a_next);          <*/
 /*---(program)--------------*/
 char*       PROG_version            (void);
 char*       PROG_usage              (void);
@@ -632,6 +632,9 @@ char        PROG__args              (int a_argc, char *a_argv[]);
 char        PROG__begin             (void);
 char        PROG__final             (void);
 char        PROG_startup            (int a_argc, char *a_argv[], char a_unit);
+/*---(driver)---------------*/
+char        PROG__wait              (char *a_func, char a_rc, int a_sec);
+char        PROG_main               (int a_argc, char *a_argv[], char a_unit);
 /*---(shutdown)-------------*/
 char        PROG_end                (void);
 char        PROG_shutdown           (void);
@@ -642,6 +645,9 @@ char        PROG_testfiles          (void);
 char        PROG_testquiet          (void);
 char        PROG_testloud           (void);
 char*       prog__unit              (char *a_question);
+/*---(done)----------------*/
+
+
 
 /*===[[ EOS_EXEC.C ]]=========================================================*/
 /*345678901-12345678901-12345678901-12345678901-12345678901-12345678901-123456*/

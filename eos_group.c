@@ -163,7 +163,6 @@ group_handler           (int n, uchar *a_verb)
    /*---(default)------------------------*/
    my.f_group = '-';
    /*---(defense)------------------------*/
-   yURG_msg (' ', "");
    DEBUG_INPT  yLOG_point   ("a_verb"    , a_verb);
    --rce;  if (a_verb == NULL || strlen (a_verb) <= 0) {
       DEBUG_INPT  yLOG_exit    (__FUNCTION__);

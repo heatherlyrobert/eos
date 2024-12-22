@@ -330,7 +330,7 @@ BASE_kharon             (void)
       rc = execvp (*my.argv, my.argv);
    }
    /*---(complete)-----------------------*/
-   DEBUG_PROG   yLOG_exit    (__FUNCTION__);
+   /*> DEBUG_PROG   yLOG_exit    (__FUNCTION__);                                      <*/
    return 0;
 }
 
@@ -492,17 +492,21 @@ BASE_handler            (int n, uchar *a_verb, char a_exist, void *a_handler)
    case 'G' :
       ++my.f_gall;
       rc = group_handler (n, a_verb);
-      if (rc < 0) ++my.f_gfail; else  ++my.f_gpass;
+      if      (rc < 0) ++my.f_gfail;
+      else             ++my.f_gpass;
       break;
    case 'A' :
       ++my.f_aall;
       rc = after_handler (n, a_verb);
-      if (rc < 0) ++my.f_afail; else  ++my.f_apass;
+      if      (rc < 0) ++my.f_afail;
+      else             ++my.f_apass;
       break;
    default  :
       ++my.f_pall;
       rc = proc_handler (n, a_verb);
-      if (rc < 0) ++my.f_pfail; else  ++my.f_ppass;
+      if      (rc < 0) ++my.f_pfail;
+      else if (rc > 0) ++my.f_pwarn;
+      else             ++my.f_ppass;
       break;
    }
    DEBUG_INPT  yLOG_value   ("handler"   , rc);
@@ -524,9 +528,9 @@ BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    /*---(reset globals)------------------*/
    my.f_lines = 0;
    my.f_group = '-';
-   my.f_gall  = my.f_gpass = my.f_gfail = 0;
-   my.f_aall  = my.f_apass = my.f_afail = 0;
-   my.f_pall  = my.f_ppass = my.f_pfail = 0;
+   my.f_gall  = my.f_gpass = my.f_gwarn = my.f_gfail = 0;
+   my.f_aall  = my.f_apass = my.f_awarn = my.f_afail = 0;
+   my.f_pall  = my.f_ppass = my.f_pwarn = my.f_pfail = 0;
    strcpy  (my.f_note, "");
    /*---(defense)------------------------*/
    DEBUG_INPT   yLOG_point   ("a_full"    , a_full);
@@ -606,27 +610,26 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    x_seqs   = yDLST_seq_count  (YDLST_GLOBAL);
    DEBUG_PROG  yLOG_value   ("x_seqs"    , x_seqs);
    DEBUG_PROG  yLOG_value   ("f_lines"   , my.f_lines);
-   yURG_msg (' ', "");
-   yURG_msg ('>', "%d lines read, %d groups, %d procs, %d seqs", my.f_lines, x_lists, x_lines, x_seqs);
+   yURG_msg ('>', "summary of incomming data...");
+   yURG_msg ('-', "%d lines read, %d groups, %d procs, %d seqs", my.f_lines, x_lists, x_lines, x_seqs);
    /*---(verify the results)-------------*/
    --rce;  if (my.f_lines <= 0) {
-      yURG_err ('>', "NO LINES found");
+      yURG_err ('f', "NO LINES found, nothing to do");
       DEBUG_PROG  yLOG_note    ("no input lines found");
       ystrlcpy (my.f_note, "NO_INPUT" , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    --rce;  if (x_lists <= 0) {
-      yURG_err ('>', "NO GROUPS created");
+      yURG_err ('f', "NO GROUPS created, nothing to do");
       DEBUG_PROG  yLOG_note    ("no groups created");
       ystrlcpy (my.f_note, "NO_GROUPS"  , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
    --rce;  if (x_lines <= 0) {
-      yURG_err ('>', "NO PROCS created");
+      yURG_err ('f', "NO PROCS created, nothing to do");
       DEBUG_PROG  yLOG_note    ("no procs created");
-      yURG_msg (' ', "");
       ystrlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -634,28 +637,34 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
    /*---(check trouble)------------------*/
    DEBUG_PROG  yLOG_complex ("fails"     , "%dg, %da, %dp", my.f_gfail, my.f_afail, my.f_pfail);
    --rce;  if (my.f_gfail >  0) {
-      yURG_err ('F', "%d GROUPS failed", my.f_gfail);
+      yURG_err ('f', "%d GROUPS failed to be properly understood", my.f_gfail);
       DEBUG_PROG  yLOG_note    ("some groups failed to read properly");
       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_GROUP" , LEN_TERSE);
    }
    --rce;  if (my.f_afail >  0) {
-      yURG_err ('F', "%d AFTERS failed", my.f_afail);
+      yURG_err ('f', "%d AFTERS failed to be properly understood", my.f_afail);
       DEBUG_PROG  yLOG_note    ("some afters failed to read properly");
       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_AFTER" , LEN_TERSE);
    }
    --rce;  if (my.f_pfail >  0) {
-      yURG_err ('F', "%d PROCS failed", my.f_pfail);
+      yURG_err ('f', "%d PROCS failed to be properly understood or executable", my.f_pfail);
       DEBUG_PROG  yLOG_note    ("some procs failed to read properly");
       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_PROC"  , LEN_TERSE);
    }
    if (my.f_gfail + my.f_afail + my.f_pfail >  0) {
-      yURG_msg (' ', "");
       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
    }
+   /*---(warnings)-----------------------*/
+   if (my.f_gwarn + my.f_awarn + my.f_pwarn >  0) {
+      DEBUG_PROG  yLOG_note    ("some procs used defaults due to bad data");
+      yURG_msg ('-', "WARNING, all read but with tweaks, reviewed %d, accepted %d, warned %d", my.f_lines, x_lines, my.f_pwarn);
+      if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "WARN_PROC" , LEN_TERSE);
+      DEBUG_PROG  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
    /*---(show success)-------------------*/
-   yURG_msg ('>', "all read correctly, SUCCESS, reviewed %d, accepted %d", my.f_lines, x_lines);
-   yURG_msg (' ', "");
+   yURG_msg ('-', "SUCCESS, all read correctly, reviewed %d, accepted %d", my.f_lines, x_lines);
    ystrlcpy (my.f_note, "success"  , LEN_TERSE);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
@@ -708,6 +717,10 @@ BASE_pull               (cchar *a_fname)
    --rce;  if (rc < 0) {
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
+   }
+   --rce;  if (rc > 0) {
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return 1;
    }
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);

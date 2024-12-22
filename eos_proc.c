@@ -256,6 +256,7 @@ proc_handler            (int n, uchar *a_verb)
    /*---(locals)-----------+-----------+-*/
    char        rce         =  -10;
    int         rc          =    0;
+   int         rc_flag     =    0;
    int         i           =    0;
    int         c           =    0;
    char        x_type      =  '-';
@@ -350,7 +351,7 @@ proc_handler            (int n, uchar *a_verb)
    rc = yEXEC_runable (x_label, x_user, x_run, YEXEC_FULL);
    DEBUG_INPT   yLOG_value   ("runnable"  , rc);
    --rce;  if (rc < 0) {
-      yURG_err ('+', "command is NOT runable %2d å%sæ", strlen (x_run), x_run);
+      yURG_msg ('+', "command is NOT runable %2d å%sæ", strlen (x_run), x_run);
       x_group->note = 'P';
       DEBUG_INPT  yLOG_exitr   (__FUNCTION__, rce);
       return rce;
@@ -373,7 +374,11 @@ proc_handler            (int n, uchar *a_verb)
    ystrlcpy (x_new->user, x_user , LEN_LABEL);
    x_new->uid     = x_uid;
    rc = yEXEC_dur_in_sec (x_dur, &(x_new->est));
-   proc__flags (x_new, x_flags, x_dur);
+   rc = rc_flag = proc__flags (x_new, x_flags, x_dur);
+   DEBUG_INPT   yLOG_value   ("rc_flag"   , rc_flag);
+   if (rc_flag < 0) {
+      yURG_err ('w', "during proc flags review, some items were defaulted");
+   }
    ystrlcpy (x_new->run , x_run  , LEN_FULL);
    ystrlcpy (x_new->altname, x_altname , LEN_TITLE);
    /*---(create line)--------------------*/
@@ -395,6 +400,11 @@ proc_handler            (int n, uchar *a_verb)
    }
    ++x_group->askd;
    yURG_msg ('+', "å%sæ step is successfully created", a_verb);
+   /*---(warning)------------------------*/
+   if (rc_flag < 0) {
+      DEBUG_INPT  yLOG_exit    (__FUNCTION__);
+      return 1;
+   }
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
    return 0;
