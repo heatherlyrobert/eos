@@ -34,9 +34,9 @@
 #define     P_CREATED   "2010-10"
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
-#define     P_VERMINOR  "2.4-, building in new yJOBS string tests"
-#define     P_VERNUM    "2.4a"
-#define     P_VERTXT    "eos_yJOBS_IN string testing is clean"
+#define     P_VERMINOR  "2.5-, better fit to yJOBS and build more yJOBS string tests"
+#define     P_VERNUM    "2.5a"
+#define     P_VERTXT    "fixed little defense that kept eos from booting"
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
