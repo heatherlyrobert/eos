@@ -613,20 +613,20 @@ PROG_main               (int a_argc, char *a_argv[], char a_unit)
    rc = rc_warn = yJOBS_driver (P_ONELINE, eos_yjobs);
    DEBUG_PROG   yLOG_value    ("driver"    , rc);
    -rce;  if (rc < 0) {
-      printf ("yJBOS_driver returned (%d)\n", rc);
-      sleep  (1);
+      /*> printf ("yJBOS_driver returned (%d)\n", rc);                                <*/
+      /*> sleep  (1);                                                                 <*/
       DEBUG_PROG   yLOG_note     ("yJOBS driver failed, returning error");
       PROG_end ();
-      printf ("dying in 3...\n");
-      sync   ();
-      sleep  (1);
-      printf ("dying in 2...\n");
-      sync   ();
-      sleep  (1);
-      printf ("dying in 1...\n");
-      sync   ();
-      sleep  (1);
-      printf ("dead\n");
+      /*> printf ("dying in 3...\n");                                                 <* 
+       *> sync   ();                                                                  <* 
+       *> sleep  (1);                                                                 <* 
+       *> printf ("dying in 2...\n");                                                 <* 
+       *> sync   ();                                                                  <* 
+       *> sleep  (1);                                                                 <* 
+       *> printf ("dying in 1...\n");                                                 <* 
+       *> sync   ();                                                                  <* 
+       *> sleep  (1);                                                                 <* 
+       *> printf ("dead\n");                                                          <*/
       return rce;
    }
    /*---(run)----------------------------*/

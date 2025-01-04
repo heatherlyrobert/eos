@@ -664,7 +664,7 @@ BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fu
       return 1;
    }
    /*---(show success)-------------------*/
-   yURG_msg ('-', "SUCCESS, all read correctly, reviewed %d, accepted %d", my.f_lines, x_lines);
+   yURG_msg ('-', "success, all read correctly, reviewed %d, accepted %d", my.f_lines, x_lines);
    ystrlcpy (my.f_note, "success"  , LEN_TERSE);
    /*---(complete)-----------------------*/
    DEBUG_INPT  yLOG_exit    (__FUNCTION__);
