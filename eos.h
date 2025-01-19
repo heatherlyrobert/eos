@@ -35,8 +35,8 @@
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_VERMAJOR  "2.--, rebuilding with better knowledge ;)"
 #define     P_VERMINOR  "2.5-, better fit to yJOBS and build more yJOBS string tests"
-#define     P_VERNUM    "2.5b"
-#define     P_VERTXT    "updated capitalization changes in eos_YJOBS_IN string-testing"
+#define     P_VERNUM    "2.5c"
+#define     P_VERTXT    "finished of eos_YJOBS_IN string-testing"
 /*--------- ----------- -----------------------------------------------------------------------*/
 #define     P_PRIORITY  "direct, simple, brief, vigorous, and lucid (h.w. fowler)"
 #define     P_PRINCIPAL "[grow a set] and build your wings on the way down (r. bradbury)"
@@ -666,6 +666,7 @@ char        BASE_handler            (int n, uchar *a_verb, char a_exist, void *a
 char        BASE__prepare           (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fuser, int a_fuid);
 char        BASE_pull_detail        (cchar a_loc, cchar *a_full, cchar *a_fname, cchar *a_fuser, int a_fuid);
 char        BASE_pull               (cchar *a_fname);
+char        BASE_purge              (void);
 /*---(execution)------------*/
 llong       BASE_msec               (void);
 char        BASE_console            (void);

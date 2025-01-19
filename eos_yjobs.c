@@ -35,7 +35,8 @@ eos_yjobs               (cchar a_req, cchar *a_data)
       break;
    case YJOBS_PURGE    :
       DEBUG_PROG    yLOG_note    ("called for purge");
-      /*> rc = BASE_purge ();                                                         <*/
+      rc = BASE_purge ();
+      /*> rc = yDLST_purge ();                                                        <*/
       break;
    }
    DEBUG_PROG    yLOG_value   ("rc"        , rc);

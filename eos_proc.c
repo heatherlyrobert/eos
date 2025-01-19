@@ -382,7 +382,7 @@ proc_handler            (int n, uchar *a_verb)
    ystrlcpy (x_new->run , x_run  , LEN_FULL);
    ystrlcpy (x_new->altname, x_altname , LEN_TITLE);
    /*---(create line)--------------------*/
-   rc = yDLST_line_create (x_label, x_new);
+   rc = yDLST_line_create (x_new->name, x_new);
    DEBUG_INPT   yLOG_value   ("create"    , rc);
    --rce;  if (rc < 0) {
       yURG_err ('f', "yDLST line could not be created (%d)", rc);

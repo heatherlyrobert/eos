@@ -10,6 +10,54 @@ static void  o___CLI_____________o () { return; }
 
 static llong  s_time  =  0;
 
+char
+BASE_purge              (void)
+{
+   /*---(locals)-----------+-----+-----+-*/
+   int         x_lists     =    0;
+   int         x_lines     =    0;
+   int         x_seqs      =    0;
+   /*---(header)-------------------------*/
+   DEBUG_PROG    yLOG_enter   (__FUNCTION__);
+   /*---(title)--------------------------*/
+   yURG_msg ('>', "verify purging all contents (purge)...");
+   /*---(before purge)-------------------*/
+   x_lists  = yDLST_list_count ();
+   DEBUG_PROG  yLOG_value   ("x_lists"   , x_lists);
+   x_lines  = yDLST_line_count (YDLST_GLOBAL);
+   DEBUG_PROG  yLOG_value   ("x_lines"   , x_lines);
+   x_seqs   = yDLST_seq_count  (YDLST_GLOBAL);
+   DEBUG_PROG  yLOG_value   ("x_seqs"    , x_seqs);
+   yURG_msg ('-', "before : %3d groups, %3d procs, %3d seqs", x_lists, x_lines, x_seqs);
+   /*---(reset content)------------------*/
+   yDLST_purge ();
+   /*---(reset globals)------------------*/
+   my.f_lines = 0;
+   my.f_group = '-';
+   my.f_gall  = my.f_gpass = my.f_gwarn = my.f_gfail = 0;
+   my.f_aall  = my.f_apass = my.f_awarn = my.f_afail = 0;
+   my.f_pall  = my.f_ppass = my.f_pwarn = my.f_pfail = 0;
+   strcpy (my.f_note, "");
+   strcpy (my.f_desc , "");
+   strcpy (my.f_dir  , "");
+   strcpy (my.f_full , "");
+   strcpy (my.f_name , "");
+   strcpy (my.f_user , "");
+   my.f_uid = -1;
+   /*---(after purge)--------------------*/
+   x_lists  = yDLST_list_count ();
+   DEBUG_PROG  yLOG_value   ("x_lists"   , x_lists);
+   x_lines  = yDLST_line_count (YDLST_GLOBAL);
+   DEBUG_PROG  yLOG_value   ("x_lines"   , x_lines);
+   x_seqs   = yDLST_seq_count  (YDLST_GLOBAL);
+   DEBUG_PROG  yLOG_value   ("x_seqs"    , x_seqs);
+   yURG_msg ('-', "after  : %3d groups, %3d procs, %3d seqs", x_lists, x_lines, x_seqs);
+   yURG_msg ('-', "success, full data purge completed successfully");
+   /*---(complete)-----------------------*/
+   DEBUG_PROG    yLOG_exit    (__FUNCTION__);
+   return 0;
+}
+
 llong             /* PURPOSE : timestamp in milliseconds      */
 BASE_msec               (void)
 {
@@ -312,7 +360,7 @@ BASE_kharon             (void)
    ystrlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrst", LEN_FULL);
    /*> ystrlcpy    (x_args, "/sbin/kharon_debug @@kitchen @@yexec --acheron --leisurely --listen --abcdefghijklmnopqrstuvwxyz", LEN_FULL);   <*/
    /*> ystrlcpy    (x_args, "/sbin/kharon_debug @@kitchen --acheron --leisurely --listen", LEN_FULL);   <*/
-                          /*123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
+   /*123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789- */
    /*> ystrlcpy    (x_args, "/sbin/kharon --acheron --leisurely --listen --abcdefghijklmnopqrstu", LEN_FULL);   <*/
    /*> ystrlcpy    (x_args, "kharon-charopos (ferryman of dead souls) watching the acheron river", LEN_FULL);   <*/
    printf ("xargs  å%sæ\n", x_args);
@@ -436,46 +484,46 @@ BASE_kharon             (void)
  *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
  *>       return rce;                                                                                                                       <* 
  *>    }                                                                                                                                    <* 
- *>    --rce;  if (x_lines <= 0) {                                                                                                          <* 
- *>       yURG_err ('>', "NO PROCS created");                                                                                               <* 
- *>       DEBUG_PROG  yLOG_note    ("no procs created");                                                                                    <* 
- *>       yURG_msg (' ', "");                                                                                                               <* 
- *>       ystrlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);                                                                                     <* 
- *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
- *>       return rce;                                                                                                                       <* 
- *>    }                                                                                                                                    <* 
- *>    /+---(save back)----------------------+/                                                                                             <* 
- *>    if (r_user != NULL)  ystrlcpy (r_user, my.f_user, LEN_LABEL);                                                                         <* 
- *>    if (r_desc != NULL)  ystrlcpy (r_desc, my.f_desc, LEN_DESC);                                                                          <* 
- *>    /+---(check trouble)------------------+/                                                                                             <* 
- *>    DEBUG_PROG  yLOG_complex ("fails"     , "%dg, %da, %dp", my.f_gfail, my.f_afail, my.f_pfail);                                        <* 
- *>    --rce;  if (my.f_gfail >  0) {                                                                                                       <* 
- *>       yURG_err ('F', "%d GROUPS failed", my.f_gfail);                                                                                   <* 
- *>       DEBUG_PROG  yLOG_note    ("some groups failed to read properly");                                                                 <* 
- *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_GROUP" , LEN_TERSE);                                                   <* 
- *>    }                                                                                                                                    <* 
- *>    --rce;  if (my.f_afail >  0) {                                                                                                       <* 
- *>       yURG_err ('F', "%d AFTERS failed", my.f_afail);                                                                                   <* 
- *>       DEBUG_PROG  yLOG_note    ("some afters failed to read properly");                                                                 <* 
- *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_AFTER" , LEN_TERSE);                                                   <* 
- *>    }                                                                                                                                    <* 
- *>    --rce;  if (my.f_pfail >  0) {                                                                                                       <* 
- *>       yURG_err ('F', "%d PROCS failed", my.f_pfail);                                                                                    <* 
- *>       DEBUG_PROG  yLOG_note    ("some procs failed to read properly");                                                                  <* 
- *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_PROC"  , LEN_TERSE);                                                   <* 
- *>    }                                                                                                                                    <* 
- *>    if (my.f_gfail + my.f_afail + my.f_pfail >  0) {                                                                                     <* 
- *>       yURG_msg (' ', "");                                                                                                               <* 
- *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
- *>       return rce;                                                                                                                       <* 
- *>    }                                                                                                                                    <* 
- *>    yURG_msg ('>', "all read correctly, SUCCESS, reviewed %d, accepted %d", my.f_lines, x_lines);                                        <* 
- *>    yURG_msg (' ', "");                                                                                                                  <* 
- *>    ystrlcpy (my.f_note, "success"  , LEN_TERSE);                                                                                         <* 
- *>    /+---(complete)-----------------------+/                                                                                             <* 
- *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                                                                             <* 
- *>    return 0;                                                                                                                            <* 
- *> }                                                                                                                                       <*/
+*>    --rce;  if (x_lines <= 0) {                                                                                                          <* 
+   *>       yURG_err ('>', "NO PROCS created");                                                                                               <* 
+      *>       DEBUG_PROG  yLOG_note    ("no procs created");                                                                                    <* 
+      *>       yURG_msg (' ', "");                                                                                                               <* 
+      *>       ystrlcpy (my.f_note, "NO_PROCS"  , LEN_TERSE);                                                                                     <* 
+      *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
+      *>       return rce;                                                                                                                       <* 
+      *>    }                                                                                                                                    <* 
+      *>    /+---(save back)----------------------+/                                                                                             <* 
+      *>    if (r_user != NULL)  ystrlcpy (r_user, my.f_user, LEN_LABEL);                                                                         <* 
+      *>    if (r_desc != NULL)  ystrlcpy (r_desc, my.f_desc, LEN_DESC);                                                                          <* 
+      *>    /+---(check trouble)------------------+/                                                                                             <* 
+      *>    DEBUG_PROG  yLOG_complex ("fails"     , "%dg, %da, %dp", my.f_gfail, my.f_afail, my.f_pfail);                                        <* 
+      *>    --rce;  if (my.f_gfail >  0) {                                                                                                       <* 
+         *>       yURG_err ('F', "%d GROUPS failed", my.f_gfail);                                                                                   <* 
+            *>       DEBUG_PROG  yLOG_note    ("some groups failed to read properly");                                                                 <* 
+            *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_GROUP" , LEN_TERSE);                                                   <* 
+            *>    }                                                                                                                                    <* 
+            *>    --rce;  if (my.f_afail >  0) {                                                                                                       <* 
+               *>       yURG_err ('F', "%d AFTERS failed", my.f_afail);                                                                                   <* 
+                  *>       DEBUG_PROG  yLOG_note    ("some afters failed to read properly");                                                                 <* 
+                  *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_AFTER" , LEN_TERSE);                                                   <* 
+                  *>    }                                                                                                                                    <* 
+                  *>    --rce;  if (my.f_pfail >  0) {                                                                                                       <* 
+                     *>       yURG_err ('F', "%d PROCS failed", my.f_pfail);                                                                                    <* 
+                        *>       DEBUG_PROG  yLOG_note    ("some procs failed to read properly");                                                                  <* 
+                        *>       if (strcmp (my.f_note, "") == 0)  ystrlcpy (my.f_note, "BAD_PROC"  , LEN_TERSE);                                                   <* 
+                        *>    }                                                                                                                                    <* 
+                        *>    if (my.f_gfail + my.f_afail + my.f_pfail >  0) {                                                                                     <* 
+                           *>       yURG_msg (' ', "");                                                                                                               <* 
+                              *>       DEBUG_PROG  yLOG_exitr   (__FUNCTION__, rce);                                                                                     <* 
+                              *>       return rce;                                                                                                                       <* 
+                              *>    }                                                                                                                                    <* 
+                              *>    yURG_msg ('>', "all read correctly, SUCCESS, reviewed %d, accepted %d", my.f_lines, x_lines);                                        <* 
+                              *>    yURG_msg (' ', "");                                                                                                                  <* 
+                              *>    ystrlcpy (my.f_note, "success"  , LEN_TERSE);                                                                                         <* 
+                              *>    /+---(complete)-----------------------+/                                                                                             <* 
+                              *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                                                                             <* 
+                              *>    return 0;                                                                                                                            <* 
+                              *> }                                                                                                                                       <*/
 
 
 char
@@ -681,7 +729,7 @@ BASE_pull               (cchar *a_fname)
    /*---(header)-------------------------*/
    DEBUG_INPT   yLOG_enter   (__FUNCTION__);
    /*---(begin feedback)-----------------*/
-   yURG_msg ('>', "verify the contents of a configuation file (pull)...");
+   yURG_msg ('>', "verify/load the contents of a file (pull)...");
    DEBUG_INPT   yLOG_point   ("a_fname"   , a_fname);
    --rce;  if (a_fname == NULL) {
       yURG_err ('f', "file name not provided to function");
@@ -727,31 +775,55 @@ BASE_pull               (cchar *a_fname)
    return 0;
 }
 
-/*> char                                                                              <* 
- *> BASE_purgeall           (void)                                                    <* 
- *> {                                                                                 <* 
- *>    /+---(locals)-----------+-----+-----+-+/                                       <* 
- *>    char        rce         =  -10;                                                <* 
- *>    tGROUP     *x_group     = NULL;                                                <* 
- *>    tPROC      *x_proc      = NULL;                                                <* 
- *>    /+---(header)-------------------------+/                                       <* 
- *>    DEBUG_INPT  yLOG_enter   (__FUNCTION__);                                       <* 
- *>    /+---(destroy procs)------------------+/                                       <* 
- *>    yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DHEAD, NULL, &x_proc);               <* 
- *>    while (x_proc != NULL) {                                                       <* 
- *>       yDLST_line_destroy   (x_proc->tracker);                                     <* 
- *>       yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DNEXT, NULL, &x_proc);            <* 
- *>    }                                                                              <* 
- *>    /+---(destroy groups)-----------------+/                                       <* 
- *>    yDLST_list_by_cursor (YDLST_DHEAD, NULL, &x_group);                            <* 
- *>    while (x_group != NULL) {                                                      <* 
- *>       yDLST_list_destroy   (x_group->name);                                       <* 
- *>       yDLST_list_by_cursor (YDLST_DNEXT, NULL, &x_group);                         <* 
- *>    }                                                                              <* 
- *>    /+---(complete)-----------------------+/                                       <* 
- *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                       <* 
- *>    return 0;                                                                      <* 
- *> }                                                                                 <*/
+/*> char                                                                                        <* 
+ *> BASE_purge              (void)                                                              <* 
+ *> {                                                                                           <* 
+ *>    /+---(locals)-----------+-----+-----+-+/                                                 <* 
+ *>    char        rce         =  -10;                                                          <* 
+ *>    char        rc          =    0;                                                          <* 
+ *>    tGROUP     *x_group     = NULL;                                                          <* 
+ *>    tPROC      *x_proc      = NULL;                                                          <* 
+ *>    int         c           =    0;                                                          <* 
+ *>    int         t           =    0;                                                          <* 
+ *>    /+---(header)-------------------------+/                                                 <* 
+ *>    DEBUG_INPT  yLOG_enter   (__FUNCTION__);                                                 <* 
+ *>    /+---(destroy procs)------------------+/                                                 <* 
+ *>    c = 0;                                                                                   <* 
+ *>    t = yDLST_line_count (YDLST_GLOBAL);                                                     <* 
+ *>    DEBUG_INPT  yLOG_value   ("PROCS"     , t);                                              <* 
+ *>    yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DHEAD, NULL, &x_proc);                         <* 
+ *>    DEBUG_INPT  yLOG_point   ("x_proc"    , x_proc);                                         <* 
+ *>    while (x_proc != NULL) {                                                                 <* 
+ *>       ++c;                                                                                  <* 
+ *>       DEBUG_INPT  yLOG_complex ("proc"      , "%3d) %s" , c, x_proc->name);                 <* 
+ *>       rc = yDLST_line_destroy   (x_proc->name);                                             <* 
+ *>       DEBUG_INPT  yLOG_value   ("destroy"   , rc);                                          <* 
+ *>       /+> rc = proc__free (&x_proc);                                                  <+/   <* 
+ *>       /+> DEBUG_INPT  yLOG_value   ("free"      , rc);                                <+/   <* 
+ *>       yDLST_line_by_cursor (YDLST_GLOBAL, YDLST_DNEXT, NULL, &x_proc);                      <* 
+ *>       DEBUG_INPT  yLOG_point   ("x_proc"    , x_proc);                                      <* 
+ *>    }                                                                                        <* 
+ *>    /+---(destroy groups)-----------------+/                                                 <* 
+ *>    c = 0;                                                                                   <* 
+ *>    t = yDLST_list_count ();                                                                 <* 
+ *>    DEBUG_INPT  yLOG_value   ("GROUPS"    , t);                                              <* 
+ *>    yDLST_list_by_cursor (YDLST_DHEAD, NULL, &x_group);                                      <* 
+ *>    DEBUG_INPT  yLOG_point   ("x_group"   , x_group);                                        <* 
+ *>    while (x_group != NULL) {                                                                <* 
+ *>       ++c;                                                                                  <* 
+ *>       DEBUG_INPT  yLOG_complex ("group"     , "%3d) %s" , c, x_group->name);                <* 
+ *>       DEBUG_INPT  yLOG_info    ("->name"    , x_group->name);                               <* 
+ *>       rc = yDLST_list_destroy   (x_group->name);                                            <* 
+ *>       DEBUG_INPT  yLOG_value   ("destroy"   , rc);                                          <* 
+ *>       /+> rc = group__free (&x_group);                                                <+/   <* 
+ *>       /+> DEBUG_INPT  yLOG_value   ("free"      , rc);                                <+/   <* 
+ *>       yDLST_list_by_cursor (YDLST_DNEXT, NULL, &x_group);                                   <* 
+ *>       DEBUG_INPT  yLOG_point   ("x_group"   , x_group);                                     <* 
+ *>    }                                                                                        <* 
+ *>    /+---(complete)-----------------------+/                                                 <* 
+ *>    DEBUG_INPT  yLOG_exit    (__FUNCTION__);                                                 <* 
+ *>    return 0;                                                                                <* 
+ *> }                                                                                           <*/
 
 
 
